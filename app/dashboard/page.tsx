@@ -164,7 +164,7 @@ export default function DashboardPage() {
     }),
   };
 
-  const { summary, timeSeries, byPlatform, isLive, lastUpdated, apiErrors } = data;
+  const { summary = { totalSpent: 0, totalRevenue: 0, avgRoas: 0, totalConversions: 0 }, timeSeries = [], byPlatform = [], isLive = false, lastUpdated = null, apiErrors = [] } = data || {};
 
   // ── render ────────────────────────────────────
   return (
