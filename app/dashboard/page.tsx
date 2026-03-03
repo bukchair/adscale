@@ -309,8 +309,8 @@ const apiErrors = data?.apiErrors ?? [];
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>📊 ביצועים לפי פלטפורמה</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
                 {(["google","meta","tiktok"] as const).map(p => {
-                  const ps = byPlatform[p];
-                  return (
+const ps = byPlatform.find((x: {platform: string}) => x.platform === p);
+return (
                     <div key={p} style={{ background: "#12141a", borderRadius: 14, padding: "18px 20px", border: `1px solid ${platformColors[p]}22` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                         <PlatformIcon platform={p} size={22} />
