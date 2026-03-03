@@ -29,10 +29,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-```
-
-**Ctrl+S** ← ואז ב-cmd:
-```
-git add .
-git commit -m "woo api simple"
-git push
