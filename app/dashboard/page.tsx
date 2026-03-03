@@ -1,13 +1,7 @@
 "use client";
-// src/app/dashboard/page.tsx
-// דשבורד מחובר לכל הפלטפורמות
-
 import { useState, useEffect } from "react";
 import { useDashboard, getToday, getDaysAgo, Campaign } from "@/hooks/useDashboard";
 
-// ─────────────────────────────────────────────
-// אייקונים
-// ─────────────────────────────────────────────
 const GoogleIcon = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -34,9 +28,6 @@ const PlatformIcon = ({ platform, size = 16 }: { platform: string; size?: number
   return <TikTokIcon size={size} />;
 };
 
-// ─────────────────────────────────────────────
-// גרפים
-// ─────────────────────────────────────────────
 function MiniChart({ data, color }: { data: number[]; color: string }) {
   if (!data.length) return null;
   const max = Math.max(...data), min = Math.min(...data), range = max - min || 1;
@@ -75,9 +66,6 @@ function BarChart({ data }: { data: { day: string; spent: number; revenue: numbe
   );
 }
 
-// ─────────────────────────────────────────────
-// Skeleton loader
-// ─────────────────────────────────────────────
 function Skeleton({ w = "100%", h = 20, r = 6 }: { w?: string | number; h?: number; r?: number }) {
   return (
     <div style={{
@@ -89,9 +77,6 @@ function Skeleton({ w = "100%", h = 20, r = 6 }: { w?: string | number; h?: numb
   );
 }
 
-// ─────────────────────────────────────────────
-// קבועים
-// ─────────────────────────────────────────────
 const platformColors: Record<string, string> = { google: "#4285F4", meta: "#1877F2", tiktok: "#ff0050" };
 const platformLabels: Record<string, string> = { google: "Google Ads", meta: "Meta Ads", tiktok: "TikTok Ads" };
 const statusColor: Record<string, string> = { active: "#00d4aa", paused: "#f5a623", draft: "#6b7280" };
@@ -107,9 +92,9 @@ const TABS = [
 
 const AI_SUGGESTIONS = [
   { id: 1, platform: "google", impact: "+18% ROAS", message: "העלה תקציב לקמפיין המוביל ב-20% – ביקוש גבוה צפוי", priority: "high" },
-  { id: 2, platform: "meta",   impact: "+12% CTR",  message: "הרחב קהל יעד ל-Lookalike 3% – קהל דומה לרוכשים הטובים שלך", priority: "medium" },
+  { id: 2, platform: "meta",   impact: "+12% CTR",  message: "הרחב קהל יעד ל-Lookalike 3%", priority: "medium" },
   { id: 3, platform: "tiktok", impact: "+25% CVR",  message: "החלף קריאייטיב ב-Retargeting – CTR ירד ב-40% בשבוע האחרון", priority: "high" },
-  { id: 4, platform: "google", impact: "-8% CPA",   message: "עבור ל-Target CPA של ₪42 – AI זיהה דפוסי המרה חדשים", priority: "low" },
+  { id: 4, platform: "google", impact: "-8% CPA",   message: "עבור ל-Target CPA של 42 – AI זיהה דפוסי המרה חדשים", priority: "low" },
 ];
 
 const DATE_PRESETS = [
@@ -118,9 +103,6 @@ const DATE_PRESETS = [
   { label: "30 ימים", from: () => getDaysAgo(30) },
 ];
 
-// ─────────────────────────────────────────────
-// קומפוננטה ראשית
-// ─────────────────────────────────────────────
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [appliedSuggestions, setAppliedSuggestions] = useState<number[]>([]);
@@ -129,7 +111,8 @@ export default function DashboardPage() {
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
 
   const range = { from: DATE_PRESETS[preset].from(), to: getToday() };
-const { data, loading, refetch } = useDashboard(range.from, range.to);
+  const { data, loading, refetch } = useDashboard(range.from, range.to);
+
   useEffect(() => { setTimeout(() => setAnimIn(true), 80); }, []);
   useEffect(() => { if (data.campaigns.length) setLocalCampaigns(data.campaigns); }, [data.campaigns]);
 
@@ -139,7 +122,6 @@ const { data, loading, refetch } = useDashboard(range.from, range.to);
     } as Campaign : c));
   };
 
-  // ── סגנונות ──────────────────────────────────
   const s: Record<string, any> = {
     root: { minHeight: "100vh", background: "#090b12", color: "#e8eaf6", fontFamily: "'Rubik','Heebo',sans-serif", direction: "rtl", display: "flex" },
     sidebar: { width: 230, minHeight: "100vh", background: "#0c0e17", borderLeft: "1px solid #181b2a", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0 },
@@ -163,16 +145,15 @@ const { data, loading, refetch } = useDashboard(range.from, range.to);
     }),
   };
 
-const summary = data?.summary ?? { totalSpent: 0, totalRevenue: 0, avgRoas: 0, totalConversions: 0 };
-const timeSeries = data?.timeSeries ?? [];
-const byPlatform = data?.byPlatform ?? [];
-const isLive = data?.isLive ?? false;
-const lastUpdated = data?.lastUpdated ?? null;
-const apiErrors = data?.apiErrors ?? [];
-  // ── render ────────────────────────────────────
+  const summary = data?.summary ?? { totalSpent: 0, totalRevenue: 0, avgRoas: 0, totalConversions: 0 };
+  const timeSeries = data?.timeSeries ?? [];
+  const byPlatform = data?.byPlatform ?? [];
+  const isLive = data?.isLive ?? false;
+  const lastUpdated = data?.lastUpdated ?? null;
+  const apiErrors = data?.apiErrors ?? [];
+
   return (
     <div style={s.root}>
-      {/* ── SIDEBAR ── */}
       <div style={s.sidebar}>
         <div style={{ padding: "0 20px 24px", borderBottom: "1px solid #181b2a", marginBottom: 12 }}>
           <div style={{ fontSize: 22, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -180,7 +161,6 @@ const apiErrors = data?.apiErrors ?? [];
           </div>
           <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>פרסום חכם לאיקומרס</div>
         </div>
-
         {TABS.map((t, i) => (
           <div key={i} onClick={() => setActiveTab(i)} style={{
             padding: "11px 20px", cursor: "pointer", fontSize: 14,
@@ -193,42 +173,33 @@ const apiErrors = data?.apiErrors ?? [];
             <span>{t.icon}</span><span>{t.label}</span>
           </div>
         ))}
-
-        {/* סטטוס חיבור */}
         <div style={{ margin: "auto 16px 16px", background: isLive ? "#00d4aa12" : "#7c74ff12", border: `1px solid ${isLive ? "#00d4aa33" : "#7c74ff33"}`, borderRadius: 12, padding: "12px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: isLive ? "#00d4aa" : "#7c74ff", marginBottom: 3 }}>
-            {isLive ? "🟢 נתונים חיים" : "🔵 מצב דמו"}
+            {isLive ? "נתונים חיים" : "מצב דמו"}
           </div>
           <div style={{ fontSize: 10, color: "#6b7280" }}>
-            {isLive && lastUpdated
-              ? `עודכן: ${new Date(lastUpdated).toLocaleTimeString("he-IL")}`
-              : "חבר API Keys לנתונים אמיתיים"}
+            {isLive && lastUpdated ? `עודכן: ${new Date(lastUpdated).toLocaleTimeString("he-IL")}` : "חבר API Keys לנתונים אמיתיים"}
           </div>
         </div>
       </div>
 
-      {/* ── MAIN ── */}
       <div style={s.main}>
-
-        {/* שגיאות API חלקיות */}
-        {Object.keys(apiErrors).length > 0 && isLive && (
+        {apiErrors.length > 0 && isLive && (
           <div style={{ background: "#f5a62312", border: "1px solid #f5a62333", borderRadius: 12, padding: "12px 18px", marginBottom: 16, fontSize: 13 }}>
-            ⚠️ חלק מהפלטפורמות לא נטענו: {Object.keys(apiErrors).join(", ")}
+            חלק מהפלטפורמות לא נטענו
           </div>
         )}
 
-        {/* ── DASHBOARD TAB ── */}
         {activeTab === 0 && (
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-0.5px" }}>דשבורד ראשי</div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>דשבורד ראשי</div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {loading ? "טוען נתונים..." : isLive ? "נתונים חיים" : "מצב דמו – חבר API Keys"}
+                  {loading ? "טוען נתונים..." : isLive ? "נתונים חיים" : "מצב דמו"}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                {/* בורר תקופה */}
                 <div style={{ display: "flex", background: "#181b2a", borderRadius: 10, padding: 3, gap: 2 }}>
                   {DATE_PRESETS.map((p, i) => (
                     <button key={i} onClick={() => setPreset(i)} style={{
@@ -239,32 +210,24 @@ const apiErrors = data?.apiErrors ?? [];
                     }}>{p.label}</button>
                   ))}
                 </div>
-                <button style={s.btn("default")} onClick={refetch} title="רענן">↻</button>
+                <button style={s.btn("default")} onClick={refetch}>↻</button>
                 <button style={s.btn("primary")} onClick={() => setActiveTab(1)}>+ קמפיין חדש</button>
               </div>
             </div>
 
-            {/* כרטיסי סיכום */}
             <div style={s.statsGrid}>
               {[
                 { label: "הוצאה כוללת", val: summary.totalSpent, prefix: "₪", data: timeSeries.map(d => d.spent) },
-                { label: "הכנסה",        val: summary.totalRevenue, prefix: "₪", data: timeSeries.map(d => d.revenue) },
-                { label: "ROAS ממוצע",  val: summary.avgRoas, suffix: "x", data: timeSeries.map(d => d.roas) },
-                { label: "המרות",        val: summary.totalConversions, data: timeSeries.map(d => d.conversions) },
+                { label: "הכנסה", val: summary.totalRevenue, prefix: "₪", data: timeSeries.map(d => d.revenue) },
+                { label: "ROAS ממוצע", val: summary.avgRoas, suffix: "x", data: timeSeries.map(d => d.roas) },
+                { label: "המרות", val: summary.totalConversions, data: timeSeries.map(d => d.conversions) },
               ].map((m, i) => (
-                <div key={i} style={{
-                  ...s.card,
-                  opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(18px)",
-                  transition: `all 0.45s ease ${i * 0.08}s`,
-                }}>
+                <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(18px)", transition: `all 0.45s ease ${i * 0.08}s` }}>
                   <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>{m.label}</div>
-                  {loading
-                    ? <Skeleton h={32} r={6} />
-                    : <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-1px" }}>
-                        {m.prefix}{typeof m.val === "number"
-                          ? m.label === "ROAS ממוצע" ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()
-                          : m.val}{m.suffix}
-                      </div>
+                  {loading ? <Skeleton h={32} r={6} /> :
+                    <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-1px" }}>
+                      {m.prefix}{typeof m.val === "number" ? (m.label === "ROAS ממוצע" ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()) : m.val}{m.suffix}
+                    </div>
                   }
                   <div style={{ marginTop: 10 }}>
                     {loading ? <Skeleton h={40} /> : <MiniChart data={m.data} color="#00d4aa" />}
@@ -273,12 +236,9 @@ const apiErrors = data?.apiErrors ?? [];
               ))}
             </div>
 
-            {/* גרף + המלצות */}
             <div style={s.grid2}>
               <div style={s.card}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, display: "flex", gap: 8 }}>
-                  <span>📈</span> הוצאה vs. הכנסה
-                </div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>הוצאה vs. הכנסה</div>
                 <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
                   {[["#00d4aa","הכנסה"],["#7c74ff","הוצאה"]].map(([c,l]) => (
                     <div key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
@@ -288,9 +248,8 @@ const apiErrors = data?.apiErrors ?? [];
                 </div>
                 {loading ? <Skeleton h={110} /> : <BarChart data={timeSeries} />}
               </div>
-
               <div style={s.card}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>🤖 המלצות AI דחופות</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>המלצות AI דחופות</div>
                 {AI_SUGGESTIONS.filter(sg => sg.priority === "high").map(sg => (
                   <div key={sg.id} style={{ background: "#12141a", borderRadius: 12, padding: "12px 14px", marginBottom: 10, border: "1px solid #7c74ff22", display: "flex", gap: 10 }}>
                     <PlatformIcon platform={sg.platform} size={20} />
@@ -304,13 +263,12 @@ const apiErrors = data?.apiErrors ?? [];
               </div>
             </div>
 
-            {/* לפי פלטפורמה */}
             <div style={s.card}>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>📊 ביצועים לפי פלטפורמה</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>ביצועים לפי פלטפורמה</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
                 {(["google","meta","tiktok"] as const).map(p => {
-const ps = byPlatform.find((x: {platform: string}) => x.platform === p);
-return (
+                  const ps = byPlatform.find((x: { platform: string }) => x.platform === p);
+                  return (
                     <div key={p} style={{ background: "#12141a", borderRadius: 14, padding: "18px 20px", border: `1px solid ${platformColors[p]}22` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                         <PlatformIcon platform={p} size={22} />
@@ -322,13 +280,13 @@ return (
                         </div>
                       ) : (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                          {[
-                            ["הוצאה", `₪${Math.round(ps.spent).toLocaleString()}`],
-                            ["ROAS", `${ps.roas.toFixed(1)}x`],
-                            ["קמפיינים", ps.activeCampaigns],
-                            ["המרות", ps.conversions],
-                          ].map(([l2, v2]) => (
-                            <div key={l2 as string}>
+                          {([
+                            ["הוצאה", `${Math.round(ps?.spent ?? 0).toLocaleString()}`],
+                            ["ROAS", `${(ps?.roas ?? 0).toFixed(1)}x`],
+                            ["קליקים", `${(ps?.clicks ?? 0).toLocaleString()}`],
+                            ["המרות", `${ps?.conversions ?? 0}`],
+                          ] as [string, string][]).map(([l2, v2]) => (
+                            <div key={l2}>
                               <div style={{ fontSize: 10, color: "#6b7280" }}>{l2}</div>
                               <div style={{ fontSize: 16, fontWeight: 700 }}>{v2}</div>
                             </div>
@@ -343,14 +301,13 @@ return (
           </>
         )}
 
-        {/* ── CAMPAIGNS TAB ── */}
         {activeTab === 1 && (
           <>
             <div style={s.header}>
               <div>
                 <div style={{ fontSize: 26, fontWeight: 700 }}>קמפיינים</div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {localCampaigns.length} קמפיינים · {localCampaigns.filter(c => c.status === "active").length} פעילים
+                  {localCampaigns.length} קמפיינים
                 </div>
               </div>
               <button style={s.btn("primary")}>+ קמפיין חדש</button>
@@ -368,10 +325,7 @@ return (
                   <tbody>
                     {localCampaigns.map((c, i) => (
                       <tr key={c.id} style={{ opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.06}s` }}>
-                        <td style={s.td}>
-                          <div style={{ fontWeight: 600 }}>{c.name}</div>
-                          <div style={{ fontSize: 11, color: "#6b7280" }}>{c.clicks.toLocaleString()} קליקים</div>
-                        </td>
+                        <td style={s.td}><div style={{ fontWeight: 600 }}>{c.name}</div></td>
                         <td style={s.td}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <PlatformIcon platform={c.platform} size={16} />
@@ -384,15 +338,10 @@ return (
                             {statusLabel[c.status]}
                           </span>
                         </td>
-                        <td style={s.td}>₪{c.budget.toLocaleString()}</td>
+                        <td style={s.td}>{c.budget.toLocaleString()}</td>
+                        <td style={s.td}>{Math.round(c.spent).toLocaleString()}</td>
                         <td style={s.td}>
-                          <div>₪{Math.round(c.spent).toLocaleString()}</div>
-                          <div style={{ height: 3, background: "#181b2a", borderRadius: 2, marginTop: 4, width: 60 }}>
-                            <div style={{ height: "100%", width: `${c.budget ? Math.min((c.spent / c.budget) * 100, 100) : 0}%`, background: "#7c74ff", borderRadius: 2 }} />
-                          </div>
-                        </td>
-                        <td style={s.td}>
-                          <span style={{ color: c.roas > 4 ? "#00d4aa" : c.roas > 0 ? "#f5a623" : "#6b7280", fontWeight: 700 }}>
+                          <span style={{ color: c.roas > 4 ? "#00d4aa" : "#f5a623", fontWeight: 700 }}>
                             {c.roas > 0 ? `${c.roas.toFixed(1)}x` : "—"}
                           </span>
                         </td>
@@ -416,46 +365,31 @@ return (
           </>
         )}
 
-        {/* ── AI TAB ── */}
         {activeTab === 2 && (
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>🤖 AI אופטימיזציה</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} המלצות ממתינות</div>
-              </div>
-              <div style={{ background: "linear-gradient(135deg,#7c74ff22,#00d4aa22)", border: "1px solid #7c74ff44", borderRadius: 12, padding: "10px 20px", fontSize: 13, fontWeight: 700, color: "#7c74ff" }}>
-                פוטנציאל: +₪12,400 הכנסה נוספת
+                <div style={{ fontSize: 26, fontWeight: 700 }}>AI אופטימיזציה</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} המלצות</div>
               </div>
             </div>
-
             {AI_SUGGESTIONS.map(sg => {
               const applied = appliedSuggestions.includes(sg.id);
               return (
-                <div key={sg.id} style={{
-                  background: applied ? "#00d4aa08" : "#0d0f18",
-                  border: `1px solid ${applied ? "#00d4aa44" : sg.priority === "high" ? "#7c74ff33" : "#181b2a"}`,
-                  borderRadius: 14, padding: "16px 20px", marginBottom: 12,
-                  display: "flex", alignItems: "flex-start", gap: 14, transition: "all 0.3s",
-                }}>
+                <div key={sg.id} style={{ background: applied ? "#00d4aa08" : "#0d0f18", border: `1px solid ${applied ? "#00d4aa44" : "#181b2a"}`, borderRadius: 14, padding: "16px 20px", marginBottom: 12, display: "flex", alignItems: "flex-start", gap: 14 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 10, background: platformColors[sg.platform] + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <PlatformIcon platform={sg.platform} size={24} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                       <span style={{ fontWeight: 600 }}>{platformLabels[sg.platform]}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: sg.priority === "high" ? "#7c74ff22" : "#f5a62322", color: sg.priority === "high" ? "#7c74ff" : "#f5a623" }}>{sg.impact}</span>
-                      {sg.priority === "high" && <span style={{ fontSize: 11, color: "#ff6b6b", fontWeight: 600 }}>● דחוף</span>}
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#7c74ff22", color: "#7c74ff" }}>{sg.impact}</span>
                     </div>
                     <div style={{ fontSize: 13, color: "#b0b8d0", lineHeight: 1.6 }}>{sg.message}</div>
                   </div>
                   <div style={{ flexShrink: 0 }}>
-                    {applied
-                      ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>✓ יושם</div>
-                      : <div style={{ display: "flex", gap: 8 }}>
-                          <button style={s.btn("default")}>דחה</button>
-                          <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>יישם אוטומטית</button>
-                        </div>
+                    {applied ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>יושם</div> :
+                      <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>יישם</button>
                     }
                   </div>
                 </div>
@@ -464,11 +398,10 @@ return (
           </>
         )}
 
-        {/* ── AUDIENCES TAB ── */}
         {activeTab === 3 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>👥 קהלים</div><div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>קהלי יעד מבוססי WooCommerce</div></div>
+              <div><div style={{ fontSize: 26, fontWeight: 700 }}>קהלים</div></div>
               <button style={s.btn("primary")}>+ קהל חדש</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
@@ -491,49 +424,28 @@ return (
           </>
         )}
 
-        {/* ── SETTINGS TAB ── */}
         {activeTab === 4 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>⚙️ הגדרות</div><div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>חיבורי API וניהול חשבון</div></div>
+              <div><div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות</div></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               {[
-                { name: "WooCommerce",          ok: !!process.env.NEXT_PUBLIC_WOO_CONNECTED,   icon: "🛒", key: "WOOCOMMERCE_URL",              detail: "חנות איקומרס" },
-                { name: "Google Ads",           ok: !!process.env.NEXT_PUBLIC_GOOGLE_CONNECTED, icon: "🔵", key: "GOOGLE_ADS_CUSTOMER_ID",        detail: "חיפוש, Shopping, Display" },
-                { name: "Meta Business",        ok: !!process.env.NEXT_PUBLIC_META_CONNECTED,   icon: "📘", key: "META_AD_ACCOUNT_ID",            detail: "Facebook + Instagram" },
-                { name: "TikTok Ads",           ok: !!process.env.NEXT_PUBLIC_TIKTOK_CONNECTED, icon: "🎵", key: "TIKTOK_ADVERTISER_ID",          detail: "TikTok For Business" },
-                { name: "Google Analytics 4",   ok: false,                                       icon: "📊", key: "GA4_PROPERTY_ID",               detail: "נתוני המרה" },
-                { name: "Google Merchant Center",ok: false,                                      icon: "🛍️", key: "GMC_MERCHANT_ID",              detail: "פיד מוצרים" },
+                { name: "WooCommerce", ok: false, icon: "🛒", key: "WOOCOMMERCE_URL", detail: "חנות איקומרס" },
+                { name: "Google Ads", ok: false, icon: "🔵", key: "GOOGLE_ADS_CUSTOMER_ID", detail: "חיפוש, Shopping, Display" },
+                { name: "Meta Business", ok: false, icon: "📘", key: "META_AD_ACCOUNT_ID", detail: "Facebook + Instagram" },
+                { name: "TikTok Ads", ok: false, icon: "🎵", key: "TIKTOK_ADVERTISER_ID", detail: "TikTok For Business" },
+                { name: "Google Analytics 4", ok: false, icon: "📊", key: "GA4_PROPERTY_ID", detail: "נתוני המרה" },
+                { name: "Google Merchant Center", ok: false, icon: "🛍️", key: "GMC_MERCHANT_ID", detail: "פיד מוצרים" },
               ].map((c, i) => (
                 <div key={i} style={{ ...s.card, display: "flex", alignItems: "center", gap: 16, opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s` }}>
                   <div style={{ fontSize: 26 }}>{c.icon}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>{c.name}</div>
                     <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{c.detail}</div>
-                    {!c.ok && <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4, fontFamily: "monospace", background: "#181b2a", padding: "2px 6px", borderRadius: 4, display: "inline-block" }}>{c.key}</div>}
+                    <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4, fontFamily: "monospace", background: "#181b2a", padding: "2px 6px", borderRadius: 4, display: "inline-block" }}>{c.key}</div>
                   </div>
-                  <div style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: c.ok ? "#00d4aa22" : "#ff6b6b22", color: c.ok ? "#00d4aa" : "#ff6b6b" }}>
-                    {c.ok ? "מחובר" : "הגדר"}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* הוראות מהירות */}
-            <div style={{ ...s.card, marginTop: 16, background: "#0a0c14" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 14, color: "#7c74ff" }}>⚡ התחל ב-3 צעדים</div>
-              {[
-                ["1", "צור פרויקט Next.js", "npx create-next-app@latest adscale --typescript --app"],
-                ["2", "הגדר משתני סביבה", "cp .env.example .env.local && מלא את המפתחות"],
-                ["3", "הפעל", "npm run dev → פתח localhost:3000/dashboard"],
-              ].map(([n, t, c2]) => (
-                <div key={n} style={{ display: "flex", gap: 14, marginBottom: 14 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: "#7c74ff22", color: "#7c74ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{n}</div>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 3 }}>{t}</div>
-                    <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "monospace", background: "#181b2a", padding: "4px 10px", borderRadius: 6 }}>{c2}</div>
-                  </div>
+                  <div style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#ff6b6b22", color: "#ff6b6b" }}>הגדר</div>
                 </div>
               ))}
             </div>
@@ -548,13 +460,8 @@ return (
         tr:hover td { background: #ffffff03; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #1a1d2e; border-radius: 2px; }
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
       `}</style>
     </div>
   );
 }
-// update 
-// update 
