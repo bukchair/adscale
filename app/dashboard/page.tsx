@@ -129,8 +129,7 @@ export default function DashboardPage() {
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
 
   const range = { from: DATE_PRESETS[preset].from(), to: getToday() };
-  const { data, loading, refetch } = useDashboard(range);
-
+const { data, loading, refetch } = useDashboard(range.from, range.to);
   useEffect(() => { setTimeout(() => setAnimIn(true), 80); }, []);
   useEffect(() => { if (data.campaigns.length) setLocalCampaigns(data.campaigns); }, [data.campaigns]);
 
@@ -164,8 +163,12 @@ export default function DashboardPage() {
     }),
   };
 
-  const { summary = { totalSpent: 0, totalRevenue: 0, avgRoas: 0, totalConversions: 0 }, timeSeries = [], byPlatform = [], isLive = false, lastUpdated = null, apiErrors = [] } = data || {};
-
+const summary = data?.summary ?? { totalSpent: 0, totalRevenue: 0, avgRoas: 0, totalConversions: 0 };
+const timeSeries = data?.timeSeries ?? [];
+const byPlatform = data?.byPlatform ?? [];
+const isLive = data?.isLive ?? false;
+const lastUpdated = data?.lastUpdated ?? null;
+const apiErrors = data?.apiErrors ?? [];
   // ── render ────────────────────────────────────
   return (
     <div style={s.root}>

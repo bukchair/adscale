@@ -98,8 +98,8 @@ export function getDaysAgo(days: number): string {
   return new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
 }
 
-export function useDashboard(from: string, to: string) {
-  const [data, setData] = useState<DashboardData>(DEMO_DATA);
+export function useDashboard(from: string, to?: string) {
+const [data, setData] = useState<DashboardData>(DEMO_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
