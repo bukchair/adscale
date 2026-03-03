@@ -80,27 +80,27 @@ function Skeleton({ w = "100%", h = 20, r = 6 }: { w?: string | number; h?: numb
 const platformColors: Record<string, string> = { google: "#4285F4", meta: "#1877F2", tiktok: "#ff0050" };
 const platformLabels: Record<string, string> = { google: "Google Ads", meta: "Meta Ads", tiktok: "TikTok Ads" };
 const statusColor: Record<string, string> = { active: "#00d4aa", paused: "#f5a623", draft: "#6b7280" };
-const statusLabel: Record<string, string> = { active: "Χ¤ΧΆΧ™Χ", paused: "ΧΧ•Χ©Χ”Χ”", draft: "ΧΧ™Χ•ΧΧ”" };
+const statusLabel: Record<string, string> = { active: "τςιμ", paused: "ξεωδδ", draft: "θιεθδ" };
 
 const TABS = [
-  { label: "Χ“Χ©Χ‘Χ•Χ¨Χ“", icon: "π“" },
-  { label: "Χ§ΧΧ¤Χ™Χ™Χ Χ™Χ", icon: "π€" },
-  { label: "AI ΧΧ•Χ¤ΧΧ™ΧΧ™Χ–Χ¦Χ™Χ”", icon: "π¤–" },
-  { label: "Χ§Χ”ΧΧ™Χ", icon: "π‘¥" },
-  { label: "Χ”Χ’Χ“Χ¨Χ•Χª", icon: "β™οΈ" },
+  { label: "γωαεψγ", icon: "??" },
+  { label: "χξτιιπιν", icon: "??" },
+  { label: "AI ΰετθιξιζφιδ", icon: "??" },
+  { label: "χδμιν", icon: "??" },
+  { label: "δβγψεϊ", icon: "??" },
 ];
 
 const AI_SUGGESTIONS = [
-  { id: 1, platform: "google", impact: "+18% ROAS", message: "Χ”ΧΆΧΧ” ΧªΧ§Χ¦Χ™Χ‘ ΧΧ§ΧΧ¤Χ™Χ™Χ Χ”ΧΧ•Χ‘Χ™Χ Χ‘-20% β€“ Χ‘Χ™Χ§Χ•Χ© Χ’Χ‘Χ•Χ” Χ¦Χ¤Χ•Χ™", priority: "high" },
-  { id: 2, platform: "meta",   impact: "+12% CTR",  message: "Χ”Χ¨Χ—Χ‘ Χ§Χ”Χ Χ™ΧΆΧ“ Χ-Lookalike 3%", priority: "medium" },
-  { id: 3, platform: "tiktok", impact: "+25% CVR",  message: "Χ”Χ—ΧΧ£ Χ§Χ¨Χ™ΧΧ™Χ™ΧΧ™Χ‘ Χ‘-Retargeting β€“ CTR Χ™Χ¨Χ“ Χ‘-40% Χ‘Χ©Χ‘Χ•ΧΆ Χ”ΧΧ—Χ¨Χ•Χ", priority: "high" },
-  { id: 4, platform: "google", impact: "-8% CPA",   message: "ΧΆΧ‘Χ•Χ¨ Χ-Target CPA Χ©Χ 42 β€“ AI Χ–Χ™Χ”Χ” Χ“Χ¤Χ•Χ΅Χ™ Χ”ΧΧ¨Χ” Χ—Χ“Χ©Χ™Χ", priority: "low" },
+  { id: 1, platform: "google", impact: "+18% ROAS", message: "δςμδ ϊχφια μχξτιιο δξεαιμ α-20% – αιχεω βαεδ φτει", priority: "high" },
+  { id: 2, platform: "meta",   impact: "+12% CTR",  message: "δψηα χδμ ιςγ μ-Lookalike 3%", priority: "medium" },
+  { id: 3, platform: "tiktok", impact: "+25% CVR",  message: "δημσ χψιΰιιθια α-Retargeting – CTR ιψγ α-40% αωαες δΰηψεο", priority: "high" },
+  { id: 4, platform: "google", impact: "-8% CPA",   message: "ςαεψ μ-Target CPA ωμ 42 – AI ζιδδ γτερι δξψδ ηγωιν", priority: "low" },
 ];
 
 const DATE_PRESETS = [
-  { label: "7 Χ™ΧΧ™Χ", from: () => getDaysAgo(7) },
-  { label: "14 Χ™ΧΧ™Χ", from: () => getDaysAgo(14) },
-  { label: "30 Χ™ΧΧ™Χ", from: () => getDaysAgo(30) },
+  { label: "7 ιξιν", from: () => getDaysAgo(7) },
+  { label: "14 ιξιν", from: () => getDaysAgo(14) },
+  { label: "30 ιξιν", from: () => getDaysAgo(30) },
 ];
 
 export default function DashboardPage() {
@@ -159,7 +159,7 @@ export default function DashboardPage() {
           <div style={{ fontSize: 22, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             AdScale AI
           </div>
-          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>Χ¤Χ¨Χ΅Χ•Χ Χ—Χ›Χ ΧΧΧ™Χ§Χ•ΧΧ¨Χ΅</div>
+          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>τψρεν ηλν μΰιχεξψρ</div>
         </div>
         {TABS.map((t, i) => (
           <div key={i} onClick={() => setActiveTab(i)} style={{
@@ -175,10 +175,10 @@ export default function DashboardPage() {
         ))}
         <div style={{ margin: "auto 16px 16px", background: isLive ? "#00d4aa12" : "#7c74ff12", border: `1px solid ${isLive ? "#00d4aa33" : "#7c74ff33"}`, borderRadius: 12, padding: "12px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: isLive ? "#00d4aa" : "#7c74ff", marginBottom: 3 }}>
-            {isLive ? "Χ ΧªΧ•Χ Χ™Χ Χ—Χ™Χ™Χ" : "ΧΧ¦Χ‘ Χ“ΧΧ•"}
+            {isLive ? "πϊεπιν ηιιν" : "ξφα γξε"}
           </div>
           <div style={{ fontSize: 10, color: "#6b7280" }}>
-            {isLive && lastUpdated ? `ΧΆΧ•Χ“Χ›Χ: ${new Date(lastUpdated).toLocaleTimeString("he-IL")}` : "Χ—Χ‘Χ¨ API Keys ΧΧ ΧªΧ•Χ Χ™Χ ΧΧΧ™ΧªΧ™Χ™Χ"}
+            {isLive && lastUpdated ? `ςεγλο: ${new Date(lastUpdated).toLocaleTimeString("he-IL")}` : "ηαψ API Keys μπϊεπιν ΰξιϊιιν"}
           </div>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function DashboardPage() {
       <div style={s.main}>
         {apiErrors.length > 0 && isLive && (
           <div style={{ background: "#f5a62312", border: "1px solid #f5a62333", borderRadius: 12, padding: "12px 18px", marginBottom: 16, fontSize: 13 }}>
-            Χ—ΧΧ§ ΧΧ”Χ¤ΧΧΧ¤Χ•Χ¨ΧΧ•Χª ΧΧ Χ ΧΧΆΧ Χ•
+            ημχ ξδτμθτεψξεϊ μΰ πθςπε
           </div>
         )}
 
@@ -194,9 +194,9 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>Χ“Χ©Χ‘Χ•Χ¨Χ“ Χ¨ΧΧ©Χ™</div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>γωαεψγ ψΰωι</div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {loading ? "ΧΧ•ΧΆΧ Χ ΧªΧ•Χ Χ™Χ..." : isLive ? "Χ ΧªΧ•Χ Χ™Χ Χ—Χ™Χ™Χ" : "ΧΧ¦Χ‘ Χ“ΧΧ•"}
+                  {loading ? "θεςο πϊεπιν..." : isLive ? "πϊεπιν ηιιν" : "ξφα γξε"}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -210,23 +210,23 @@ export default function DashboardPage() {
                     }}>{p.label}</button>
                   ))}
                 </div>
-                <button style={s.btn("default")} onClick={refetch}>β†»</button>
-                <button style={s.btn("primary")} onClick={() => setActiveTab(1)}>+ Χ§ΧΧ¤Χ™Χ™Χ Χ—Χ“Χ©</button>
+                <button style={s.btn("default")} onClick={refetch}>?</button>
+                <button style={s.btn("primary")} onClick={() => setActiveTab(1)}>+ χξτιιο ηγω</button>
               </div>
             </div>
 
             <div style={s.statsGrid}>
               {[
-                { label: "Χ”Χ•Χ¦ΧΧ” Χ›Χ•ΧΧΧª", val: summary.totalSpent, prefix: "β‚ª", data: timeSeries.map(d => d.spent) },
-                { label: "Χ”Χ›Χ Χ΅Χ”", val: summary.totalRevenue, prefix: "β‚ª", data: timeSeries.map(d => d.revenue) },
-                { label: "ROAS ΧΧΧ•Χ¦ΧΆ", val: summary.avgRoas, suffix: "x", data: timeSeries.map(d => d.roas) },
-                { label: "Χ”ΧΧ¨Χ•Χª", val: summary.totalConversions, data: timeSeries.map(d => d.conversions) },
+                { label: "δεφΰδ λεμμϊ", val: summary.totalSpent, prefix: "¤", data: timeSeries.map(d => d.spent) },
+                { label: "δλπρδ", val: summary.totalRevenue, prefix: "¤", data: timeSeries.map(d => d.revenue) },
+                { label: "ROAS ξξεφς", val: summary.avgRoas, suffix: "x", data: timeSeries.map(d => d.roas) },
+                { label: "δξψεϊ", val: summary.totalConversions, data: timeSeries.map(d => d.conversions) },
               ].map((m, i) => (
                 <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(18px)", transition: `all 0.45s ease ${i * 0.08}s` }}>
                   <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>{m.label}</div>
                   {loading ? <Skeleton h={32} r={6} /> :
                     <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-1px" }}>
-                      {m.prefix}{typeof m.val === "number" ? (m.label === "ROAS ΧΧΧ•Χ¦ΧΆ" ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()) : m.val}{m.suffix}
+                      {m.prefix}{typeof m.val === "number" ? (m.label === "ROAS ξξεφς" ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()) : m.val}{m.suffix}
                     </div>
                   }
                   <div style={{ marginTop: 10 }}>
@@ -238,9 +238,9 @@ export default function DashboardPage() {
 
             <div style={s.grid2}>
               <div style={s.card}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Χ”Χ•Χ¦ΧΧ” vs. Χ”Χ›Χ Χ΅Χ”</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>δεφΰδ vs. δλπρδ</div>
                 <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
-                  {[["#00d4aa","Χ”Χ›Χ Χ΅Χ”"],["#7c74ff","Χ”Χ•Χ¦ΧΧ”"]].map(([c,l]) => (
+                  {[["#00d4aa","δλπρδ"],["#7c74ff","δεφΰδ"]].map(([c,l]) => (
                     <div key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
                       <div style={{ width: 10, height: 10, borderRadius: 2, background: c }} />{l}
                     </div>
@@ -249,22 +249,22 @@ export default function DashboardPage() {
                 {loading ? <Skeleton h={110} /> : <BarChart data={timeSeries} />}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Χ”ΧΧΧ¦Χ•Χª AI Χ“Χ—Χ•Χ¤Χ•Χª</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>δξμφεϊ AI γηετεϊ</div>
                 {AI_SUGGESTIONS.filter(sg => sg.priority === "high").map(sg => (
                   <div key={sg.id} style={{ background: "#12141a", borderRadius: 12, padding: "12px 14px", marginBottom: 10, border: "1px solid #7c74ff22", display: "flex", gap: 10 }}>
                     <PlatformIcon platform={sg.platform} size={20} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, lineHeight: 1.5 }}>{sg.message}</div>
-                      <div style={{ fontSize: 11, color: "#00d4aa", fontWeight: 700, marginTop: 3 }}>Χ¦Χ¤Χ™: {sg.impact}</div>
+                      <div style={{ fontSize: 11, color: "#00d4aa", fontWeight: 700, marginTop: 3 }}>φτι: {sg.impact}</div>
                     </div>
-                    <button style={s.btn("sm")} onClick={() => { setAppliedSuggestions(p => [...p, sg.id]); setActiveTab(2); }}>Χ™Χ™Χ©Χ</button>
+                    <button style={s.btn("sm")} onClick={() => { setAppliedSuggestions(p => [...p, sg.id]); setActiveTab(2); }}>ιιων</button>
                   </div>
                 ))}
               </div>
             </div>
 
             <div style={s.card}>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>Χ‘Χ™Χ¦Χ•ΧΆΧ™Χ ΧΧ¤Χ™ Χ¤ΧΧΧ¤Χ•Χ¨ΧΧ”</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>αιφεςιν μτι τμθτεψξδ</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
                 {(["google","meta","tiktok"] as const).map(p => {
                   const ps = byPlatform.find((x: { platform: string }) => x.platform === p);
@@ -281,10 +281,10 @@ export default function DashboardPage() {
                       ) : (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                           {([
-                            ["Χ”Χ•Χ¦ΧΧ”", `${Math.round(ps?.spent ?? 0).toLocaleString()}`],
+                            ["δεφΰδ", `${Math.round(ps?.spent ?? 0).toLocaleString()}`],
                             ["ROAS", `${(ps?.roas ?? 0).toFixed(1)}x`],
-                            ["Χ§ΧΧ™Χ§Χ™Χ", `${(ps?.clicks ?? 0).toLocaleString()}`],
-                            ["Χ”ΧΧ¨Χ•Χª", `${ps?.conversions ?? 0}`],
+                            ["χμιχιν", `${(ps?.clicks ?? 0).toLocaleString()}`],
+                            ["δξψεϊ", `${ps?.conversions ?? 0}`],
                           ] as [string, string][]).map(([l2, v2]) => (
                             <div key={l2}>
                               <div style={{ fontSize: 10, color: "#6b7280" }}>{l2}</div>
@@ -305,12 +305,12 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>Χ§ΧΧ¤Χ™Χ™Χ Χ™Χ</div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>χξτιιπιν</div>
                 <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {localCampaigns.length} Χ§ΧΧ¤Χ™Χ™Χ Χ™Χ
+                  {localCampaigns.length} χξτιιπιν
                 </div>
               </div>
-              <button style={s.btn("primary")}>+ Χ§ΧΧ¤Χ™Χ™Χ Χ—Χ“Χ©</button>
+              <button style={s.btn("primary")}>+ χξτιιο ηγω</button>
             </div>
             <div style={s.card}>
               {loading ? (
@@ -320,7 +320,7 @@ export default function DashboardPage() {
               ) : (
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr>{["Χ©Χ Χ§ΧΧ¤Χ™Χ™Χ","Χ¤ΧΧΧ¤Χ•Χ¨ΧΧ”","Χ΅ΧΧΧ•Χ΅","ΧªΧ§Χ¦Χ™Χ‘","Χ”Χ•Χ¦ΧΧ”","ROAS","Χ”ΧΧ¨Χ•Χª","Χ¤ΧΆΧ•ΧΧ•Χª"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+                    <tr>{["ων χξτιιο","τμθτεψξδ","ρθθερ","ϊχφια","δεφΰδ","ROAS","δξψεϊ","τςεμεϊ"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {localCampaigns.map((c, i) => (
@@ -342,16 +342,16 @@ export default function DashboardPage() {
                         <td style={s.td}>{Math.round(c.spent).toLocaleString()}</td>
                         <td style={s.td}>
                           <span style={{ color: c.roas > 4 ? "#00d4aa" : "#f5a623", fontWeight: 700 }}>
-                            {c.roas > 0 ? `${c.roas.toFixed(1)}x` : "β€”"}
+                            {c.roas > 0 ? `${c.roas.toFixed(1)}x` : "—"}
                           </span>
                         </td>
-                        <td style={s.td}>{c.conversions || "β€”"}</td>
+                        <td style={s.td}>{c.conversions || "—"}</td>
                         <td style={s.td}>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <button style={s.btn("sm")}>ΧΆΧ¨Χ•Χ</button>
+                            <button style={s.btn("sm")}>ςψεκ</button>
                             {c.status !== "draft" && (
                               <button style={{ ...s.btn("sm"), color: c.status === "active" ? "#f5a623" : "#00d4aa" }} onClick={() => toggleCampaign(c.id)}>
-                                {c.status === "active" ? "Χ”Χ©Χ”Χ”" : "Χ”Χ¤ΧΆΧ"}
+                                {c.status === "active" ? "δωδδ" : "δτςμ"}
                               </button>
                             )}
                           </div>
@@ -369,8 +369,8 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>AI ΧΧ•Χ¤ΧΧ™ΧΧ™Χ–Χ¦Χ™Χ”</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} Χ”ΧΧΧ¦Χ•Χª</div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>AI ΰετθιξιζφιδ</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} δξμφεϊ</div>
               </div>
             </div>
             {AI_SUGGESTIONS.map(sg => {
@@ -388,8 +388,8 @@ export default function DashboardPage() {
                     <div style={{ fontSize: 13, color: "#b0b8d0", lineHeight: 1.6 }}>{sg.message}</div>
                   </div>
                   <div style={{ flexShrink: 0 }}>
-                    {applied ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>Χ™Χ•Χ©Χ</div> :
-                      <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>Χ™Χ™Χ©Χ</button>
+                    {applied ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>ιεων</div> :
+                      <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>ιιων</button>
                     }
                   </div>
                 </div>
@@ -401,17 +401,17 @@ export default function DashboardPage() {
         {activeTab === 3 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>Χ§Χ”ΧΧ™Χ</div></div>
-              <button style={s.btn("primary")}>+ Χ§Χ”Χ Χ—Χ“Χ©</button>
+              <div><div style={{ fontSize: 26, fontWeight: 700 }}>χδμιν</div></div>
+              <button style={s.btn("primary")}>+ χδμ ηγω</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
               {[
-                { name: "Χ¨Χ•Χ›Χ©Χ™Χ ΧΧ—Χ¨Χ•Χ Χ™Χ 30 Χ™Χ•Χ", size: "1,248", platforms: ["google","meta"], c: "#7c74ff", icon: "π›’" },
-                { name: "ΧΆΧ–Χ‘Χ• ΧΆΧ’ΧΧ”", size: "3,401", platforms: ["meta","tiktok"], c: "#f5a623", icon: "π›οΈ" },
-                { name: "Lookalike Χ¨Χ•Χ›Χ©Χ™Χ 3%", size: "82,000", platforms: ["meta"], c: "#00d4aa", icon: "π―" },
-                { name: "Χ¦Χ¤Χ• Χ‘ΧΧ•Χ¦Χ¨ 3+ Χ¤ΧΆΧΧ™Χ", size: "2,190", platforms: ["google","meta","tiktok"], c: "#ff6b6b", icon: "π‘οΈ" },
-                { name: "ΧΧ§Χ•Χ—Χ•Χª VIP", size: "340", platforms: ["meta"], c: "#f5a623", icon: "β­" },
-                { name: "Χ›Χ Χ”ΧΧ‘Χ§Χ¨Χ™Χ", size: "24,700", platforms: ["google","meta"], c: "#7c74ff", icon: "π" },
+                { name: "ψελωιν ΰηψεπιν 30 ιεν", size: "1,248", platforms: ["google","meta"], c: "#7c74ff", icon: "??" },
+                { name: "ςζαε ςβμδ", size: "3,401", platforms: ["meta","tiktok"], c: "#f5a623", icon: "???" },
+                { name: "Lookalike ψελωιν 3%", size: "82,000", platforms: ["meta"], c: "#00d4aa", icon: "??" },
+                { name: "φτε αξεφψ 3+ τςξιν", size: "2,190", platforms: ["google","meta","tiktok"], c: "#ff6b6b", icon: "???" },
+                { name: "μχεηεϊ VIP", size: "340", platforms: ["meta"], c: "#f5a623", icon: "?" },
+                { name: "λμ δξαχψιν", size: "24,700", platforms: ["google","meta"], c: "#7c74ff", icon: "??" },
               ].map((a, i) => (
                 <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(20px)", transition: `all 0.4s ease ${i * 0.08}s`, cursor: "pointer" }}>
                   <div style={{ fontSize: 28, marginBottom: 12 }}>{a.icon}</div>
@@ -427,16 +427,16 @@ export default function DashboardPage() {
         {activeTab === 4 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>Χ”Χ’Χ“Χ¨Χ•Χª</div></div>
+              <div><div style={{ fontSize: 26, fontWeight: 700 }}>δβγψεϊ</div></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               {[
-                { name: "WooCommerce", ok: false, icon: "π›’", key: "WOOCOMMERCE_URL", detail: "Χ—Χ Χ•Χª ΧΧ™Χ§Χ•ΧΧ¨Χ΅" },
-                { name: "Google Ads", ok: false, icon: "π”µ", key: "GOOGLE_ADS_CUSTOMER_ID", detail: "Χ—Χ™Χ¤Χ•Χ©, Shopping, Display" },
-                { name: "Meta Business", ok: false, icon: "π“", key: "META_AD_ACCOUNT_ID", detail: "Facebook + Instagram" },
-                { name: "TikTok Ads", ok: false, icon: "πµ", key: "TIKTOK_ADVERTISER_ID", detail: "TikTok For Business" },
-                { name: "Google Analytics 4", ok: false, icon: "π“", key: "GA4_PROPERTY_ID", detail: "Χ ΧªΧ•Χ Χ™ Χ”ΧΧ¨Χ”" },
-                { name: "Google Merchant Center", ok: false, icon: "π›οΈ", key: "GMC_MERCHANT_ID", detail: "Χ¤Χ™Χ“ ΧΧ•Χ¦Χ¨Χ™Χ" },
+                { name: "WooCommerce", ok: false, icon: "??", key: "WOOCOMMERCE_URL", detail: "ηπεϊ ΰιχεξψρ" },
+                { name: "Google Ads", ok: false, icon: "??", key: "GOOGLE_ADS_CUSTOMER_ID", detail: "ηιτεω, Shopping, Display" },
+                { name: "Meta Business", ok: false, icon: "??", key: "META_AD_ACCOUNT_ID", detail: "Facebook + Instagram" },
+                { name: "TikTok Ads", ok: false, icon: "??", key: "TIKTOK_ADVERTISER_ID", detail: "TikTok For Business" },
+                { name: "Google Analytics 4", ok: false, icon: "??", key: "GA4_PROPERTY_ID", detail: "πϊεπι δξψδ" },
+                { name: "Google Merchant Center", ok: false, icon: "???", key: "GMC_MERCHANT_ID", detail: "τιγ ξεφψιν" },
               ].map((c, i) => (
                 <div key={i} style={{ ...s.card, display: "flex", alignItems: "center", gap: 16, opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s` }}>
                   <div style={{ fontSize: 26 }}>{c.icon}</div>
@@ -445,7 +445,7 @@ export default function DashboardPage() {
                     <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{c.detail}</div>
                     <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4, fontFamily: "monospace", background: "#181b2a", padding: "2px 6px", borderRadius: 4, display: "inline-block" }}>{c.key}</div>
                   </div>
-                  <div style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#ff6b6b22", color: "#ff6b6b" }}>Χ”Χ’Χ“Χ¨</div>
+                  <div style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#ff6b6b22", color: "#ff6b6b" }}>δβγψ</div>
                 </div>
               ))}
             </div>
