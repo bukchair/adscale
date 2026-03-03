@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
   if (!url || !ck || !cs) return NextResponse.json({ error: "Missing credentials" }, { status: 500 });
   try {
     const auth = Buffer.from(ck+":"+cs).toString("base64");
-    const res = await fetch(url+"/wp-json/wc/v3/orders?after="+from+"T00:00:00&before="+to+"T23:59:59&per_page=100&status=completed,processing", { headers: { Authorization: "Basic "+auth } });
+const res = await fetch(url+"/wp-json/wc/v3/orders?after="+from+"T00:00:00&before="+to+"T23:59:59&per_page=20&status=completed,processing&_fields=id,total,date_created", { headers: { Authorization: "Basic "+auth } });
+    if (!res.ok) throw new Error("WC error: "+res.status);
     if (!res.ok) throw new Error("WC error: "+res.status);
     const orders = await res.json();
     const totalRevenue = orders.reduce((s:number,o:any) => s+parseFloat(o.total||"0"), 0);
