@@ -9,8 +9,8 @@ export async function GET(req: NextRequest) {
   if (!url || !ck || !cs) return NextResponse.json({ error: "Missing credentials" }, { status: 500 });
   try {
     const auth = Buffer.from(ck+":"+cs).toString("base64");
-    const endpoint = url+"/wp-json/wc/v3/orders?after="+from+"T00:00:00&before="+to+"T23:59:59&per_page=10&status=completed,processing&orderby=date&order=desc&fields=id,total,date_created";
-    const res = await fetch(endpoint, { headers: { Authorization: "Basic "+auth }, signal: AbortSignal.timeout(8000) });
+    const endpoint = url+"/wp-json/wc/v3/orders?after="+from+"T00:00:00&before="+to+"T23:59:59&per_page=10&status=completed,processing&consumer_key="+ck+"&consumer_secret="+cs;
+    const res = await fetch(endpoint, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error("WC error: "+res.status);
     const orders = await res.json();
     const totalRevenue = orders.reduce((s:number,o:any) => s+parseFloat(o.total||"0"), 0);
