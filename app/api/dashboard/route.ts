@@ -59,9 +59,7 @@ export async function GET(req: NextRequest) {
   try {
     const metaToken = process.env.META_ACCESS_TOKEN;
     const metaAccountId = process.env.META_AD_ACCOUNT_ID;
-    const metaRes = await fetch(`https://graph.facebook.com/v19.0/act_${metaAccountId}/insights?fields=spend,clicks,impressions,actions&time_range={"since":"${from}","until":"${to}"}&access_token=${metaToken}`, {
-      signal: AbortSignal.timeout(8000)
-    });
+    const metaRes = await fetch(`https://graph.facebook.com/v19.0/act_${metaAccountId}/insights?fields=spend,clicks,impressions,actions&time_range={"since":"${from}","until":"${to}"}&access_token=${metaToken}`, { signal: AbortSignal.timeout(8000) });
     if (metaRes.ok) {
       const metaData = await metaRes.json();
       (metaData.data||[]).forEach((d:any) => {
@@ -71,6 +69,26 @@ export async function GET(req: NextRequest) {
         (d.actions||[]).forEach((a:any) => { if(a.action_type==="purchase") metaConversions += parseInt(a.value||"0"); });
       });
     }
+  } catch(e) {}
+
+  // GA4
+  let ga4Sessions = 0, ga4Users = 0, ga4Revenue = 0;
+  try {
+    const clientEmail = process.env.GA4_CLIENT_EMAIL!;
+    const privateKey = process.env.GA4_PRIVATE_KEY!.replace(/\\n/g, '\n');
+    const propertyId = process.env.GA4_PROPERTY_ID!;
+    const now = Math.floor(Date.now() / 1000);
+    const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({ iss: clientEmail, scope: "https://www.googleapis.com/auth/analytics.readonly", aud: "https://oauth2.googleapis.com/token", exp: now + 3600, iat: now })).toString('base64url');
+    const { createSign } = await import('crypto');
+    const sign = createSign('RSA-SHA256');
+    sign.update(`${header}.${payload}`);
+    const signature = sign.sign(privateKey, 'base64url');
+    const jwt = `${header}.${payload}.${signature}`;
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: jwt }) });
+    const tokenData = await tokenRes.json();
+    const ga4Res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, { method: "POST", headers: { "Authorization": "Bearer " + tokenData.access_token, "Content-Type": "application/json" }, body: JSON.stringify({ dateRanges: [{ startDate: from, endDate: to }], metrics: [{ name: "sessions" }, { name: "activeUsers" }, { name: "purchaseRevenue" }] }), signal: AbortSignal.timeout(8000) });
+    if (ga4Res.ok) { const ga4Data = await ga4Res.json(); const row = ga4Data.rows?.[0]?.metricValues; if (row) { ga4Sessions = parseFloat(row[0]?.value||"0"); ga4Users = parseFloat(row[1]?.value||"0"); ga4Revenue = parseFloat(row[2]?.value||"0"); } }
   } catch(e) {}
 
   const totalSpent = googleSpent + metaSpent;
@@ -85,6 +103,7 @@ export async function GET(req: NextRequest) {
     campaigns: [],
     isLive: true,
     lastUpdated: new Date().toISOString(),
-    apiErrors: []
+    apiErrors: [],
+    ga4: { sessions: ga4Sessions, users: ga4Users, revenue: ga4Revenue }
   });
 }
