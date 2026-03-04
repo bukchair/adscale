@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
     const managerId = "2913379431";
     const query = `SELECT campaign.name, metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.conversions FROM campaign WHERE segments.date BETWEEN '${from}' AND '${to}'`;
-    const gaRes = await fetch(`https://googleads.googleapis.com/v16/customers/${customerId}/googleAds:search`, {
+    const gaRes = await fetch(`https://googleads.googleapis.com/v18/customers/${customerId}/googleAds:search`, {
       method: "POST",
       headers: { "Authorization": "Bearer "+accessToken, "developer-token": devToken!, "login-customer-id": managerId, "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
