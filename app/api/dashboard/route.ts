@@ -19,15 +19,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from") || new Date(Date.now()-7*86400000).toISOString().split("T")[0];
   const to = searchParams.get("to") || new Date().toISOString().split("T")[0];
-  
-  // WooCommerce
   const url = process.env.WOOCOMMERCE_URL;
   if (!url) return NextResponse.json({ error: "Missing credentials" }, { status: 500 });
-  
+
+  // WooCommerce
   let totalRevenue = 0, totalConversions = 0;
   try {
-    const ck = process.env.WOOCOMMERCE_CONSUMER_KEY;
-    const cs = process.env.WOOCOMMERCE_CONSUMER_SECRET;
     const wcRes = await fetch(url+"/wp-json/adscale/v1/summary?from="+from+"&to="+to, { signal: AbortSignal.timeout(8000) });
     if (wcRes.ok) { const d = await wcRes.json(); totalRevenue = d.totalRevenue; totalConversions = d.totalConversions; }
   } catch(e) {}
@@ -46,10 +43,8 @@ export async function GET(req: NextRequest) {
       body: JSON.stringify({ query }),
       signal: AbortSignal.timeout(8000)
     });
-const gaText = await gaRes.text();
-    console.log("GA response:", gaRes.status, gaText.substring(0, 500));
     if (gaRes.ok) {
-      const gaData = JSON.parse(gaText);
+      const gaData = await gaRes.json();
       (gaData.results||[]).forEach((r:any) => {
         googleSpent += (r.metrics?.costMicros||0) / 1000000;
         googleClicks += r.metrics?.clicks||0;
@@ -57,14 +52,34 @@ const gaText = await gaRes.text();
         googleConversions += r.metrics?.conversions||0;
       });
     }
-} catch(e:any) { console.error("Google Ads error:", e.message); return NextResponse.json({ error: e.message }, { status: 500 }); }
+  } catch(e) {}
 
+  // Meta Ads
+  let metaSpent = 0, metaClicks = 0, metaImpressions = 0, metaConversions = 0;
+  try {
+    const metaToken = process.env.META_ACCESS_TOKEN;
+    const metaAccountId = process.env.META_AD_ACCOUNT_ID;
+    const metaRes = await fetch(`https://graph.facebook.com/v19.0/act_${metaAccountId}/insights?fields=spend,clicks,impressions,actions&time_range={"since":"${from}","until":"${to}"}&access_token=${metaToken}`, {
+      signal: AbortSignal.timeout(8000)
+    });
+    if (metaRes.ok) {
+      const metaData = await metaRes.json();
+      (metaData.data||[]).forEach((d:any) => {
+        metaSpent += parseFloat(d.spend||"0");
+        metaClicks += parseInt(d.clicks||"0");
+        metaImpressions += parseInt(d.impressions||"0");
+        (d.actions||[]).forEach((a:any) => { if(a.action_type==="purchase") metaConversions += parseInt(a.value||"0"); });
+      });
+    }
+  } catch(e) {}
+
+  const totalSpent = googleSpent + metaSpent;
   return NextResponse.json({
-    summary: { totalSpent: googleSpent, totalRevenue, avgRoas: googleSpent > 0 ? totalRevenue/googleSpent : 0, totalConversions },
+    summary: { totalSpent, totalRevenue, avgRoas: totalSpent > 0 ? totalRevenue/totalSpent : 0, totalConversions },
     timeSeries: [],
     byPlatform: [
-      { platform: "google", spent: googleSpent, revenue: totalRevenue, roas: googleSpent > 0 ? totalRevenue/googleSpent : 0, clicks: googleClicks, conversions: googleConversions, impressions: googleImpressions },
-      { platform: "meta", spent: 0, revenue: 0, roas: 0, clicks: 0, conversions: 0, impressions: 0 },
+      { platform: "google", spent: googleSpent, revenue: 0, roas: 0, clicks: googleClicks, conversions: googleConversions, impressions: googleImpressions },
+      { platform: "meta", spent: metaSpent, revenue: 0, roas: 0, clicks: metaClicks, conversions: metaConversions, impressions: metaImpressions },
       { platform: "tiktok", spent: 0, revenue: 0, roas: 0, clicks: 0, conversions: 0, impressions: 0 }
     ],
     campaigns: [],
