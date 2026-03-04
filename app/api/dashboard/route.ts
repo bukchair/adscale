@@ -46,8 +46,10 @@ export async function GET(req: NextRequest) {
       body: JSON.stringify({ query }),
       signal: AbortSignal.timeout(8000)
     });
+const gaText = await gaRes.text();
+    console.log("GA response:", gaRes.status, gaText.substring(0, 500));
     if (gaRes.ok) {
-      const gaData = await gaRes.json();
+      const gaData = JSON.parse(gaText);
       (gaData.results||[]).forEach((r:any) => {
         googleSpent += (r.metrics?.costMicros||0) / 1000000;
         googleClicks += r.metrics?.clicks||0;
