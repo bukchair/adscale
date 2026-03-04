@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         googleConversions += r.metrics?.conversions||0;
       });
     }
-} catch(e:any) { console.error("Google Ads error:", e.message); }
+} catch(e:any) { console.error("Google Ads error:", e.message); return NextResponse.json({ error: e.message }, { status: 500 }); }
 
   return NextResponse.json({
     summary: { totalSpent: googleSpent, totalRevenue, avgRoas: googleSpent > 0 ? totalRevenue/googleSpent : 0, totalConversions },
