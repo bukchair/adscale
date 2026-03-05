@@ -102,6 +102,7 @@ export function useDashboard(from: string, to?: string) {
 const [data, setData] = useState<DashboardData>(DEMO_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,10 +121,10 @@ const [data, setData] = useState<DashboardData>(DEMO_DATA);
       }
     };
     fetchData();
-  }, [from, to]);
+  }, [from, to, tick]);
 
   const refetch = () => {
-    setData(DEMO_DATA);
+    setTick(t => t + 1);
   };
 
   return { data, loading, error, refetch };
