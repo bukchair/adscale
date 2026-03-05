@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
 
     // Campaign-level query
     const campaignQuery = `SELECT campaign.id, campaign.name, campaign.status, campaign_budget.amount_micros, metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.conversions FROM campaign WHERE segments.date BETWEEN '${from}' AND '${to}'`;
-    const gaRes = await fetch(`https://googleads.googleapis.com/v18/customers/${customerId}/googleAds:search`, {
+    const gaRes = await fetch(`https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`, {
       method: "POST",
       headers: { "Authorization": "Bearer "+accessToken, "developer-token": devToken!, "login-customer-id": managerId, "Content-Type": "application/json" },
       body: JSON.stringify({ query: campaignQuery }),
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
 
     // Daily breakdown query
     const dailyQuery = `SELECT segments.date, metrics.cost_micros, metrics.clicks, metrics.conversions FROM customer WHERE segments.date BETWEEN '${from}' AND '${to}'`;
-    const dailyRes = await fetch(`https://googleads.googleapis.com/v18/customers/${customerId}/googleAds:search`, {
+    const dailyRes = await fetch(`https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`, {
       method: "POST",
       headers: { "Authorization": "Bearer "+accessToken, "developer-token": devToken!, "login-customer-id": managerId, "Content-Type": "application/json" },
       body: JSON.stringify({ query: dailyQuery }),
@@ -211,7 +211,7 @@ export async function GET(req: NextRequest) {
     const tokenData = await tokenRes.json();
     const ga4Res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`, { method: "POST", headers: { "Authorization": "Bearer " + tokenData.access_token, "Content-Type": "application/json" }, body: JSON.stringify({ dateRanges: [{ startDate: from, endDate: to }], metrics: [{ name: "sessions" }, { name: "activeUsers" }, { name: "purchaseRevenue" }] }), signal: AbortSignal.timeout(8000) });
     if (ga4Res.ok) { const ga4Data = await ga4Res.json(); const row = ga4Data.rows?.[0]?.metricValues; if (row) { ga4Sessions = parseFloat(row[0]?.value||"0"); ga4Users = parseFloat(row[1]?.value||"0"); ga4Revenue = parseFloat(row[2]?.value||"0"); } }
-  } catch(e) { apiErrors.push("ga4"); }
+  } catch(e) { apiErrors.push("ga4:"+String(e).slice(0,150)); }
 
   // Build timeSeries from daily maps
   const dates = dateRange(from, to);
