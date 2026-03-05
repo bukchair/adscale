@@ -12,6 +12,9 @@ async function getGoogleAdsToken() {
     }),
   });
   const data = await res.json();
+  if (!data.access_token) {
+    throw new Error(`google_token_refresh_failed: ${JSON.stringify(data)}`);
+  }
   return data.access_token as string;
 }
 
