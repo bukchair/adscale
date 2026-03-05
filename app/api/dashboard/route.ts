@@ -60,7 +60,10 @@ export async function GET(req: NextRequest) {
       body: JSON.stringify({ query: campaignQuery }),
       signal: AbortSignal.timeout(8000)
     });
-    if (gaRes.ok) {
+    if (!gaRes.ok) {
+      const errText = await gaRes.text();
+      apiErrors.push(`google:${gaRes.status}:${errText.slice(0,200)}`);
+    } else {
       const gaData = await gaRes.json();
       (gaData.results||[]).forEach((r:any) => {
         const spent = (r.metrics?.costMicros||0) / 1000000;
@@ -125,7 +128,10 @@ export async function GET(req: NextRequest) {
       `https://graph.facebook.com/v19.0/act_${metaAccountId}/insights?fields=spend,clicks,impressions,actions&time_range={"since":"${from}","until":"${to}"}&access_token=${metaToken}`,
       { signal: AbortSignal.timeout(8000) }
     );
-    if (metaRes.ok) {
+    if (!metaRes.ok) {
+      const errText = await metaRes.text();
+      apiErrors.push(`meta:${metaRes.status}:${errText.slice(0,200)}`);
+    } else {
       const metaData = await metaRes.json();
       (metaData.data||[]).forEach((d:any) => {
         metaSpent += parseFloat(d.spend||"0");
