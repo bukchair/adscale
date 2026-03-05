@@ -87,6 +87,7 @@ const TABS = [
   { label: "קמפיינים", icon: "🚀" },
   { label: "AI אופטימיזציה", icon: "🤖" },
   { label: "קהלים", icon: "👥" },
+  { label: "מילות שליליות", icon: "🚫" },
   { label: "הגדרות", icon: "⚙️" },
 ];
 
@@ -110,11 +111,69 @@ export default function DashboardPage() {
   const [preset, setPreset] = useState(0);
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
 
+  // Negative keywords tab state
+  const [negTerms, setNegTerms] = useState<any[]>([]);
+  const [negLoading, setNegLoading] = useState(false);
+  const [negSelected, setNegSelected] = useState<Set<string>>(new Set());
+  const [negApplying, setNegApplying] = useState(false);
+  const [negResult, setNegResult] = useState<{ listName: string; added: number; campaignsLinked: number } | null>(null);
+  const [negApiErrors, setNegApiErrors] = useState<string[]>([]);
+  const [negExistingList, setNegExistingList] = useState<{ id: string; name: string } | null>(null);
+  const [negMatchType, setNegMatchType] = useState<"BROAD" | "PHRASE" | "EXACT">("BROAD");
+
   const range = { from: DATE_PRESETS[preset].from(), to: getToday() };
   const { data, loading, refetch } = useDashboard(range.from, range.to);
 
   useEffect(() => { setTimeout(() => setAnimIn(true), 80); }, []);
   useEffect(() => { if (data.campaigns.length) setLocalCampaigns(data.campaigns); }, [data.campaigns]);
+
+  async function loadNegTerms() {
+    setNegLoading(true);
+    setNegResult(null);
+    try {
+      const res = await fetch(`/api/negative-keywords?from=${range.from}&to=${range.to}`);
+      const d = await res.json();
+      setNegTerms(d.terms || []);
+      setNegExistingList(d.existingList || null);
+      setNegApiErrors(d.errors || []);
+      setNegSelected(new Set());
+    } finally {
+      setNegLoading(false);
+    }
+  }
+
+  useEffect(() => { if (activeTab === 4) loadNegTerms(); }, [activeTab]);
+
+  async function applyNegKeywords() {
+    if (!negSelected.size) return;
+    setNegApplying(true);
+    try {
+      const res = await fetch("/api/negative-keywords/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywords: Array.from(negSelected), matchType: negMatchType }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        setNegResult({ listName: d.listName, added: d.added, campaignsLinked: d.campaignsLinked });
+        await loadNegTerms();
+      }
+    } finally {
+      setNegApplying(false);
+    }
+  }
+
+  function toggleNegTerm(term: string) {
+    setNegSelected(prev => {
+      const next = new Set(prev);
+      next.has(term) ? next.delete(term) : next.add(term);
+      return next;
+    });
+  }
+
+  function selectAllNeg() {
+    setNegSelected(negTerms.length === negSelected.size ? new Set() : new Set(negTerms.map(t => t.term)));
+  }
 
   const toggleCampaign = (id: string) => {
     setLocalCampaigns(prev => prev.map(c => c.id === id ? {
@@ -425,6 +484,109 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 4 && (
+          <>
+            <div style={s.header}>
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>מילות מפתח שליליות</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
+                  {negLoading ? "טוען..." : `${negTerms.length} מילים מוצעות`}
+                  {negExistingList && <span style={{ marginRight: 10, color: "#00d4aa" }}>✓ רשימה קיימת: {negExistingList.name}</span>}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <select
+                  value={negMatchType}
+                  onChange={e => setNegMatchType(e.target.value as "BROAD" | "PHRASE" | "EXACT")}
+                  style={{ background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "7px 12px", fontSize: 13, cursor: "pointer" }}
+                >
+                  <option value="BROAD">התאמה רחבה</option>
+                  <option value="PHRASE">התאמת ביטוי</option>
+                  <option value="EXACT">התאמה מדויקת</option>
+                </select>
+                <button style={s.btn("sm")} onClick={loadNegTerms} disabled={negLoading}>
+                  {negLoading ? "טוען..." : "רענן"}
+                </button>
+                <button
+                  style={{ ...s.btn("primary"), opacity: negSelected.size === 0 || negApplying ? 0.5 : 1 }}
+                  onClick={applyNegKeywords}
+                  disabled={negSelected.size === 0 || negApplying}
+                >
+                  {negApplying ? "מוסיף..." : `הוסף לגוגל אדס (${negSelected.size})`}
+                </button>
+              </div>
+            </div>
+
+            {negResult && (
+              <div style={{ background: "#00d4aa12", border: "1px solid #00d4aa44", borderRadius: 12, padding: "14px 20px", marginBottom: 16, fontSize: 13 }}>
+                <span style={{ color: "#00d4aa", fontWeight: 700 }}>נוסף בהצלחה!</span>
+                {" "}{negResult.added} מילים נוספו לרשימה "{negResult.listName}"
+                {negResult.campaignsLinked > 0 && ` • הרשימה קושרה ל-${negResult.campaignsLinked} קמפיינים`}
+              </div>
+            )}
+
+            {negApiErrors.length > 0 && (
+              <div style={{ background: "#f5a62310", border: "1px solid #f5a62333", borderRadius: 10, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#f5a623" }}>
+                {negApiErrors.join(" | ")}
+              </div>
+            )}
+
+            <div style={s.card}>
+              {negLoading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {[1,2,3,4,5].map(i => <Skeleton key={i} h={36} />)}
+                </div>
+              ) : negTerms.length === 0 ? (
+                <div style={{ textAlign: "center", color: "#6b7280", padding: "40px 0" }}>
+                  {negApiErrors.length > 0 ? "שגיאה בטעינת הנתונים — בדוק חיבור Google Ads" : "לא נמצאו מילות מפתח מוצעות לתקופה זו"}
+                </div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...s.th, width: 32 }}>
+                        <input type="checkbox" checked={negSelected.size === negTerms.length && negTerms.length > 0} onChange={selectAllNeg} style={{ cursor: "pointer" }} />
+                      </th>
+                      <th style={s.th}>מילת חיפוש</th>
+                      <th style={s.th}>מקור</th>
+                      <th style={s.th}>סיבה</th>
+                      <th style={{ ...s.th, textAlign: "left" as const }}>חשיפות</th>
+                      <th style={{ ...s.th, textAlign: "left" as const }}>קליקים</th>
+                      <th style={{ ...s.th, textAlign: "left" as const }}>עלות ₪</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {negTerms.map((t, i) => {
+                      const selected = negSelected.has(t.term);
+                      return (
+                        <tr key={i} onClick={() => toggleNegTerm(t.term)} style={{ cursor: "pointer", background: selected ? "#7c74ff08" : "transparent" }}>
+                          <td style={s.td}>
+                            <input type="checkbox" checked={selected} onChange={() => toggleNegTerm(t.term)} onClick={e => e.stopPropagation()} style={{ cursor: "pointer" }} />
+                          </td>
+                          <td style={{ ...s.td, fontFamily: "monospace", fontSize: 12, color: "#e8eaf6" }}>{t.term}</td>
+                          <td style={s.td}>
+                            <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, fontWeight: 600,
+                              background: t.source === "google_ads" ? "#4285F422" : "#34A85322",
+                              color: t.source === "google_ads" ? "#4285F4" : "#34A853" }}>
+                              {t.source === "google_ads" ? "Google Ads" : "Search Console"}
+                            </span>
+                          </td>
+                          <td style={{ ...s.td, fontSize: 12, color: "#b0b8d0" }}>{t.reason}</td>
+                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12 }}>{t.impressions.toLocaleString()}</td>
+                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12 }}>{t.clicks.toLocaleString()}</td>
+                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12, color: t.cost > 0 ? "#ff6b6b" : "#6b7280" }}>
+                            {t.cost > 0 ? `₪${t.cost.toFixed(2)}` : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 5 && (
           <>
             <div style={s.header}>
               <div><div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות</div></div>
