@@ -88,6 +88,7 @@ const TABS = [
   { label: "AI אופטימיזציה", icon: "🤖" },
   { label: "קהלים", icon: "👥" },
   { label: "מילות שליליות", icon: "🚫" },
+  { label: "מרצ'נט", icon: "🛍️" },
   { label: "הגדרות", icon: "⚙️" },
 ];
 
@@ -110,6 +111,10 @@ export default function DashboardPage() {
   const [animIn, setAnimIn] = useState(false);
   const [preset, setPreset] = useState(0);
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
+
+  // Merchant Center tab state
+  const [merchantData, setMerchantData] = useState<any>(null);
+  const [merchantLoading, setMerchantLoading] = useState(false);
 
   // Negative keywords tab state
   const [negTerms, setNegTerms] = useState<any[]>([]);
@@ -143,6 +148,18 @@ export default function DashboardPage() {
   }
 
   useEffect(() => { if (activeTab === 4) loadNegTerms(); }, [activeTab]);
+
+  async function loadMerchantData() {
+    setMerchantLoading(true);
+    try {
+      const res = await fetch(`/api/merchant?from=${range.from}&to=${range.to}`);
+      const d = await res.json();
+      setMerchantData(d);
+    } finally {
+      setMerchantLoading(false);
+    }
+  }
+  useEffect(() => { if (activeTab === 5) loadMerchantData(); }, [activeTab]);
 
   async function applyNegKeywords() {
     if (!negSelected.size) return;
@@ -589,6 +606,139 @@ export default function DashboardPage() {
         {activeTab === 5 && (
           <>
             <div style={s.header}>
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>Google Merchant Center</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
+                  {merchantLoading ? "טוען..." : merchantData ? `${merchantData.summary?.totalProducts || 0} מוצרים` : "טרם נטען"}
+                </div>
+              </div>
+              <button style={s.btn("sm")} onClick={loadMerchantData} disabled={merchantLoading}>
+                {merchantLoading ? "טוען..." : "רענן"}
+              </button>
+            </div>
+
+            {merchantData?.errors?.length > 0 && (
+              <div style={{ background: "#f5a62310", border: "1px solid #f5a62333", borderRadius: 10, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#f5a623" }}>
+                {merchantData.errors.join(" | ")}
+              </div>
+            )}
+
+            {merchantLoading && !merchantData && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+                  {[1,2,3,4].map(i => <Skeleton key={i} h={90} r={16} />)}
+                </div>
+                <Skeleton h={200} r={16} />
+              </div>
+            )}
+
+            {merchantData && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
+                  {[
+                    { label: "סה״כ מוצרים", val: merchantData.summary?.totalProducts || 0, color: "#7c74ff" },
+                    { label: "מאושרים", val: merchantData.summary?.approved || 0, color: "#00d4aa" },
+                    { label: "נדחו", val: merchantData.summary?.disapproved || 0, color: "#ff6b6b" },
+                    { label: "אזהרות", val: merchantData.summary?.warnings || 0, color: "#f5a623" },
+                  ].map((m, i) => (
+                    <div key={i} style={{ ...s.card }}>
+                      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>{m.label}</div>
+                      <div style={{ fontSize: 30, fontWeight: 800, color: m.color }}>{m.val.toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {merchantData.disapprovedProducts?.length > 0 && (
+                  <div style={{ ...s.card, marginBottom: 20 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16, color: "#ff6b6b" }}>
+                      ⚠️ מוצרים נדחים ({merchantData.disapprovedProducts.length})
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr>
+                          <th style={s.th}>מוצר</th>
+                          <th style={s.th}>סיבות דחייה</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {merchantData.disapprovedProducts.map((p: any, i: number) => (
+                          <tr key={i}>
+                            <td style={{ ...s.td, fontWeight: 600, maxWidth: 280 }}>
+                              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.title}</div>
+                              <div style={{ fontSize: 10, color: "#6b7280", fontFamily: "monospace", marginTop: 2 }}>{p.id}</div>
+                            </td>
+                            <td style={s.td}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                                {(p.reasons || []).map((r: string, j: number) => (
+                                  <span key={j} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 8, background: "#ff6b6b18", color: "#ff6b6b", display: "inline-block" }}>{r}</span>
+                                ))}
+                                {!p.reasons?.length && <span style={{ fontSize: 12, color: "#6b7280" }}>—</span>}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {merchantData.topProducts?.length > 0 && (
+                  <div style={s.card}>
+                    <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>
+                      🏆 מוצרים מובילים לפי חשיפות
+                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead>
+                        <tr>
+                          {["מוצר","חשיפות","קליקים","CTR","המרות","הכנסה"].map(h => <th key={h} style={s.th}>{h}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {merchantData.topProducts.map((p: any, i: number) => (
+                          <tr key={i}>
+                            <td style={{ ...s.td, maxWidth: 260 }}>
+                              <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>{p.title || p.offerId}</div>
+                            </td>
+                            <td style={s.td}>{p.impressions.toLocaleString()}</td>
+                            <td style={s.td}>{p.clicks.toLocaleString()}</td>
+                            <td style={s.td}>
+                              <span style={{ color: p.ctr > 2 ? "#00d4aa" : "#6b7280" }}>
+                                {p.ctr.toFixed(2)}%
+                              </span>
+                            </td>
+                            <td style={s.td}>{p.conversions > 0 ? p.conversions.toFixed(1) : "—"}</td>
+                            <td style={s.td}>
+                              {p.revenue > 0 ? <span style={{ color: "#00d4aa", fontWeight: 700 }}>₪{Math.round(p.revenue).toLocaleString()}</span> : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {!merchantData.topProducts?.length && !merchantData.disapprovedProducts?.length && !merchantData.errors?.length && (
+                  <div style={{ ...s.card, textAlign: "center", color: "#6b7280", padding: "40px 0" }}>
+                    אין נתונים לתקופה זו
+                  </div>
+                )}
+              </>
+            )}
+
+            {!merchantData && !merchantLoading && (
+              <div style={{ ...s.card, textAlign: "center", padding: "40px 0" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🛍️</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Google Merchant Center</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>הוסף את GMC_MERCHANT_ID ב-Vercel כדי לחבר</div>
+                <button style={s.btn("primary")} onClick={loadMerchantData}>טען נתונים</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 6 && (
+          <>
+            <div style={s.header}>
               <div><div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות</div></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
@@ -598,7 +748,7 @@ export default function DashboardPage() {
                 { name: "Meta Business", ok: false, icon: "📘", key: "META_AD_ACCOUNT_ID", detail: "Facebook + Instagram" },
                 { name: "TikTok Ads", ok: false, icon: "🎵", key: "TIKTOK_ADVERTISER_ID", detail: "TikTok For Business" },
                 { name: "Google Analytics 4", ok: false, icon: "📊", key: "GA4_PROPERTY_ID", detail: "נתוני המרה" },
-                { name: "Google Merchant Center", ok: false, icon: "🛍️", key: "GMC_MERCHANT_ID", detail: "פיד מוצרים" },
+                { name: "Google Merchant Center", ok: false, icon: "🛍️", key: "GMC_MERCHANT_ID", detail: "פיד מוצרים — מחובר לטאב מרצ'נט" },
               ].map((c, i) => (
                 <div key={i} style={{ ...s.card, display: "flex", alignItems: "center", gap: 16, opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s` }}>
                   <div style={{ fontSize: 26 }}>{c.icon}</div>
