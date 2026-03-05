@@ -92,12 +92,9 @@ const TABS = [
   { label: "הגדרות", icon: "⚙️" },
 ];
 
-const AI_SUGGESTIONS = [
-  { id: 1, platform: "google", impact: "+18% ROAS", message: "העלה תקציב לקמפיין המוביל ב-20% – ביקוש גבוה צפוי", priority: "high" },
-  { id: 2, platform: "meta",   impact: "+12% CTR",  message: "הרחב קהל יעד ל-Lookalike 3%", priority: "medium" },
-  { id: 3, platform: "tiktok", impact: "+25% CVR",  message: "החלף קריאייטיב ב-Retargeting – CTR ירד ב-40% בשבוע האחרון", priority: "high" },
-  { id: 4, platform: "google", impact: "-8% CPA",   message: "עבור ל-Target CPA של 42 – AI זיהה דפוסי המרה חדשים", priority: "low" },
-];
+const PRIORITY_COLORS: Record<string, string> = { high: "#ff6b6b", medium: "#f5a623", low: "#7c74ff" };
+const PRIORITY_LABELS: Record<string, string> = { high: "דחוף", medium: "בינוני", low: "נמוך" };
+const CATEGORY_LABELS: Record<string, string> = { budget: "תקציב", creative: "קריאייטיב", bidding: "הצעות מחיר", audience: "קהל", structure: "מבנה" };
 
 const DATE_PRESETS = [
   { label: "7 ימים", from: () => getDaysAgo(7) },
@@ -107,10 +104,15 @@ const DATE_PRESETS = [
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(0);
-  const [appliedSuggestions, setAppliedSuggestions] = useState<number[]>([]);
   const [animIn, setAnimIn] = useState(false);
   const [preset, setPreset] = useState(0);
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
+
+  // AI suggestions state
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiApplied, setAiApplied] = useState<Set<string>>(new Set());
+  const [aiErrors, setAiErrors] = useState<string[]>([]);
 
   // Merchant Center tab state
   const [merchantData, setMerchantData] = useState<any>(null);
@@ -148,6 +150,19 @@ export default function DashboardPage() {
   }
 
   useEffect(() => { if (activeTab === 4) loadNegTerms(); }, [activeTab]);
+
+  async function loadAiSuggestions() {
+    setAiLoading(true);
+    try {
+      const res = await fetch(`/api/ai-suggestions?from=${range.from}&to=${range.to}`);
+      const d = await res.json();
+      setAiSuggestions(d.suggestions || []);
+      setAiErrors(d.errors || []);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+  useEffect(() => { if (activeTab === 2) loadAiSuggestions(); }, [activeTab]);
 
   async function loadMerchantData() {
     setMerchantLoading(true);
@@ -326,16 +341,21 @@ export default function DashboardPage() {
               </div>
               <div style={s.card}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>המלצות AI דחופות</div>
-                {AI_SUGGESTIONS.filter(sg => sg.priority === "high").map(sg => (
-                  <div key={sg.id} style={{ background: "#12141a", borderRadius: 12, padding: "12px 14px", marginBottom: 10, border: "1px solid #7c74ff22", display: "flex", gap: 10 }}>
+                {aiSuggestions.filter(sg => sg.priority === "high" && !aiApplied.has(sg.id)).slice(0, 3).map(sg => (
+                  <div key={sg.id} style={{ background: "#12141a", borderRadius: 12, padding: "12px 14px", marginBottom: 10, border: "1px solid #ff6b6b22", display: "flex", gap: 10 }}>
                     <PlatformIcon platform={sg.platform} size={20} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, lineHeight: 1.5 }}>{sg.message}</div>
                       <div style={{ fontSize: 11, color: "#00d4aa", fontWeight: 700, marginTop: 3 }}>צפי: {sg.impact}</div>
                     </div>
-                    <button style={s.btn("sm")} onClick={() => { setAppliedSuggestions(p => [...p, sg.id]); setActiveTab(2); }}>יישם</button>
+                    <button style={s.btn("sm")} onClick={() => { setAiApplied(prev => new Set([...prev, sg.id])); setActiveTab(2); }}>יישם</button>
                   </div>
                 ))}
+                {aiSuggestions.filter(sg => sg.priority === "high").length === 0 && !aiLoading && (
+                  <div style={{ fontSize: 13, color: "#6b7280", textAlign: "center", padding: "16px 0" }}>
+                    {aiLoading ? "טוען..." : "אין המלצות דחופות כרגע"}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -446,26 +466,68 @@ export default function DashboardPage() {
             <div style={s.header}>
               <div>
                 <div style={{ fontSize: 26, fontWeight: 700 }}>AI אופטימיזציה</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} המלצות</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
+                  {aiLoading ? "מנתח קמפיינים..." : `${aiSuggestions.filter(s => !aiApplied.has(s.id)).length} המלצות פעילות`}
+                </div>
               </div>
+              <button style={s.btn("sm")} onClick={loadAiSuggestions} disabled={aiLoading}>
+                {aiLoading ? "טוען..." : "נתח מחדש"}
+              </button>
             </div>
-            {AI_SUGGESTIONS.map(sg => {
-              const applied = appliedSuggestions.includes(sg.id);
+
+            {aiErrors.length > 0 && (
+              <div style={{ background: "#f5a62310", border: "1px solid #f5a62333", borderRadius: 10, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#f5a623" }}>
+                {aiErrors.join(" | ")}
+              </div>
+            )}
+
+            {aiLoading && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[1,2,3,4].map(i => <Skeleton key={i} h={88} r={14} />)}
+              </div>
+            )}
+
+            {!aiLoading && aiSuggestions.length === 0 && (
+              <div style={{ ...s.card, textAlign: "center", padding: "48px 0", color: "#6b7280" }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>אין המלצות כרגע</div>
+                <div style={{ fontSize: 13 }}>כל הקמפיינים מבצעים בצורה טובה, או שהנתונים עדיין בטעינה</div>
+              </div>
+            )}
+
+            {!aiLoading && aiSuggestions.map(sg => {
+              const applied = aiApplied.has(sg.id);
+              const prioColor = PRIORITY_COLORS[sg.priority] || "#7c74ff";
               return (
-                <div key={sg.id} style={{ background: applied ? "#00d4aa08" : "#0d0f18", border: `1px solid ${applied ? "#00d4aa44" : "#181b2a"}`, borderRadius: 14, padding: "16px 20px", marginBottom: 12, display: "flex", alignItems: "flex-start", gap: 14 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 10, background: platformColors[sg.platform] + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div key={sg.id} style={{
+                  background: applied ? "#00d4aa08" : "#0d0f18",
+                  border: `1px solid ${applied ? "#00d4aa44" : prioColor + "28"}`,
+                  borderRadius: 14, padding: "16px 20px", marginBottom: 12,
+                  display: "flex", alignItems: "flex-start", gap: 14,
+                  opacity: applied ? 0.6 : 1,
+                }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: platformColors[sg.platform] + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
                     <PlatformIcon platform={sg.platform} size={24} />
+                    <div style={{ position: "absolute", top: -4, right: -4, width: 10, height: 10, borderRadius: "50%", background: prioColor, border: "2px solid #090b12" }} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 600 }}>{platformLabels[sg.platform]}</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#7c74ff22", color: "#7c74ff" }}>{sg.impact}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: prioColor + "22", color: prioColor }}>
+                        {PRIORITY_LABELS[sg.priority]}
+                      </span>
+                      <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "#181b2a", color: "#6b7280" }}>
+                        {CATEGORY_LABELS[sg.category]}
+                      </span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#00d4aa", marginRight: "auto" }}>{sg.impact}</span>
                     </div>
-                    <div style={{ fontSize: 13, color: "#b0b8d0", lineHeight: 1.6 }}>{sg.message}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>{sg.message}</div>
+                    <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "monospace", background: "#12141a", padding: "4px 8px", borderRadius: 6, display: "inline-block" }}>{sg.detail}</div>
                   </div>
                   <div style={{ flexShrink: 0 }}>
-                    {applied ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>יושם</div> :
-                      <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>יישם</button>
+                    {applied
+                      ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>✓ יושם</div>
+                      : <button style={s.btn("primary")} onClick={() => setAiApplied(prev => new Set([...prev, sg.id]))}>יישם</button>
                     }
                   </div>
                 </div>
