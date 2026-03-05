@@ -108,6 +108,10 @@ export default function DashboardPage() {
   const [preset, setPreset] = useState(0);
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
 
+  // Settings status state
+  const [settingsStatus, setSettingsStatus] = useState<any>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+
   // AI suggestions state
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -163,6 +167,18 @@ export default function DashboardPage() {
     }
   }
   useEffect(() => { if (activeTab === 2) loadAiSuggestions(); }, [activeTab]);
+
+  async function loadSettingsStatus() {
+    setSettingsLoading(true);
+    try {
+      const res = await fetch("/api/settings/status");
+      const d = await res.json();
+      setSettingsStatus(d);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }
+  useEffect(() => { if (activeTab === 6) loadSettingsStatus(); }, [activeTab]);
 
   async function loadMerchantData() {
     setMerchantLoading(true);
@@ -801,28 +817,98 @@ export default function DashboardPage() {
         {activeTab === 6 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות</div></div>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              {[
-                { name: "WooCommerce", ok: false, icon: "🛒", key: "WOOCOMMERCE_URL", detail: "חנות איקומרס" },
-                { name: "Google Ads", ok: false, icon: "🔵", key: "GOOGLE_ADS_CUSTOMER_ID", detail: "חיפוש, Shopping, Display" },
-                { name: "Meta Business", ok: false, icon: "📘", key: "META_AD_ACCOUNT_ID", detail: "Facebook + Instagram" },
-                { name: "TikTok Ads", ok: false, icon: "🎵", key: "TIKTOK_ADVERTISER_ID", detail: "TikTok For Business" },
-                { name: "Google Analytics 4", ok: false, icon: "📊", key: "GA4_PROPERTY_ID", detail: "נתוני המרה" },
-                { name: "Google Merchant Center", ok: false, icon: "🛍️", key: "GMC_MERCHANT_ID", detail: "פיד מוצרים — מחובר לטאב מרצ'נט" },
-              ].map((c, i) => (
-                <div key={i} style={{ ...s.card, display: "flex", alignItems: "center", gap: 16, opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s` }}>
-                  <div style={{ fontSize: 26 }}>{c.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{c.detail}</div>
-                    <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4, fontFamily: "monospace", background: "#181b2a", padding: "2px 6px", borderRadius: 4, display: "inline-block" }}>{c.key}</div>
-                  </div>
-                  <div style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#ff6b6b22", color: "#ff6b6b" }}>הגדר</div>
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
+                  {settingsLoading
+                    ? "בודק חיבורים..."
+                    : settingsStatus
+                    ? `${settingsStatus.summary?.connected}/${settingsStatus.summary?.total} חיבורים פעילים`
+                    : "לחץ בדוק חיבורים"}
                 </div>
-              ))}
+              </div>
+              <button style={s.btn("primary")} onClick={loadSettingsStatus} disabled={settingsLoading}>
+                {settingsLoading ? "בודק..." : "בדוק חיבורים"}
+              </button>
             </div>
+
+            {settingsLoading && !settingsStatus && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                {[1,2,3,4,5,6,7].map(i => <Skeleton key={i} h={80} r={16} />)}
+              </div>
+            )}
+
+            {settingsStatus && (
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
+                  {[
+                    { label: "מחוברים", val: settingsStatus.summary?.connected, color: "#00d4aa" },
+                    { label: "הגדרה חלקית", val: settingsStatus.integrations?.filter((i: any) => i.status === "partial").length, color: "#f5a623" },
+                    { label: "לא מחוברים", val: settingsStatus.integrations?.filter((i: any) => i.status === "disconnected").length, color: "#ff6b6b" },
+                  ].map((m, i) => (
+                    <div key={i} style={{ ...s.card, textAlign: "center" as const, padding: "16px 12px" }}>
+                      <div style={{ fontSize: 28, fontWeight: 800, color: m.color }}>{m.val}</div>
+                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4 }}>{m.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  {(settingsStatus.integrations || []).map((intg: any, i: number) => {
+                    const iconMap: Record<string, string> = {
+                      WooCommerce: "🛒", "Google Ads": "🔵", "Meta Business": "📘",
+                      "Google Analytics 4": "📊", "Search Console": "🔍",
+                      "Google Merchant Center": "🛍️", "TikTok Ads": "🎵",
+                    };
+                    const stColor = intg.status === "connected" ? "#00d4aa" : intg.status === "partial" ? "#f5a623" : "#ff6b6b";
+                    const stBg = intg.status === "connected" ? "#00d4aa18" : intg.status === "partial" ? "#f5a62318" : "#ff6b6b18";
+                    const stLabel = intg.status === "connected" ? "מחובר" : intg.status === "partial" ? "הגדרה חלקית" : "לא מחובר";
+                    const stDot = intg.status === "connected" ? "●" : intg.status === "partial" ? "◐" : "○";
+                    return (
+                      <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transition: `opacity 0.35s ease ${i * 0.07}s`, borderColor: stColor + "33" }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                          <div style={{ fontSize: 28, lineHeight: 1 }}>{iconMap[intg.name] || "🔌"}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{intg.name}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 20, background: stBg, color: stColor }}>
+                                {stDot} {stLabel}
+                              </span>
+                            </div>
+                            {intg.detail && (
+                              <div style={{ fontSize: 11, color: "#6b7280", fontFamily: "monospace", background: "#12141a", padding: "3px 7px", borderRadius: 5, display: "inline-block", maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {intg.detail}
+                              </div>
+                            )}
+                            {intg.status !== "connected" && (
+                              <div style={{ fontSize: 11, color: stColor, marginTop: 4 }}>{intg.message}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ marginTop: 12, fontSize: 10, color: "#6b7280", fontFamily: "monospace", background: "#181b2a", padding: "2px 6px", borderRadius: 4, display: "inline-block" }}>
+                          {intg.key}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {settingsStatus.checkedAt && (
+                  <div style={{ fontSize: 11, color: "#6b7280", textAlign: "center" as const, marginTop: 16 }}>
+                    נבדק ב-{new Date(settingsStatus.checkedAt).toLocaleTimeString("he-IL")}
+                  </div>
+                )}
+              </>
+            )}
+
+            {!settingsStatus && !settingsLoading && (
+              <div style={{ ...s.card, textAlign: "center" as const, padding: "48px 0", color: "#6b7280" }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>⚙️</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>בדוק את סטטוס החיבורים</div>
+                <div style={{ fontSize: 13, marginBottom: 20 }}>לחץ "בדוק חיבורים" לבדיקה חיה של כל ה-API Keys</div>
+                <button style={s.btn("primary")} onClick={loadSettingsStatus}>בדוק חיבורים</button>
+              </div>
+            )}
           </>
         )}
       </div>
