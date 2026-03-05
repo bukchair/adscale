@@ -104,6 +104,234 @@ const DATE_PRESETS = [
   { label: "30 ימים", from: () => getDaysAgo(30) },
 ];
 
+// ── Integration definitions ────────────────────────────────────────────────
+interface IntegrationField { key: string; label: string; placeholder: string; hint?: string; secret?: boolean; }
+interface IntegrationDef {
+  id: string; name: string; detail: string; iconType: string; envKey: string;
+  oauthProvider: "google" | "meta" | "tiktok" | null; oauthLabel: string | null;
+  oauthScopes?: string; fields: IntegrationField[];
+}
+
+const INTEGRATIONS: IntegrationDef[] = [
+  {
+    id: "google_ads", name: "Google Ads", detail: "Shopping, Display, חיפוש",
+    iconType: "google", envKey: "GOOGLE_ADS_CUSTOMER_ID",
+    oauthProvider: "google", oauthLabel: "Google",
+    oauthScopes: "https://www.googleapis.com/auth/adwords",
+    fields: [
+      { key: "customer_id", label: "Customer ID", placeholder: "123-456-7890", hint: "מספר חשבון ב-Google Ads" },
+      { key: "developer_token", label: "Developer Token", placeholder: "ABcd1234...", secret: true },
+      { key: "client_id", label: "OAuth Client ID", placeholder: "1234.apps.googleusercontent.com" },
+      { key: "client_secret", label: "OAuth Client Secret", placeholder: "GOCSPX-...", secret: true },
+    ],
+  },
+  {
+    id: "woocommerce", name: "WooCommerce", detail: "חנות איקומרס",
+    iconType: "woo", envKey: "WOOCOMMERCE_URL",
+    oauthProvider: null, oauthLabel: null,
+    fields: [
+      { key: "url", label: "כתובת החנות", placeholder: "https://mystore.co.il" },
+      { key: "consumer_key", label: "Consumer Key", placeholder: "ck_..." },
+      { key: "consumer_secret", label: "Consumer Secret", placeholder: "cs_...", secret: true },
+    ],
+  },
+  {
+    id: "meta", name: "Meta Business", detail: "Facebook + Instagram",
+    iconType: "meta", envKey: "META_AD_ACCOUNT_ID",
+    oauthProvider: "meta", oauthLabel: "Facebook",
+    fields: [
+      { key: "account_id", label: "Ad Account ID", placeholder: "act_123456789", hint: "מספר חשבון פרסום" },
+      { key: "app_id", label: "App ID", placeholder: "123456789" },
+      { key: "app_secret", label: "App Secret", placeholder: "...", secret: true },
+    ],
+  },
+  {
+    id: "tiktok", name: "TikTok Ads", detail: "TikTok For Business",
+    iconType: "tiktok", envKey: "TIKTOK_ADVERTISER_ID",
+    oauthProvider: "tiktok", oauthLabel: "TikTok",
+    fields: [
+      { key: "advertiser_id", label: "Advertiser ID", placeholder: "1234567890" },
+      { key: "app_id", label: "App ID", placeholder: "...", hint: "מ-TikTok Business Center" },
+      { key: "app_secret", label: "App Secret", placeholder: "...", secret: true },
+    ],
+  },
+  {
+    id: "ga4", name: "Google Analytics 4", detail: "נתוני המרה",
+    iconType: "google", envKey: "GA4_PROPERTY_ID",
+    oauthProvider: "google", oauthLabel: "Google",
+    oauthScopes: "https://www.googleapis.com/auth/analytics.readonly",
+    fields: [
+      { key: "property_id", label: "Property ID", placeholder: "123456789", hint: "Admin → Property" },
+      { key: "client_id", label: "OAuth Client ID", placeholder: "1234.apps.googleusercontent.com" },
+      { key: "client_secret", label: "OAuth Client Secret", placeholder: "GOCSPX-...", secret: true },
+    ],
+  },
+  {
+    id: "gmc", name: "Google Merchant Center", detail: "פיד מוצרים",
+    iconType: "google", envKey: "GMC_MERCHANT_ID",
+    oauthProvider: "google", oauthLabel: "Google",
+    oauthScopes: "https://www.googleapis.com/auth/content",
+    fields: [
+      { key: "merchant_id", label: "Merchant ID", placeholder: "123456789" },
+      { key: "client_id", label: "OAuth Client ID", placeholder: "1234.apps.googleusercontent.com" },
+      { key: "client_secret", label: "OAuth Client Secret", placeholder: "GOCSPX-...", secret: true },
+    ],
+  },
+];
+
+function IntegrationIcon({ type, size = 20 }: { type: string; size?: number }) {
+  if (type === "google") return <GoogleIcon size={size} />;
+  if (type === "meta") return <MetaIcon size={size} />;
+  if (type === "tiktok") return <TikTokIcon size={size} />;
+  return <span style={{ fontSize: size * 0.75 }}>🛒</span>;
+}
+
+function ConnectModal({ integration, savedValues, onClose, onSave }: {
+  integration: IntegrationDef;
+  savedValues: Record<string, string>;
+  onClose: () => void;
+  onSave: (values: Record<string, string>) => void;
+}) {
+  const [values, setValues] = useState<Record<string, string>>(savedValues);
+  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [oauthStatus, setOauthStatus] = useState<"idle" | "waiting" | "done">(
+    Object.keys(savedValues).length > 0 ? "done" : "idle"
+  );
+
+  function buildOAuthUrl() {
+    const origin = window.location.origin;
+    const redirectUri = `${origin}/api/auth/token`;
+    if (integration.oauthProvider === "google") {
+      const scopes = integration.oauthScopes || "https://www.googleapis.com/auth/adwords";
+      const clientId = values.client_id || "";
+      return `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&response_type=code&access_type=offline&prompt=consent`;
+    }
+    if (integration.oauthProvider === "meta") {
+      const appId = values.app_id || "";
+      return `https://www.facebook.com/v18.0/dialog/oauth?client_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=ads_management,ads_read,business_management`;
+    }
+    if (integration.oauthProvider === "tiktok") {
+      const appId = values.app_id || "";
+      return `https://ads.tiktok.com/marketing_api/auth?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=adscale`;
+    }
+    return "";
+  }
+
+  function handleOAuth() {
+    const url = buildOAuthUrl();
+    if (!url) return;
+    window.open(url, "_blank", "width=620,height=720,scrollbars=yes,resizable=yes");
+    setOauthStatus("waiting");
+  }
+
+  const oauthBg: Record<string, string> = {
+    google: "linear-gradient(135deg,#4285F4,#34A853)",
+    meta: "linear-gradient(135deg,#1877F2,#0064D0)",
+    tiktok: "linear-gradient(135deg,#010101,#444)",
+  };
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={onClose}
+    >
+      <div
+        style={{ background: "#0d0f18", border: "1px solid #1e2235", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", position: "relative" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+          <div style={{ width: 50, height: 50, borderRadius: 14, background: "#181b2a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <IntegrationIcon type={integration.iconType} size={26} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>{integration.name}</div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>{integration.detail}</div>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", fontSize: 18, lineHeight: 1, padding: 6 }}>✕</button>
+        </div>
+
+        {/* Fields */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+          {integration.fields.map(f => (
+            <div key={f.key}>
+              <label style={{ fontSize: 12, color: "#9ca3af", display: "block", marginBottom: 5 }}>
+                {f.label}
+                {f.hint && <span style={{ color: "#4b5563", marginRight: 6 }}>— {f.hint}</span>}
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={f.secret && !showSecrets[f.key] ? "password" : "text"}
+                  value={values[f.key] || ""}
+                  onChange={e => setValues(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  placeholder={f.placeholder}
+                  dir="ltr"
+                  style={{ width: "100%", background: "#12141d", border: "1px solid #1e2235", borderRadius: 10, padding: "10px 14px", paddingLeft: f.secret ? 40 : 14, fontSize: 13, color: "#e8eaf6", outline: "none", fontFamily: "monospace" }}
+                />
+                {f.secret && (
+                  <button
+                    onClick={() => setShowSecrets(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
+                    style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", fontSize: 14, padding: 0 }}
+                  >
+                    {showSecrets[f.key] ? "🙈" : "👁️"}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* OAuth section */}
+        {integration.oauthProvider && (
+          <div style={{ background: "#12141d", border: "1px solid #1e2235", borderRadius: 14, padding: 16, marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>
+              לאחר הזנת הפרטים, אשר את ההרשאות מול {integration.oauthLabel}
+            </div>
+            <button
+              onClick={handleOAuth}
+              style={{ width: "100%", padding: 11, borderRadius: 10, border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, background: oauthBg[integration.oauthProvider] || "#333", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}
+            >
+              <IntegrationIcon type={integration.iconType} size={18} />
+              אשר חיבור דרך {integration.oauthLabel}
+            </button>
+            {oauthStatus === "waiting" && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "#f5a623", textAlign: "center" }}>
+                חלון האישור נפתח — אשר את ההרשאות ולאחר מכן לחץ "שמור"
+              </div>
+            )}
+            {oauthStatus === "done" && (
+              <div style={{ marginTop: 10, fontSize: 12, color: "#00d4aa", textAlign: "center" }}>✓ ההרשאה אושרה</div>
+            )}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid #1e2235", background: "transparent", color: "#9ca3af", cursor: "pointer", fontSize: 13 }}>
+            ביטול
+          </button>
+          {!integration.oauthProvider && (
+            <button
+              onClick={() => { onSave(values); onClose(); }}
+              style={{ padding: "9px 22px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#7c74ff,#5e55e8)", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+            >
+              שמור חיבור
+            </button>
+          )}
+          {integration.oauthProvider && (
+            <button
+              onClick={() => { onSave(values); onClose(); }}
+              style={{ padding: "9px 22px", borderRadius: 10, border: "none", background: oauthStatus !== "idle" ? "linear-gradient(135deg,#00d4aa,#009b7d)" : "linear-gradient(135deg,#7c74ff,#5e55e8)", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+            >
+              {oauthStatus !== "idle" ? "✓ שמור חיבור" : "שמור"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [appliedSuggestions, setAppliedSuggestions] = useState<number[]>([]);
@@ -120,6 +348,18 @@ export default function DashboardPage() {
   const [negApiErrors, setNegApiErrors] = useState<string[]>([]);
   const [negExistingList, setNegExistingList] = useState<{ id: string; name: string } | null>(null);
   const [negMatchType, setNegMatchType] = useState<"BROAD" | "PHRASE" | "EXACT">("BROAD");
+
+  // Connections (settings tab)
+  const [openModal, setOpenModal] = useState<string | null>(null);
+  const [connections, setConnections] = useState<Record<string, Record<string, string>>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
+  });
+  function saveConnection(id: string, values: Record<string, string>) {
+    const next = { ...connections, [id]: values };
+    setConnections(next);
+    if (typeof window !== "undefined") localStorage.setItem("adscale_connections", JSON.stringify(next));
+  }
 
   const range = { from: DATE_PRESETS[preset].from(), to: getToday() };
   const { data, loading, refetch } = useDashboard(range.from, range.to);
@@ -589,28 +829,64 @@ export default function DashboardPage() {
         {activeTab === 5 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות</div></div>
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>חיבורים</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
+                  {Object.keys(connections).filter(k => Object.keys(connections[k]).length > 0).length} פלטפורמות מחוברות
+                </div>
+              </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              {[
-                { name: "WooCommerce", ok: false, icon: "🛒", key: "WOOCOMMERCE_URL", detail: "חנות איקומרס" },
-                { name: "Google Ads", ok: false, icon: "🔵", key: "GOOGLE_ADS_CUSTOMER_ID", detail: "חיפוש, Shopping, Display" },
-                { name: "Meta Business", ok: false, icon: "📘", key: "META_AD_ACCOUNT_ID", detail: "Facebook + Instagram" },
-                { name: "TikTok Ads", ok: false, icon: "🎵", key: "TIKTOK_ADVERTISER_ID", detail: "TikTok For Business" },
-                { name: "Google Analytics 4", ok: false, icon: "📊", key: "GA4_PROPERTY_ID", detail: "נתוני המרה" },
-                { name: "Google Merchant Center", ok: false, icon: "🛍️", key: "GMC_MERCHANT_ID", detail: "פיד מוצרים" },
-              ].map((c, i) => (
-                <div key={i} style={{ ...s.card, display: "flex", alignItems: "center", gap: 16, opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s` }}>
-                  <div style={{ fontSize: 26 }}>{c.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{c.detail}</div>
-                    <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4, fontFamily: "monospace", background: "#181b2a", padding: "2px 6px", borderRadius: 4, display: "inline-block" }}>{c.key}</div>
+              {INTEGRATIONS.map((intg, i) => {
+                const saved = connections[intg.id] || {};
+                const isConnected = Object.keys(saved).length > 0;
+                return (
+                  <div key={intg.id} style={{
+                    ...s.card,
+                    display: "flex", alignItems: "center", gap: 16,
+                    opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s`,
+                    border: isConnected ? "1px solid #00d4aa33" : "1px solid #181b2a",
+                  }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: "#181b2a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <IntegrationIcon type={intg.iconType} size={26} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 15, fontWeight: 700 }}>{intg.name}</div>
+                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{intg.detail}</div>
+                      <div style={{ fontSize: 10, fontFamily: "monospace", color: "#4b5563", marginTop: 5, background: "#181b2a", padding: "2px 7px", borderRadius: 4, display: "inline-block" }}>{intg.envKey}</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+                      {isConnected && (
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#00d4aa", background: "#00d4aa15", padding: "2px 9px", borderRadius: 10 }}>● מחובר</div>
+                      )}
+                      <button
+                        onClick={() => setOpenModal(intg.id)}
+                        style={{
+                          padding: "6px 16px", borderRadius: 10, border: "none", cursor: "pointer",
+                          fontSize: 12, fontWeight: 600,
+                          background: isConnected ? "#181b2a" : "linear-gradient(135deg,#7c74ff,#5e55e8)",
+                          color: isConnected ? "#9ca3af" : "#fff",
+                        }}
+                      >
+                        {isConnected ? "ערוך" : "הגדר"}
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#ff6b6b22", color: "#ff6b6b" }}>הגדר</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
+            {openModal && (() => {
+              const intg = INTEGRATIONS.find(i => i.id === openModal)!;
+              return (
+                <ConnectModal
+                  integration={intg}
+                  savedValues={connections[openModal] || {}}
+                  onClose={() => setOpenModal(null)}
+                  onSave={(vals) => { saveConnection(openModal, vals); setOpenModal(null); }}
+                />
+              );
+            })()}
           </>
         )}
       </div>
