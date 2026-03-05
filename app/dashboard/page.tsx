@@ -118,6 +118,15 @@ export default function DashboardPage() {
   const [aiApplied, setAiApplied] = useState<Set<string>>(new Set());
   const [aiErrors, setAiErrors] = useState<string[]>([]);
 
+  // Audiences tab state
+  const [audiencesData, setAudiencesData] = useState<any>(null);
+  const [audiencesLoading, setAudiencesLoading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", type: "website", retentionDays: 30, sourceAudienceId: "", ratio: 0.01 });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createResult, setCreateResult] = useState<{ id: string; name: string } | null>(null);
+  const [audienceFilter, setAudienceFilter] = useState<"all" | "meta" | "google">("all");
+
   // Merchant Center tab state
   const [merchantData, setMerchantData] = useState<any>(null);
   const [merchantLoading, setMerchantLoading] = useState(false);
@@ -153,7 +162,41 @@ export default function DashboardPage() {
     }
   }
 
+  useEffect(() => { if (activeTab === 3) loadAudiences(); }, [activeTab]);
   useEffect(() => { if (activeTab === 4) loadNegTerms(); }, [activeTab]);
+
+  async function loadAudiences() {
+    setAudiencesLoading(true);
+    try {
+      const res = await fetch("/api/audiences");
+      const d = await res.json();
+      setAudiencesData(d);
+    } finally {
+      setAudiencesLoading(false);
+    }
+  }
+
+  async function createAudience() {
+    if (!createForm.name.trim()) return;
+    setCreateLoading(true);
+    setCreateResult(null);
+    try {
+      const res = await fetch("/api/audiences/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(createForm),
+      });
+      const d = await res.json();
+      if (d.success) {
+        setCreateResult({ id: d.id, name: d.name });
+        setShowCreateForm(false);
+        setCreateForm({ name: "", type: "website", retentionDays: 30, sourceAudienceId: "", ratio: 0.01 });
+        await loadAudiences();
+      }
+    } finally {
+      setCreateLoading(false);
+    }
+  }
 
   async function loadAiSuggestions() {
     setAiLoading(true);
@@ -555,26 +598,178 @@ export default function DashboardPage() {
         {activeTab === 3 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>קהלים</div></div>
-              <button style={s.btn("primary")}>+ קהל חדש</button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
-              {[
-                { name: "רוכשים אחרונים 30 יום", size: "1,248", platforms: ["google","meta"], c: "#7c74ff", icon: "🛒" },
-                { name: "עזבו עגלה", size: "3,401", platforms: ["meta","tiktok"], c: "#f5a623", icon: "🛍️" },
-                { name: "Lookalike רוכשים 3%", size: "82,000", platforms: ["meta"], c: "#00d4aa", icon: "🎯" },
-                { name: "צפו במוצר 3+ פעמים", size: "2,190", platforms: ["google","meta","tiktok"], c: "#ff6b6b", icon: "👁️" },
-                { name: "לקוחות VIP", size: "340", platforms: ["meta"], c: "#f5a623", icon: "⭐" },
-                { name: "כל המבקרים", size: "24,700", platforms: ["google","meta"], c: "#7c74ff", icon: "🌐" },
-              ].map((a, i) => (
-                <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(20px)", transition: `all 0.4s ease ${i * 0.08}s`, cursor: "pointer" }}>
-                  <div style={{ fontSize: 28, marginBottom: 12 }}>{a.icon}</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{a.name}</div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: a.c, marginBottom: 12 }}>{a.size}</div>
-                  <div style={{ display: "flex", gap: 6 }}>{a.platforms.map(p => <PlatformIcon key={p} platform={p} size={18} />)}</div>
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>קהלים</div>
+                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
+                  {audiencesLoading ? "טוען..." : audiencesData ? `${audiencesData.total} קהלים` : ""}
                 </div>
-              ))}
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", background: "#181b2a", borderRadius: 10, padding: 3, gap: 2 }}>
+                  {(["all","meta","google"] as const).map(f => (
+                    <button key={f} onClick={() => setAudienceFilter(f)} style={{ padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: audienceFilter === f ? "#7c74ff" : "transparent", color: audienceFilter === f ? "#fff" : "#6b7280" }}>
+                      {f === "all" ? "הכל" : f === "meta" ? "Meta" : "Google"}
+                    </button>
+                  ))}
+                </div>
+                <button style={s.btn("sm")} onClick={loadAudiences} disabled={audiencesLoading}>{audiencesLoading ? "טוען..." : "רענן"}</button>
+                <button style={s.btn("primary")} onClick={() => { setShowCreateForm(true); setCreateResult(null); }}>+ קהל חדש</button>
+              </div>
             </div>
+
+            {createResult && (
+              <div style={{ background: "#00d4aa12", border: "1px solid #00d4aa44", borderRadius: 12, padding: "12px 20px", marginBottom: 16, fontSize: 13 }}>
+                <span style={{ color: "#00d4aa", fontWeight: 700 }}>✓ קהל נוצר!</span> "{createResult.name}" (ID: {createResult.id})
+              </div>
+            )}
+
+            {showCreateForm && (
+              <div style={{ ...s.card, marginBottom: 20, border: "1px solid #7c74ff44" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>יצירת קהל חדש ב-Meta</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>שם הקהל</div>
+                    <input
+                      value={createForm.name}
+                      onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
+                      placeholder="לדוגמה: מבקרי אתר 30 יום"
+                      style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>סוג קהל</div>
+                    <select
+                      value={createForm.type}
+                      onChange={e => setCreateForm(p => ({ ...p, type: e.target.value }))}
+                      style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, cursor: "pointer" }}
+                    >
+                      <option value="website">מבקרי אתר (Pixel)</option>
+                      <option value="engagement">מעורבות</option>
+                      <option value="lookalike">לוקאלייק</option>
+                    </select>
+                  </div>
+                  {createForm.type !== "lookalike" && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>תקופת שמירה (ימים)</div>
+                      <select
+                        value={createForm.retentionDays}
+                        onChange={e => setCreateForm(p => ({ ...p, retentionDays: parseInt(e.target.value) }))}
+                        style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, cursor: "pointer" }}
+                      >
+                        {[7, 14, 30, 60, 90, 180].map(d => <option key={d} value={d}>{d} יום</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {createForm.type === "lookalike" && (
+                    <>
+                      <div>
+                        <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>ID קהל מקור</div>
+                        <input
+                          value={createForm.sourceAudienceId}
+                          onChange={e => setCreateForm(p => ({ ...p, sourceAudienceId: e.target.value }))}
+                          placeholder="הדבק ID של קהל קיים"
+                          style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>אחוז לוקאלייק</div>
+                        <select
+                          value={createForm.ratio}
+                          onChange={e => setCreateForm(p => ({ ...p, ratio: parseFloat(e.target.value) }))}
+                          style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, cursor: "pointer" }}
+                        >
+                          <option value={0.01}>1%</option>
+                          <option value={0.02}>2%</option>
+                          <option value={0.03}>3%</option>
+                          <option value={0.05}>5%</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button style={{ ...s.btn("primary"), opacity: createLoading ? 0.5 : 1 }} onClick={createAudience} disabled={createLoading}>
+                    {createLoading ? "יוצר..." : "צור קהל"}
+                  </button>
+                  <button style={s.btn("default")} onClick={() => setShowCreateForm(false)}>ביטול</button>
+                </div>
+              </div>
+            )}
+
+            {audiencesLoading && !audiencesData && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+                {[1,2,3,4,5,6].map(i => <Skeleton key={i} h={120} r={16} />)}
+              </div>
+            )}
+
+            {audiencesData?.errors?.length > 0 && (
+              <div style={{ background: "#f5a62310", border: "1px solid #f5a62333", borderRadius: 10, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#f5a623" }}>
+                {audiencesData.errors.join(" | ")}
+              </div>
+            )}
+
+            {audiencesData && (() => {
+              const allAudiences = [
+                ...(audiencesData.meta || []),
+                ...(audiencesData.google || []),
+              ].filter(a => audienceFilter === "all" || a.platform === audienceFilter)
+               .sort((a: any, b: any) => (b.sizeRaw || 0) - (a.sizeRaw || 0));
+
+              const subtypeIcon: Record<string, string> = {
+                WEBSITE: "🌐", LOOKALIKE: "🎯", CUSTOM: "📋", APP: "📱", VIDEO: "🎬",
+                ENGAGEMENT: "❤️", REMARKETING: "🔄", CRM_BASED: "👥", SIMILAR_USERS: "✨",
+              };
+
+              if (!allAudiences.length) {
+                return (
+                  <div style={{ ...s.card, textAlign: "center" as const, padding: "48px 0", color: "#6b7280" }}>
+                    <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>אין קהלים {audienceFilter !== "all" ? `ב-${audienceFilter}` : ""}</div>
+                    <div style={{ fontSize: 13 }}>בדוק שה-API Keys מוגדרים נכון בהגדרות</div>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+                  {allAudiences.map((a: any, i: number) => {
+                    const platColor = a.platform === "meta" ? "#1877F2" : "#4285F4";
+                    return (
+                      <div key={a.id || i} style={{ ...s.card, cursor: "default", border: `1px solid ${platColor}22`, opacity: animIn ? 1 : 0, transition: `opacity 0.35s ease ${Math.min(i, 8) * 0.06}s` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                          <span style={{ fontSize: 22 }}>{subtypeIcon[a.subtype] || "👥"}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            <PlatformIcon platform={a.platform} size={16} />
+                            {a.hasLookalike && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 8, background: "#00d4aa22", color: "#00d4aa" }}>LAL</span>}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.4 }}>{a.name}</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: platColor, marginBottom: 6 }}>{a.size}</div>
+                        <div style={{ fontSize: 11, color: "#6b7280", display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+                          <span style={{ background: "#181b2a", padding: "1px 7px", borderRadius: 8 }}>{a.type}</span>
+                          {a.retentionDays && <span style={{ background: "#181b2a", padding: "1px 7px", borderRadius: 8 }}>{a.retentionDays}י'</span>}
+                        </div>
+                        {a.subtype !== "LOOKALIKE" && a.platform === "meta" && (
+                          <button
+                            style={{ ...s.btn("sm"), marginTop: 10, fontSize: 10, padding: "3px 8px" }}
+                            onClick={() => { setCreateForm(p => ({ ...p, type: "lookalike", sourceAudienceId: a.id, name: `LAL ${a.name} 1%` })); setShowCreateForm(true); }}
+                          >
+                            + צור LAL
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {!audiencesData && !audiencesLoading && (
+              <div style={{ ...s.card, textAlign: "center" as const, padding: "48px 0", color: "#6b7280" }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>טוען קהלים...</div>
+              </div>
+            )}
           </>
         )}
 
