@@ -590,7 +590,7 @@ function AdCreatorTab({ s, t, lang, connections }: {
             </div>
           </div>
 
-          {/* Generate buttons */}
+          {/* Generate buttons — always visible */}
           <button
             onClick={generateText}
             disabled={generatingText || !selectedProduct}
@@ -603,19 +603,17 @@ function AdCreatorTab({ s, t, lang, connections }: {
             )}
           </button>
 
-          {variations.length > 0 && (
-            <button
-              onClick={generateImage}
-              disabled={generatingImage}
-              style={{ width: "100%", padding: "12px 0", borderRadius: 10, border: "none", cursor: generatingImage ? "wait" : "pointer", fontSize: 14, fontWeight: 600, background: "linear-gradient(135deg,#00d4aa,#009b7d)", color: "#fff", opacity: generatingImage ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-            >
-              {generatingImage ? (
-                <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span> {t("מייצר תמונה...","Generating image...")}</>
-              ) : (
-                <>🖼️ {t("צור תמונה","Generate Image")}</>
-              )}
-            </button>
-          )}
+          <button
+            onClick={generateImage}
+            disabled={generatingImage || !selectedProduct}
+            style={{ width: "100%", padding: "12px 0", borderRadius: 10, border: "none", cursor: generatingImage || !selectedProduct ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600, background: "linear-gradient(135deg,#00d4aa,#009b7d)", color: "#fff", opacity: generatingImage || !selectedProduct ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            {generatingImage ? (
+              <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span> {t("מייצר תמונה...","Generating image...")}</>
+            ) : (
+              <>🖼️ {t("צור תמונה","Generate Image")}</>
+            )}
+          </button>
         </div>
 
         {/* Right panel: results */}
