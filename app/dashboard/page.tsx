@@ -1415,13 +1415,13 @@ export default function DashboardPage() {
               <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "#1e293b" }}>
                 {t("דוחות לפי פלטפורמה", "Reports by Platform")}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+              <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 6, WebkitOverflowScrolling: "touch" as any }}>
                 {(["google", "meta", "tiktok"] as const).map(p => {
                   const ps = byPlatform.find((x: { platform: string }) => x.platform === p);
                   const connId = p === "google" ? "google_ads" : p;
                   const isConn = connections[connId] && Object.keys(connections[connId]).length > 0;
                   return (
-                    <div key={p} style={{ ...s.card, borderTop: `3px solid ${platformColors[p]}`, opacity: animIn ? 1 : 0, transition: `all 0.4s ease ${["google","meta","tiktok"].indexOf(p) * 0.1}s` }}>
+                    <div key={p} style={{ ...s.card, minWidth: 220, flex: "0 0 auto", borderTop: `3px solid ${platformColors[p]}`, opacity: animIn ? 1 : 0, transition: `all 0.4s ease ${["google","meta","tiktok"].indexOf(p) * 0.1}s` }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <PlatformIcon platform={p} size={20} />
@@ -1494,11 +1494,11 @@ export default function DashboardPage() {
 
             <div style={s.card}>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>{t("ביצועים לפי פלטפורמה", "Performance by Platform")}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+              <div style={{ display: "flex", gap: 14, overflowX: "auto", paddingBottom: 4, WebkitOverflowScrolling: "touch" as any }}>
                 {(["google","meta","tiktok"] as const).map(p => {
                   const ps = byPlatform.find((x: { platform: string }) => x.platform === p);
                   return (
-                    <div key={p} style={{ background: "#f8fafc", borderRadius: 14, padding: "18px 20px", border: `1px solid ${platformColors[p]}22` }}>
+                    <div key={p} style={{ background: "#f8fafc", borderRadius: 14, padding: "18px 20px", border: `1px solid ${platformColors[p]}22`, minWidth: 200, flex: "0 0 auto" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                         <PlatformIcon platform={p} size={22} />
                         <span style={{ fontSize: 14, fontWeight: 600 }}>{platformLabels[lang][p]}</span>
