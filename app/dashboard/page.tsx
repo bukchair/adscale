@@ -272,6 +272,120 @@ function IntegrationIcon({ type, size = 20 }: { type: string; size?: number }) {
   return <span style={{ fontSize: size * 0.75 }}>🛒</span>;
 }
 
+// ── Help content per integration ─────────────────────────────────────────────
+const INTEGRATION_HELP: Record<string, {
+  steps: string[];
+  links: { label: string; url: string }[];
+}> = {
+  google_ads: {
+    steps: [
+      "היכנס לחשבון Google Ads שלך",
+      "Customer ID: מספר 3 ספרות×3 בפינה הימנית העליונה (xxx-xxx-xxxx)",
+      "Developer Token: Tools → API Center → Developer Token",
+      "OAuth Client ID/Secret: Google Cloud Console → APIs & Services → Credentials → Create OAuth 2.0 Client",
+      "הכנס את הפרטים ולאחר מכן לחץ \"אשר חיבור דרך Google\" לקבלת Access Token",
+    ],
+    links: [
+      { label: "Google Ads", url: "https://ads.google.com" },
+      { label: "Google Cloud Console — Credentials", url: "https://console.cloud.google.com/apis/credentials" },
+      { label: "Google Ads API Center", url: "https://ads.google.com/aw/apicenter" },
+    ],
+  },
+  woocommerce: {
+    steps: [
+      "היכנס לממשק ניהול WordPress שלך (yourdomain.com/wp-admin)",
+      "נווט ל-WooCommerce → Settings → Advanced → REST API",
+      "לחץ \"Add key\" — Description: AdScale, User: Admin, Permissions: Read/Write",
+      "לחץ \"Generate API key\" — העתק את Consumer Key ו-Consumer Secret",
+      "ה-Consumer Secret מוצג פעם אחת בלבד! שמור אותו מיד",
+    ],
+    links: [
+      { label: "WooCommerce REST API Docs", url: "https://woocommerce.com/document/woocommerce-rest-api/" },
+      { label: "WP Admin (יש להחליף לדומיין שלך)", url: "https://yourstore.com/wp-admin/admin.php?page=wc-settings&tab=advanced&section=keys" },
+    ],
+  },
+  meta: {
+    steps: [
+      "היכנס ל-Meta Business Suite",
+      "Ad Account ID: Business Settings → Accounts → Ad Accounts (פורמט: act_123456789)",
+      "App ID + Secret: developers.facebook.com → My Apps → Create App → Business",
+      "הוסף Product: Marketing API לאפליקציה",
+      "הכנס App ID ו-App Secret, לאחר מכן לחץ \"אשר חיבור דרך Facebook\"",
+    ],
+    links: [
+      { label: "Meta Business Suite", url: "https://business.facebook.com/settings" },
+      { label: "Meta Developers — My Apps", url: "https://developers.facebook.com/apps" },
+      { label: "Meta Ads Manager", url: "https://www.facebook.com/adsmanager" },
+    ],
+  },
+  tiktok: {
+    steps: [
+      "היכנס ל-TikTok Ads Manager",
+      "Advertiser ID: נמצא בפינה השמאלית העליונה תחת שם החשבון",
+      "App ID + Secret: TikTok For Developers → My Apps → Create App → Marketing API",
+      "ציין Redirect URI: כתובת האתר שלך + /api/auth/token",
+      "הכנס App ID ו-App Secret, לאחר מכן לחץ \"אשר חיבור דרך TikTok\"",
+    ],
+    links: [
+      { label: "TikTok Ads Manager", url: "https://ads.tiktok.com" },
+      { label: "TikTok For Developers — Apps", url: "https://developers.tiktok.com/apps" },
+      { label: "TikTok Business Center", url: "https://business.tiktok.com" },
+    ],
+  },
+  ga4: {
+    steps: [
+      "היכנס ל-Google Analytics",
+      "Property ID: Admin (גלגל שיניים) → Property Settings → Property ID",
+      "OAuth Client: Google Cloud Console → Credentials → Create OAuth 2.0 Client ID",
+      "ב-Authorized redirect URIs הוסף: כתובת האתר שלך + /api/auth/token",
+      "לחץ \"אשר חיבור דרך Google\" לאישור הרשאת קריאת Analytics",
+    ],
+    links: [
+      { label: "Google Analytics", url: "https://analytics.google.com" },
+      { label: "Google Cloud Console — Credentials", url: "https://console.cloud.google.com/apis/credentials" },
+    ],
+  },
+  gmc: {
+    steps: [
+      "היכנס ל-Google Merchant Center",
+      "Merchant ID: נמצא בפינה הימנית העליונה (מספר 9 ספרות בד\"כ)",
+      "OAuth Client: Google Cloud Console → Credentials → Create OAuth 2.0 Client ID",
+      "ב-Scopes הוסף: https://www.googleapis.com/auth/content",
+      "לחץ \"אשר חיבור דרך Google\" לאישור גישה לפיד המוצרים",
+    ],
+    links: [
+      { label: "Google Merchant Center", url: "https://merchants.google.com" },
+      { label: "Google Cloud Console — Credentials", url: "https://console.cloud.google.com/apis/credentials" },
+    ],
+  },
+  anthropic: {
+    steps: [
+      "היכנס ל-Anthropic Console",
+      "נווט ל-Settings → API Keys",
+      "לחץ \"Create Key\" — תן שם כמו \"AdScale\"",
+      "העתק את המפתח — הוא מוצג פעם אחת בלבד!",
+      "הדבק את המפתח בשדה API Key למטה",
+    ],
+    links: [
+      { label: "Anthropic Console — API Keys", url: "https://console.anthropic.com/settings/keys" },
+      { label: "Anthropic Pricing", url: "https://www.anthropic.com/pricing" },
+    ],
+  },
+  openai: {
+    steps: [
+      "היכנס ל-OpenAI Platform",
+      "נווט ל-API Keys מהתפריט הצדדי",
+      "לחץ \"Create new secret key\" — תן שם כמו \"AdScale\"",
+      "העתק את המפתח — הוא מוצג פעם אחת בלבד!",
+      "הדבק את המפתח בשדה API Key למטה",
+    ],
+    links: [
+      { label: "OpenAI Platform — API Keys", url: "https://platform.openai.com/api-keys" },
+      { label: "OpenAI Usage & Billing", url: "https://platform.openai.com/usage" },
+    ],
+  },
+};
+
 function ConnectModal({ integration, savedValues, onClose, onSave }: {
   integration: IntegrationDef;
   savedValues: Record<string, string>;
@@ -280,9 +394,11 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
 }) {
   const [values, setValues] = useState<Record<string, string>>(savedValues);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [showHelp, setShowHelp] = useState(false);
   const [oauthStatus, setOauthStatus] = useState<"idle" | "waiting" | "done">(
     Object.keys(savedValues).length > 0 ? "done" : "idle"
   );
+  const help = INTEGRATION_HELP[integration.id];
 
   function buildOAuthUrl() {
     const origin = window.location.origin;
@@ -326,7 +442,7 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: showHelp ? 16 : 24 }}>
           <div style={{ width: 50, height: 50, borderRadius: 14, background: "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <IntegrationIcon type={integration.iconType} size={26} />
           </div>
@@ -334,8 +450,62 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
             <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{integration.name}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>{integration.detail}</div>
           </div>
+          {help && (
+            <button
+              onClick={() => setShowHelp(v => !v)}
+              title="הצג מדריך חיבור"
+              style={{
+                width: 32, height: 32, borderRadius: "50%", border: "none", cursor: "pointer",
+                fontSize: 14, fontWeight: 700,
+                background: showHelp ? "#7c74ff" : "#f0f4f8",
+                color: showHelp ? "#fff" : "#64748b",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                transition: "all 0.2s",
+              }}
+            >?</button>
+          )}
           <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#64748b", fontSize: 18, lineHeight: 1, padding: 6 }}>✕</button>
         </div>
+
+        {/* Help panel */}
+        {showHelp && help && (
+          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 14, padding: "16px 18px", marginBottom: 20 }}>
+            {/* Steps */}
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>📋</span> מדריך חיבור
+            </div>
+            <ol style={{ margin: 0, padding: "0 18px", display: "flex", flexDirection: "column", gap: 7 }}>
+              {help.steps.map((step, i) => (
+                <li key={i} style={{ fontSize: 12, color: "#475569", lineHeight: 1.5 }}>{step}</li>
+              ))}
+            </ol>
+
+            {/* Links */}
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #e2e8f0" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                לינקים ישירים
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {help.links.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+                      background: "#fff", border: "1px solid #e2e8f0", color: "#7c74ff",
+                      textDecoration: "none", transition: "all 0.15s",
+                    }}
+                  >
+                    {link.label} ↗
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Fields */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
@@ -972,20 +1142,36 @@ export default function DashboardPage() {
     try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
   });
 
-  // On mount: load server-side connections (shared across devices) and merge with localStorage
+  // On mount: sync connections between server and localStorage
+  // - Desktop with data  → pushes localStorage to server (migration / update)
+  // - Mobile (no LS)     → pulls from server (picks up desktop's connections)
+  // - Both have data     → server wins (most up-to-date cross-device source)
   useEffect(() => {
+    const localConns = (() => {
+      try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
+    })();
+    const hasLocal = Object.keys(localConns).length > 0;
+
     fetch("/api/connections")
       .then(r => r.json())
       .then((serverConns: Record<string, Record<string, string>>) => {
-        if (serverConns && Object.keys(serverConns).length > 0) {
-          setConnections(prev => {
-            const merged = { ...serverConns, ...prev };
-            localStorage.setItem("adscale_connections", JSON.stringify(merged));
-            return merged;
-          });
+        const hasServer = serverConns && Object.keys(serverConns).length > 0;
+
+        if (hasServer) {
+          // Server is the source of truth — use it (mobile gets desktop data)
+          setConnections(serverConns);
+          localStorage.setItem("adscale_connections", JSON.stringify(serverConns));
+        } else if (hasLocal) {
+          // Server is empty but we have local data → push to server (first-time migration)
+          fetch("/api/connections", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(localConns),
+          }).catch(() => {});
+          // connections state already set from localStorage (useState initializer)
         }
       })
-      .catch(() => {}); // silently ignore if server file doesn't exist yet
+      .catch(() => {});
   }, []);
 
   function saveConnection(id: string, values: Record<string, string>) {
@@ -1624,6 +1810,26 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* ── Partner view link ── */}
+            <div style={{ ...s.card, marginTop: 14, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" as const }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#7c74ff18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>👁</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{t("שתף עם שותף — צפייה בלבד", "Share with Partner — View Only")}</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{t("הלינק מאפשר צפייה בנתונים ללא אפשרות עריכה", "This link allows viewing data without any editing capabilities")}</div>
+                <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" as const }}>
+                  <code style={{ fontSize: 12, background: "#f0f4f8", padding: "4px 10px", borderRadius: 6, color: "#475569", direction: "ltr", wordBreak: "break-all" as const }}>
+                    {typeof window !== "undefined" ? window.location.origin + "/view" : "/view"}
+                  </code>
+                  <button onClick={() => { if (typeof window !== "undefined") navigator.clipboard?.writeText(window.location.origin + "/view"); }} style={{ padding: "5px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: "#7c74ff", color: "#fff" }}>
+                    {t("העתק לינק", "Copy Link")}
+                  </button>
+                  <a href="/view" target="_blank" rel="noreferrer" style={{ padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "#f0f4f8", color: "#475569", textDecoration: "none" }}>
+                    {t("פתח", "Open")} ↗
+                  </a>
+                </div>
+              </div>
             </div>
 
             {openModal && (() => {
