@@ -12,41 +12,58 @@ import AuditLogModule from "./audit-log/AuditLogModule";
 import AutomationModule from "./automation/AutomationModule";
 import IntegrationsModule from "./integrations/IntegrationsModule";
 
+export type Lang = "he" | "en";
+
 const TABS = [
-  { id: "overview",          label: "📊 סקירה כללית",         en: "Overview" },
-  { id: "recommendations",   label: "🤖 המלצות AI",           en: "Recommendations" },
-  { id: "search-terms",      label: "🔍 ניתוח חיפושים",       en: "Search Intelligence" },
-  { id: "negative-keywords", label: "🚫 מילות מפתח שליליות",  en: "Negative Keywords" },
-  { id: "profitability",     label: "💰 רווחיות",             en: "Profitability" },
-  { id: "budget",            label: "📈 ניהול תקציב",         en: "Budget Control" },
-  { id: "creative-lab",      label: "✍️ מעבדת קריאייטיב",    en: "Creative Lab" },
-  { id: "approvals",         label: "✅ אישורים",             en: "Approvals" },
-  { id: "audit-log",         label: "📋 יומן פעולות",         en: "Audit Log" },
-  { id: "automation",        label: "⚙️ אוטומציה",           en: "Automation" },
-  { id: "integrations",      label: "🔗 חיבורים",            en: "Integrations" },
+  { id: "overview",          he: "📊 סקירה כללית",         en: "📊 Overview" },
+  { id: "recommendations",   he: "🤖 המלצות AI",           en: "🤖 AI Recommendations" },
+  { id: "search-terms",      he: "🔍 ניתוח חיפושים",       en: "🔍 Search Intelligence" },
+  { id: "negative-keywords", he: "🚫 מילות מפתח שליליות",  en: "🚫 Negative Keywords" },
+  { id: "profitability",     he: "💰 רווחיות",             en: "💰 Profitability" },
+  { id: "budget",            he: "📈 ניהול תקציב",         en: "📈 Budget Control" },
+  { id: "creative-lab",      he: "✍️ מעבדת קריאייטיב",    en: "✍️ Creative Lab" },
+  { id: "approvals",         he: "✅ אישורים",             en: "✅ Approvals" },
+  { id: "audit-log",         he: "📋 יומן פעולות",         en: "📋 Audit Log" },
+  { id: "automation",        he: "⚙️ אוטומציה",           en: "⚙️ Automation" },
+  { id: "integrations",      he: "🔗 חיבורים",            en: "🔗 Integrations" },
 ];
 
 export default function ModulesPage() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [lang, setLang] = useState<Lang>("he");
+  const dir = lang === "he" ? "rtl" : "ltr";
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d1a", color: "#e0e0ff", fontFamily: "'Segoe UI', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#0d0d1a", color: "#e0e0ff", fontFamily: "'Segoe UI', sans-serif", direction: dir }}>
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)", borderBottom: "1px solid #2a2a4a", padding: "20px 32px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, #7c74ff, #00d4aa)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
             🤖
           </div>
-          <div>
+          <div style={{ flex: 1 }}>
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#fff" }}>AdScale AI</h1>
-            <p style={{ margin: 0, fontSize: 12, color: "#8888aa" }}>מנוע אופטימיזציה חכם לפרסום</p>
+            <p style={{ margin: 0, fontSize: 12, color: "#8888aa" }}>
+              {lang === "he" ? "מנוע אופטימיזציה חכם לפרסום" : "Smart advertising optimization engine"}
+            </p>
           </div>
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === "he" ? "en" : "he")}
+            style={{
+              padding: "7px 16px", borderRadius: 20, border: "1px solid #3a3a5a",
+              background: "#13132a", color: "#e0e0ff", cursor: "pointer",
+              fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8,
+            }}
+          >
+            {lang === "he" ? "🇺🇸 English" : "🇮🇱 עברית"}
+          </button>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ background: "#13132a", borderBottom: "1px solid #2a2a4a", overflowX: "auto" }}>
-        <div style={{ display: "flex", padding: "0 16px", minWidth: "max-content" }}>
+        <div style={{ display: "flex", padding: "0 16px", minWidth: "max-content", direction: "ltr" }}>
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -64,7 +81,7 @@ export default function ModulesPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {tab.label}
+              {lang === "he" ? tab.he : tab.en}
             </button>
           ))}
         </div>
@@ -72,17 +89,17 @@ export default function ModulesPage() {
 
       {/* Content */}
       <div style={{ padding: "24px 32px" }}>
-        {activeTab === "overview" && <OverviewModule />}
-        {activeTab === "recommendations" && <RecommendationsModule />}
-        {activeTab === "search-terms" && <SearchTermsModule />}
-        {activeTab === "negative-keywords" && <NegativeKeywordsModule />}
-        {activeTab === "profitability" && <ProfitabilityModule />}
-        {activeTab === "budget" && <BudgetModule />}
-        {activeTab === "creative-lab" && <CreativeLabModule />}
-        {activeTab === "approvals" && <ApprovalsModule />}
-        {activeTab === "audit-log" && <AuditLogModule />}
-        {activeTab === "automation" && <AutomationModule />}
-        {activeTab === "integrations" && <IntegrationsModule />}
+        {activeTab === "overview"          && <OverviewModule lang={lang} />}
+        {activeTab === "recommendations"   && <RecommendationsModule lang={lang} />}
+        {activeTab === "search-terms"      && <SearchTermsModule lang={lang} />}
+        {activeTab === "negative-keywords" && <NegativeKeywordsModule lang={lang} />}
+        {activeTab === "profitability"     && <ProfitabilityModule lang={lang} />}
+        {activeTab === "budget"            && <BudgetModule lang={lang} />}
+        {activeTab === "creative-lab"      && <CreativeLabModule lang={lang} />}
+        {activeTab === "approvals"         && <ApprovalsModule lang={lang} />}
+        {activeTab === "audit-log"         && <AuditLogModule lang={lang} />}
+        {activeTab === "automation"        && <AutomationModule lang={lang} />}
+        {activeTab === "integrations"      && <IntegrationsModule lang={lang} />}
       </div>
     </div>
   );
