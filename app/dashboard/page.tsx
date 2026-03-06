@@ -225,12 +225,43 @@ const INTEGRATIONS: IntegrationDef[] = [
       { key: "client_secret", label: "OAuth Client Secret", placeholder: "GOCSPX-...", secret: true },
     ],
   },
+  {
+    id: "anthropic", name: "Anthropic Claude", detail: "יצירת טקסט מודעות AI",
+    iconType: "anthropic", envKey: "ANTHROPIC_API_KEY",
+    oauthProvider: null, oauthLabel: null,
+    fields: [
+      { key: "api_key", label: "API Key", placeholder: "sk-ant-api03-...", secret: true, hint: "console.anthropic.com/settings/keys" },
+    ],
+  },
+  {
+    id: "openai", name: "OpenAI DALL-E 3", detail: "יצירת תמונות מודעות AI",
+    iconType: "openai", envKey: "OPENAI_API_KEY",
+    oauthProvider: null, oauthLabel: null,
+    fields: [
+      { key: "api_key", label: "API Key", placeholder: "sk-proj-...", secret: true, hint: "platform.openai.com/api-keys" },
+    ],
+  },
 ];
+
+const AnthropicIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect width="24" height="24" rx="6" fill="#D97757"/>
+    <path d="M14.67 6h-2.27L8 18h2.27l.97-2.67h3.52L15.73 18H18L14.67 6zm-2.9 7.6 1.23-3.38 1.23 3.38h-2.46z" fill="white"/>
+  </svg>
+);
+const OpenAIIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect width="24" height="24" rx="6" fill="#10a37f"/>
+    <path d="M19.07 9.51a4.67 4.67 0 0 0-.32-3.83 4.73 4.73 0 0 0-5.1-2.27 4.67 4.67 0 0 0-3.52-1.57 4.73 4.73 0 0 0-4.5 3.27 4.67 4.67 0 0 0-3.12 2.27 4.73 4.73 0 0 0 .58 5.55 4.67 4.67 0 0 0 .32 3.83 4.73 4.73 0 0 0 5.1 2.27 4.67 4.67 0 0 0 3.52 1.57 4.73 4.73 0 0 0 4.51-3.28 4.67 4.67 0 0 0 3.12-2.27 4.73 4.73 0 0 0-.59-5.54zm-7.03 9.85a3.5 3.5 0 0 1-2.25-.82l.11-.06 3.73-2.15a.62.62 0 0 0 .31-.54V11.1l1.58.91a.06.06 0 0 1 .03.05v4.35a3.52 3.52 0 0 1-3.51 3.51v-.06zM4.37 16.9a3.5 3.5 0 0 1-.42-2.35l.11.07 3.73 2.15c.19.11.43.11.62 0l4.56-2.63v1.82a.06.06 0 0 1-.02.05L9.2 18.1a3.52 3.52 0 0 1-4.83-1.2zm-.92-8.15a3.5 3.5 0 0 1 1.83-1.54v4.43c0 .22.12.43.31.54l4.55 2.63-1.57.91a.06.06 0 0 1-.06 0L4.76 13.1a3.52 3.52 0 0 1-.31-4.35zm12.93 3.02-4.56-2.63 1.57-.91a.06.06 0 0 1 .06 0l3.75 2.17a3.51 3.51 0 0 1-.54 6.33v-4.43a.62.62 0 0 0-.28-.53zm1.57-2.37-.11-.07-3.73-2.15a.62.62 0 0 0-.62 0L8.93 9.81V7.99a.06.06 0 0 1 .02-.05l3.75-2.17a3.51 3.51 0 0 1 5.25 3.63zM8.03 12.9l-1.57-.91a.06.06 0 0 1-.03-.05V7.59a3.51 3.51 0 0 1 5.76-2.7l-.11.06-3.73 2.15a.62.62 0 0 0-.31.54v.01L8.03 12.9zm.85-1.84 2.03-1.17 2.03 1.17v2.34l-2.03 1.17-2.03-1.17V11.06z" fill="white"/>
+  </svg>
+);
 
 function IntegrationIcon({ type, size = 20 }: { type: string; size?: number }) {
   if (type === "google") return <GoogleIcon size={size} />;
   if (type === "meta") return <MetaIcon size={size} />;
   if (type === "tiktok") return <TikTokIcon size={size} />;
+  if (type === "anthropic") return <AnthropicIcon size={size} />;
+  if (type === "openai") return <OpenAIIcon size={size} />;
   return <span style={{ fontSize: size * 0.75 }}>🛒</span>;
 }
 
@@ -437,7 +468,7 @@ function AdCreatorTab({ s, t, lang, connections }: {
       const res = await fetch("/api/ads/generate-text", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product: selectedProduct, platform, lang, tone }),
+        body: JSON.stringify({ product: selectedProduct, platform, lang, tone, connections }),
       });
       const d = await res.json();
       if (d.error) throw new Error(d.error);
@@ -459,7 +490,7 @@ function AdCreatorTab({ s, t, lang, connections }: {
       const res = await fetch("/api/ads/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product: selectedProduct, platform, headline, style: imageStyle }),
+        body: JSON.stringify({ product: selectedProduct, platform, headline, style: imageStyle, connections }),
       });
       const d = await res.json();
       if (d.error) throw new Error(d.error);
@@ -590,7 +621,7 @@ function AdCreatorTab({ s, t, lang, connections }: {
             </div>
           </div>
 
-          {/* Generate buttons */}
+          {/* Generate buttons — always visible */}
           <button
             onClick={generateText}
             disabled={generatingText || !selectedProduct}
@@ -603,19 +634,17 @@ function AdCreatorTab({ s, t, lang, connections }: {
             )}
           </button>
 
-          {variations.length > 0 && (
-            <button
-              onClick={generateImage}
-              disabled={generatingImage}
-              style={{ width: "100%", padding: "12px 0", borderRadius: 10, border: "none", cursor: generatingImage ? "wait" : "pointer", fontSize: 14, fontWeight: 600, background: "linear-gradient(135deg,#00d4aa,#009b7d)", color: "#fff", opacity: generatingImage ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-            >
-              {generatingImage ? (
-                <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span> {t("מייצר תמונה...","Generating image...")}</>
-              ) : (
-                <>🖼️ {t("צור תמונה","Generate Image")}</>
-              )}
-            </button>
-          )}
+          <button
+            onClick={generateImage}
+            disabled={generatingImage || !selectedProduct}
+            style={{ width: "100%", padding: "12px 0", borderRadius: 10, border: "none", cursor: generatingImage || !selectedProduct ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600, background: "linear-gradient(135deg,#00d4aa,#009b7d)", color: "#fff", opacity: generatingImage || !selectedProduct ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            {generatingImage ? (
+              <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span> {t("מייצר תמונה...","Generating image...")}</>
+            ) : (
+              <>🖼️ {t("צור תמונה","Generate Image")}</>
+            )}
+          </button>
         </div>
 
         {/* Right panel: results */}

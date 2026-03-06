@@ -23,11 +23,13 @@ const PLATFORM_SPECS: Record<string, { name: string; headline_chars: number; des
 };
 
 export async function POST(req: NextRequest) {
-  const { product, platform, lang = "he", tone = "enthusiastic" } = await req.json();
+  const { product, platform, lang = "he", tone = "enthusiastic", connections } = await req.json();
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey =
+    connections?.anthropic?.api_key ||
+    process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "ANTHROPIC_API_KEY not set" }, { status: 500 });
+    return NextResponse.json({ error: "ANTHROPIC_API_KEY לא מוגדר — הוסף אותו בחיבורים או ב-.env.local" }, { status: 500 });
   }
 
   const spec = PLATFORM_SPECS[platform] || PLATFORM_SPECS.meta;

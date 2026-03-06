@@ -8,11 +8,13 @@ const PLATFORM_SIZES: Record<string, { size: "1024x1024" | "1792x1024" | "1024x1
 };
 
 export async function POST(req: NextRequest) {
-  const { product, platform, headline, style = "modern" } = await req.json();
+  const { product, platform, headline, style = "modern", connections } = await req.json();
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey =
+    connections?.openai?.api_key ||
+    process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "OPENAI_API_KEY not set" }, { status: 500 });
+    return NextResponse.json({ error: "OPENAI_API_KEY לא מוגדר — הוסף אותו בחיבורים או ב-.env.local" }, { status: 500 });
   }
 
   const platformConfig = PLATFORM_SIZES[platform] || PLATFORM_SIZES.meta;
