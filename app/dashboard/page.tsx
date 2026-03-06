@@ -59,7 +59,7 @@ function BarChart({ data }: { data: { day: string; spent: number; revenue: numbe
             <div style={{ flex: 1, height: `${(d.revenue / maxR) * 100}%`, background: "linear-gradient(to top,#00d4aa,#00d4aa55)", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
             <div style={{ flex: 1, height: `${(d.spent / maxS) * 100}%`, background: "linear-gradient(to top,#7c74ff,#7c74ff55)", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
           </div>
-          <span style={{ fontSize: 10, color: "#6b7280" }}>{d.day}</span>
+          <span style={{ fontSize: 10, color: "#64748b" }}>{d.day}</span>
         </div>
       ))}
     </div>
@@ -70,7 +70,7 @@ function Skeleton({ w = "100%", h = 20, r = 6 }: { w?: string | number; h?: numb
   return (
     <div style={{
       width: w, height: h, borderRadius: r,
-      background: "linear-gradient(90deg, #181b2a 25%, #1f2235 50%, #181b2a 75%)",
+      background: "linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)",
       backgroundSize: "200% 100%",
       animation: "shimmer 1.4s infinite",
     }} />
@@ -78,30 +78,56 @@ function Skeleton({ w = "100%", h = 20, r = 6 }: { w?: string | number; h?: numb
 }
 
 const platformColors: Record<string, string> = { google: "#4285F4", meta: "#1877F2", tiktok: "#ff0050" };
-const platformLabels: Record<string, string> = { google: "Google Ads", meta: "Meta Ads", tiktok: "TikTok Ads" };
-const statusColor: Record<string, string> = { active: "#00d4aa", paused: "#f5a623", draft: "#6b7280" };
-const statusLabel: Record<string, string> = { active: "פעיל", paused: "מושהה", draft: "טיוטה" };
+const platformLabels: Record<string, Record<string, string>> = {
+  he: { google: "Google Ads", meta: "Meta Ads", tiktok: "TikTok Ads" },
+  en: { google: "Google Ads", meta: "Meta Ads", tiktok: "TikTok Ads" },
+};
+const statusColor: Record<string, string> = { active: "#00d4aa", paused: "#f5a623", draft: "#64748b" };
+const statusLabel: Record<string, Record<string, string>> = {
+  he: { active: "פעיל", paused: "מושהה", draft: "טיוטה" },
+  en: { active: "Active", paused: "Paused", draft: "Draft" },
+};
 
-const TABS = [
-  { label: "דשבורד", icon: "📊" },
-  { label: "קמפיינים", icon: "🚀" },
-  { label: "AI אופטימיזציה", icon: "🤖" },
-  { label: "קהלים", icon: "👥" },
-  { label: "מילות שליליות", icon: "🚫" },
-  { label: "הגדרות", icon: "⚙️" },
-];
+function getTabs(lang: "he" | "en") {
+  return lang === "he" ? [
+    { label: "דשבורד", icon: "📊" },
+    { label: "קמפיינים", icon: "🚀" },
+    { label: "AI אופטימיזציה", icon: "🤖" },
+    { label: "קהלים", icon: "👥" },
+    { label: "מילות שליליות", icon: "🚫" },
+    { label: "הגדרות", icon: "⚙️" },
+  ] : [
+    { label: "Dashboard", icon: "📊" },
+    { label: "Campaigns", icon: "🚀" },
+    { label: "AI Optimization", icon: "🤖" },
+    { label: "Audiences", icon: "👥" },
+    { label: "Negative Keywords", icon: "🚫" },
+    { label: "Settings", icon: "⚙️" },
+  ];
+}
 
-const AI_SUGGESTIONS = [
+const AI_SUGGESTIONS_HE = [
   { id: 1, platform: "google", impact: "+18% ROAS", message: "העלה תקציב לקמפיין המוביל ב-20% – ביקוש גבוה צפוי", priority: "high" },
   { id: 2, platform: "meta",   impact: "+12% CTR",  message: "הרחב קהל יעד ל-Lookalike 3%", priority: "medium" },
   { id: 3, platform: "tiktok", impact: "+25% CVR",  message: "החלף קריאייטיב ב-Retargeting – CTR ירד ב-40% בשבוע האחרון", priority: "high" },
   { id: 4, platform: "google", impact: "-8% CPA",   message: "עבור ל-Target CPA של 42 – AI זיהה דפוסי המרה חדשים", priority: "low" },
 ];
+const AI_SUGGESTIONS_EN = [
+  { id: 1, platform: "google", impact: "+18% ROAS", message: "Increase budget for top campaign by 20% – high demand expected", priority: "high" },
+  { id: 2, platform: "meta",   impact: "+12% CTR",  message: "Expand audience to Lookalike 3%", priority: "medium" },
+  { id: 3, platform: "tiktok", impact: "+25% CVR",  message: "Replace Retargeting creative – CTR dropped 40% this week", priority: "high" },
+  { id: 4, platform: "google", impact: "-8% CPA",   message: "Switch to Target CPA of 42 – AI detected new conversion patterns", priority: "low" },
+];
 
-const DATE_PRESETS = [
+const DATE_PRESETS_HE = [
   { label: "7 ימים", from: () => getDaysAgo(7) },
   { label: "14 ימים", from: () => getDaysAgo(14) },
   { label: "30 ימים", from: () => getDaysAgo(30) },
+];
+const DATE_PRESETS_EN = [
+  { label: "7 days", from: () => getDaysAgo(7) },
+  { label: "14 days", from: () => getDaysAgo(14) },
+  { label: "30 days", from: () => getDaysAgo(30) },
 ];
 
 // ── Integration definitions ────────────────────────────────────────────────
@@ -232,32 +258,32 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
       onClick={onClose}
     >
       <div
-        style={{ background: "#0d0f18", border: "1px solid #1e2235", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 24px 64px rgba(0,0,0,0.7)", position: "relative" }}
+        style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 24px 64px rgba(0,0,0,0.15)", position: "relative" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-          <div style={{ width: 50, height: 50, borderRadius: 14, background: "#181b2a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <div style={{ width: 50, height: 50, borderRadius: 14, background: "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <IntegrationIcon type={integration.iconType} size={26} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{integration.name}</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>{integration.detail}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}>{integration.name}</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>{integration.detail}</div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", fontSize: 18, lineHeight: 1, padding: 6 }}>✕</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#64748b", fontSize: 18, lineHeight: 1, padding: 6 }}>✕</button>
         </div>
 
         {/* Fields */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
           {integration.fields.map(f => (
             <div key={f.key}>
-              <label style={{ fontSize: 12, color: "#9ca3af", display: "block", marginBottom: 5 }}>
+              <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 5 }}>
                 {f.label}
-                {f.hint && <span style={{ color: "#4b5563", marginRight: 6 }}>— {f.hint}</span>}
+                {f.hint && <span style={{ color: "#94a3b8", marginRight: 6 }}>— {f.hint}</span>}
               </label>
               <div style={{ position: "relative" }}>
                 <input
@@ -266,12 +292,12 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
                   onChange={e => setValues(prev => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
                   dir="ltr"
-                  style={{ width: "100%", background: "#12141d", border: "1px solid #1e2235", borderRadius: 10, padding: "10px 14px", paddingLeft: f.secret ? 40 : 14, fontSize: 13, color: "#e8eaf6", outline: "none", fontFamily: "monospace" }}
+                  style={{ width: "100%", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "10px 14px", paddingLeft: f.secret ? 40 : 14, fontSize: 13, color: "#1e293b", outline: "none", fontFamily: "monospace" }}
                 />
                 {f.secret && (
                   <button
                     onClick={() => setShowSecrets(prev => ({ ...prev, [f.key]: !prev[f.key] }))}
-                    style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", color: "#6b7280", fontSize: 14, padding: 0 }}
+                    style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", background: "transparent", border: "none", cursor: "pointer", color: "#64748b", fontSize: 14, padding: 0 }}
                   >
                     {showSecrets[f.key] ? "🙈" : "👁️"}
                   </button>
@@ -283,8 +309,8 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
 
         {/* OAuth section */}
         {integration.oauthProvider && (
-          <div style={{ background: "#12141d", border: "1px solid #1e2235", borderRadius: 14, padding: 16, marginBottom: 20 }}>
-            <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>
+          <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 14, padding: 16, marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
               לאחר הזנת הפרטים, אשר את ההרשאות מול {integration.oauthLabel}
             </div>
             <button
@@ -307,7 +333,7 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
 
         {/* Actions */}
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={onClose} style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid #1e2235", background: "transparent", color: "#9ca3af", cursor: "pointer", fontSize: 13 }}>
+          <button onClick={onClose} style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid #e2e8f0", background: "transparent", color: "#64748b", cursor: "pointer", fontSize: 13 }}>
             ביטול
           </button>
           {!integration.oauthProvider && (
@@ -338,6 +364,12 @@ export default function DashboardPage() {
   const [animIn, setAnimIn] = useState(false);
   const [preset, setPreset] = useState(0);
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
+  const [lang, setLang] = useState<"he" | "en">("he");
+
+  const t = (he: string, en: string) => lang === "he" ? he : en;
+  const TABS = getTabs(lang);
+  const AI_SUGGESTIONS = lang === "he" ? AI_SUGGESTIONS_HE : AI_SUGGESTIONS_EN;
+  const DATE_PRESETS = lang === "he" ? DATE_PRESETS_HE : DATE_PRESETS_EN;
 
   // Negative keywords tab state
   const [negTerms, setNegTerms] = useState<any[]>([]);
@@ -421,22 +453,24 @@ export default function DashboardPage() {
     } as Campaign : c));
   };
 
+  const dir = lang === "he" ? "rtl" : "ltr";
+
   const s: Record<string, any> = {
-    root: { minHeight: "100vh", background: "#090b12", color: "#e8eaf6", fontFamily: "'Rubik','Heebo',sans-serif", direction: "rtl", display: "flex" },
-    sidebar: { width: 230, minHeight: "100vh", background: "#0c0e17", borderLeft: "1px solid #181b2a", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0 },
+    root: { minHeight: "100vh", background: "#f0f4f8", color: "#1e293b", fontFamily: "'Rubik','Heebo',sans-serif", direction: dir, display: "flex" },
+    sidebar: { width: 230, minHeight: "100vh", background: "#ffffff", borderLeft: lang === "he" ? "1px solid #e2e8f0" : "none", borderRight: lang === "en" ? "1px solid #e2e8f0" : "none", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, boxShadow: "0 0 20px rgba(0,0,0,0.06)" },
     main: { flex: 1, padding: "32px 36px", minWidth: 0, overflowY: "auto" },
     header: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 },
-    card: { background: "#0d0f18", border: "1px solid #181b2a", borderRadius: 16, padding: 22 },
+    card: { background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 22, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" },
     statsGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 },
     grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 },
     btn: (v: string) => ({
       padding: v === "sm" ? "5px 12px" : "9px 20px", borderRadius: 10, border: "none",
       cursor: "pointer", fontSize: v === "sm" ? 11 : 13, fontWeight: 600,
-      background: v === "primary" ? "linear-gradient(135deg,#7c74ff,#5e55e8)" : "#181b2a",
-      color: "#fff", transition: "opacity 0.2s",
+      background: v === "primary" ? "linear-gradient(135deg,#7c74ff,#5e55e8)" : "#f0f4f8",
+      color: v === "primary" ? "#fff" : "#475569", transition: "opacity 0.2s",
     }),
-    th: { fontSize: 11, color: "#6b7280", fontWeight: 500, textAlign: "right" as const, padding: "5px 12px 12px", borderBottom: "1px solid #181b2a" },
-    td: { padding: "12px", borderBottom: "1px solid #181b2a08", fontSize: 13, verticalAlign: "middle" as const },
+    th: { fontSize: 11, color: "#64748b", fontWeight: 500, textAlign: "right" as const, padding: "5px 12px 12px", borderBottom: "1px solid #e2e8f0" },
+    td: { padding: "12px", borderBottom: "1px solid #f1f5f9", fontSize: 13, verticalAlign: "middle" as const },
     badge: (st: string) => ({
       display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
       borderRadius: 20, fontSize: 11, fontWeight: 600,
@@ -450,34 +484,58 @@ export default function DashboardPage() {
   const isLive = data?.isLive ?? false;
   const lastUpdated = data?.lastUpdated ?? null;
   const apiErrors = data?.apiErrors ?? [];
+  const connectedPlatforms = ["google", "meta", "tiktok"].filter(p => {
+    const id = p === "google" ? "google_ads" : p;
+    return connections[id] && Object.keys(connections[id]).length > 0;
+  });
 
   return (
     <div style={s.root}>
       <div style={s.sidebar}>
-        <div style={{ padding: "0 20px 24px", borderBottom: "1px solid #181b2a", marginBottom: 12 }}>
+        <div style={{ padding: "0 20px 20px", borderBottom: "1px solid #e2e8f0", marginBottom: 12 }}>
           <div style={{ fontSize: 22, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             AdScale AI
           </div>
-          <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>פרסום חכם לאיקומרס</div>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
+            {t("פרסום חכם לאיקומרס", "Smart e-commerce ads")}
+          </div>
+          {/* Language switcher */}
+          <div style={{ display: "flex", gap: 4, marginTop: 12, background: "#f0f4f8", borderRadius: 8, padding: 3 }}>
+            {(["he", "en"] as const).map(l => (
+              <button key={l} onClick={() => setLang(l)} style={{
+                flex: 1, padding: "4px 0", borderRadius: 6, border: "none", cursor: "pointer",
+                fontSize: 12, fontWeight: 600,
+                background: lang === l ? "#ffffff" : "transparent",
+                color: lang === l ? "#7c74ff" : "#94a3b8",
+                boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                transition: "all 0.2s",
+              }}>
+                {l === "he" ? "עברית" : "English"}
+              </button>
+            ))}
+          </div>
         </div>
-        {TABS.map((t, i) => (
+        {TABS.map((tab, i) => (
           <div key={i} onClick={() => setActiveTab(i)} style={{
             padding: "11px 20px", cursor: "pointer", fontSize: 14,
             fontWeight: activeTab === i ? 600 : 400,
-            color: activeTab === i ? "#e8eaf6" : "#6b7280",
+            color: activeTab === i ? "#1e293b" : "#94a3b8",
             background: activeTab === i ? "#7c74ff14" : "transparent",
-            borderRight: activeTab === i ? "3px solid #7c74ff" : "3px solid transparent",
+            borderRight: lang === "he" && activeTab === i ? "3px solid #7c74ff" : lang === "he" ? "3px solid transparent" : "none",
+            borderLeft: lang === "en" && activeTab === i ? "3px solid #7c74ff" : lang === "en" ? "3px solid transparent" : "none",
             display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s",
           }}>
-            <span>{t.icon}</span><span>{t.label}</span>
+            <span>{tab.icon}</span><span>{tab.label}</span>
           </div>
         ))}
-        <div style={{ margin: "auto 16px 16px", background: isLive ? "#00d4aa12" : "#7c74ff12", border: `1px solid ${isLive ? "#00d4aa33" : "#7c74ff33"}`, borderRadius: 12, padding: "12px 14px" }}>
+        <div style={{ margin: "auto 16px 16px", background: isLive ? "#00d4aa10" : "#7c74ff10", border: `1px solid ${isLive ? "#00d4aa33" : "#7c74ff33"}`, borderRadius: 12, padding: "12px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: isLive ? "#00d4aa" : "#7c74ff", marginBottom: 3 }}>
-            {isLive ? "נתונים חיים" : "מצב דמו"}
+            {isLive ? t("נתונים חיים", "Live Data") : t("מצב דמו", "Demo Mode")}
           </div>
-          <div style={{ fontSize: 10, color: "#6b7280" }}>
-            {isLive && lastUpdated ? `עודכן: ${new Date(lastUpdated).toLocaleTimeString("he-IL")}` : "חבר API Keys לנתונים אמיתיים"}
+          <div style={{ fontSize: 10, color: "#94a3b8" }}>
+            {isLive && lastUpdated
+              ? `${t("עודכן", "Updated")}: ${new Date(lastUpdated).toLocaleTimeString(lang === "he" ? "he-IL" : "en-US")}`
+              : t("חבר API Keys לנתונים אמיתיים", "Connect API Keys for live data")}
           </div>
         </div>
       </div>
@@ -485,7 +543,7 @@ export default function DashboardPage() {
       <div style={s.main}>
         {apiErrors.length > 0 && isLive && (
           <div style={{ background: "#f5a62312", border: "1px solid #f5a62333", borderRadius: 12, padding: "12px 18px", marginBottom: 16, fontSize: 13 }}>
-            חלק מהפלטפורמות לא נטענו
+            {t("חלק מהפלטפורמות לא נטענו", "Some platforms failed to load")}
           </div>
         )}
 
@@ -493,54 +551,110 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>דשבורד ראשי</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {loading ? "טוען נתונים..." : isLive ? "נתונים חיים" : "מצב דמו"}
+                <div style={{ fontSize: 26, fontWeight: 700 }}>{t("דשבורד ראשי", "Main Dashboard")}</div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
+                  {loading ? t("טוען נתונים...", "Loading...") : isLive ? t("נתונים חיים", "Live data") : t("מצב דמו", "Demo mode")}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <div style={{ display: "flex", background: "#181b2a", borderRadius: 10, padding: 3, gap: 2 }}>
+                <div style={{ display: "flex", background: "#f0f4f8", borderRadius: 10, padding: 3, gap: 2 }}>
                   {DATE_PRESETS.map((p, i) => (
                     <button key={i} onClick={() => setPreset(i)} style={{
                       padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer",
                       fontSize: 12, fontWeight: 600,
                       background: preset === i ? "#7c74ff" : "transparent",
-                      color: preset === i ? "#fff" : "#6b7280",
+                      color: preset === i ? "#fff" : "#64748b",
                     }}>{p.label}</button>
                   ))}
                 </div>
                 <button style={s.btn("default")} onClick={refetch}>↻</button>
-                <button style={s.btn("primary")} onClick={() => setActiveTab(1)}>+ קמפיין חדש</button>
+                <button style={s.btn("primary")} onClick={() => setActiveTab(1)}>+ {t("קמפיין חדש", "New Campaign")}</button>
               </div>
             </div>
 
+            {/* Stats row */}
             <div style={s.statsGrid}>
               {[
-                { label: "הוצאה כוללת", val: summary.totalSpent, prefix: "₪", data: timeSeries.map(d => d.spent) },
-                { label: "הכנסה", val: summary.totalRevenue, prefix: "₪", data: timeSeries.map(d => d.revenue) },
-                { label: "ROAS ממוצע", val: summary.avgRoas, suffix: "x", data: timeSeries.map(d => d.roas) },
-                { label: "המרות", val: summary.totalConversions, data: timeSeries.map(d => d.conversions) },
+                { label: t("הוצאה כוללת", "Total Spend"), val: summary.totalSpent, prefix: "₪", data: timeSeries.map(d => d.spent) },
+                { label: t("הכנסה", "Revenue"), val: summary.totalRevenue, prefix: "₪", data: timeSeries.map(d => d.revenue) },
+                { label: t("ROAS ממוצע", "Avg ROAS"), val: summary.avgRoas, suffix: "x", data: timeSeries.map(d => d.roas) },
+                { label: t("המרות", "Conversions"), val: summary.totalConversions, data: timeSeries.map(d => d.conversions) },
               ].map((m, i) => (
                 <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(18px)", transition: `all 0.45s ease ${i * 0.08}s` }}>
-                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>{m.label}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>{m.label}</div>
                   {loading ? <Skeleton h={32} r={6} /> :
-                    <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-1px" }}>
-                      {m.prefix}{typeof m.val === "number" ? (m.label === "ROAS ממוצע" ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()) : m.val}{m.suffix}
+                    <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-1px", color: "#1e293b" }}>
+                      {m.prefix}{typeof m.val === "number" ? (m.label.includes("ROAS") || m.label.includes("Avg") ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()) : m.val}{m.suffix}
                     </div>
                   }
                   <div style={{ marginTop: 10 }}>
-                    {loading ? <Skeleton h={40} /> : <MiniChart data={m.data} color="#00d4aa" />}
+                    {loading ? <Skeleton h={40} /> : <MiniChart data={m.data} color="#7c74ff" />}
                   </div>
                 </div>
               ))}
             </div>
 
+            {/* Reports row */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: "#1e293b" }}>
+                {t("דוחות לפי פלטפורמה", "Reports by Platform")}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+                {(["google", "meta", "tiktok"] as const).map(p => {
+                  const ps = byPlatform.find((x: { platform: string }) => x.platform === p);
+                  const connId = p === "google" ? "google_ads" : p;
+                  const isConn = connections[connId] && Object.keys(connections[connId]).length > 0;
+                  return (
+                    <div key={p} style={{ ...s.card, borderTop: `3px solid ${platformColors[p]}`, opacity: animIn ? 1 : 0, transition: `all 0.4s ease ${["google","meta","tiktok"].indexOf(p) * 0.1}s` }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <PlatformIcon platform={p} size={20} />
+                          <span style={{ fontSize: 14, fontWeight: 700 }}>{platformLabels[lang][p]}</span>
+                        </div>
+                        {isConn
+                          ? <span style={{ fontSize: 10, fontWeight: 700, color: "#00d4aa", background: "#00d4aa15", padding: "2px 8px", borderRadius: 10 }}>● {t("מחובר", "Connected")}</span>
+                          : <span style={{ fontSize: 10, color: "#94a3b8", cursor: "pointer", textDecoration: "underline" }} onClick={() => setActiveTab(5)}>{t("חבר", "Connect")}</span>
+                        }
+                      </div>
+                      {loading ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <Skeleton h={16} /><Skeleton h={16} w="70%" />
+                        </div>
+                      ) : (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                          {([
+                            [t("הוצאה", "Spend"), `₪${Math.round(ps?.spent ?? 0).toLocaleString()}`],
+                            ["ROAS", `${(ps?.roas ?? 0).toFixed(1)}x`],
+                            [t("קליקים", "Clicks"), `${(ps?.clicks ?? 0).toLocaleString()}`],
+                            [t("המרות", "Conversions"), `${ps?.conversions ?? 0}`],
+                          ] as [string, string][]).map(([lbl, val]) => (
+                            <div key={lbl} style={{ background: "#f8fafc", borderRadius: 8, padding: "8px 10px" }}>
+                              <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 3 }}>{lbl}</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{val}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                          {t("תקופה", "Period")}: {DATE_PRESETS[preset].label}
+                        </span>
+                        <button style={{ ...s.btn("sm"), fontSize: 10 }} onClick={() => setActiveTab(1)}>
+                          {t("פרטים", "Details")} →
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div style={s.grid2}>
               <div style={s.card}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>הוצאה vs. הכנסה</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>{t("הוצאה vs. הכנסה", "Spend vs. Revenue")}</div>
                 <div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
-                  {[["#00d4aa","הכנסה"],["#7c74ff","הוצאה"]].map(([c,l]) => (
-                    <div key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#6b7280" }}>
+                  {[["#00d4aa", t("הכנסה","Revenue")],["#7c74ff", t("הוצאה","Spend")]].map(([c,l]) => (
+                    <div key={l} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}>
                       <div style={{ width: 10, height: 10, borderRadius: 2, background: c }} />{l}
                     </div>
                   ))}
@@ -548,30 +662,30 @@ export default function DashboardPage() {
                 {loading ? <Skeleton h={110} /> : <BarChart data={timeSeries} />}
               </div>
               <div style={s.card}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>המלצות AI דחופות</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>{t("המלצות AI דחופות", "Urgent AI Recommendations")}</div>
                 {AI_SUGGESTIONS.filter(sg => sg.priority === "high").map(sg => (
-                  <div key={sg.id} style={{ background: "#12141a", borderRadius: 12, padding: "12px 14px", marginBottom: 10, border: "1px solid #7c74ff22", display: "flex", gap: 10 }}>
+                  <div key={sg.id} style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", marginBottom: 10, border: "1px solid #7c74ff22", display: "flex", gap: 10 }}>
                     <PlatformIcon platform={sg.platform} size={20} />
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, lineHeight: 1.5 }}>{sg.message}</div>
-                      <div style={{ fontSize: 11, color: "#00d4aa", fontWeight: 700, marginTop: 3 }}>צפי: {sg.impact}</div>
+                      <div style={{ fontSize: 12, lineHeight: 1.5, color: "#475569" }}>{sg.message}</div>
+                      <div style={{ fontSize: 11, color: "#00d4aa", fontWeight: 700, marginTop: 3 }}>{t("צפי","Est.")}: {sg.impact}</div>
                     </div>
-                    <button style={s.btn("sm")} onClick={() => { setAppliedSuggestions(p => [...p, sg.id]); setActiveTab(2); }}>יישם</button>
+                    <button style={s.btn("sm")} onClick={() => { setAppliedSuggestions(p => [...p, sg.id]); setActiveTab(2); }}>{t("יישם","Apply")}</button>
                   </div>
                 ))}
               </div>
             </div>
 
             <div style={s.card}>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>ביצועים לפי פלטפורמה</div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 16 }}>{t("ביצועים לפי פלטפורמה", "Performance by Platform")}</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
                 {(["google","meta","tiktok"] as const).map(p => {
                   const ps = byPlatform.find((x: { platform: string }) => x.platform === p);
                   return (
-                    <div key={p} style={{ background: "#12141a", borderRadius: 14, padding: "18px 20px", border: `1px solid ${platformColors[p]}22` }}>
+                    <div key={p} style={{ background: "#f8fafc", borderRadius: 14, padding: "18px 20px", border: `1px solid ${platformColors[p]}22` }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
                         <PlatformIcon platform={p} size={22} />
-                        <span style={{ fontSize: 14, fontWeight: 600 }}>{platformLabels[p]}</span>
+                        <span style={{ fontSize: 14, fontWeight: 600 }}>{platformLabels[lang][p]}</span>
                       </div>
                       {loading ? (
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -580,14 +694,14 @@ export default function DashboardPage() {
                       ) : (
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                           {([
-                            ["הוצאה", `${Math.round(ps?.spent ?? 0).toLocaleString()}`],
+                            [t("הוצאה","Spend"), `₪${Math.round(ps?.spent ?? 0).toLocaleString()}`],
                             ["ROAS", `${(ps?.roas ?? 0).toFixed(1)}x`],
-                            ["קליקים", `${(ps?.clicks ?? 0).toLocaleString()}`],
-                            ["המרות", `${ps?.conversions ?? 0}`],
+                            [t("קליקים","Clicks"), `${(ps?.clicks ?? 0).toLocaleString()}`],
+                            [t("המרות","Conv."), `${ps?.conversions ?? 0}`],
                           ] as [string, string][]).map(([l2, v2]) => (
                             <div key={l2}>
-                              <div style={{ fontSize: 10, color: "#6b7280" }}>{l2}</div>
-                              <div style={{ fontSize: 16, fontWeight: 700 }}>{v2}</div>
+                              <div style={{ fontSize: 10, color: "#94a3b8" }}>{l2}</div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>{v2}</div>
                             </div>
                           ))}
                         </div>
@@ -604,12 +718,12 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>קמפיינים</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {localCampaigns.length} קמפיינים
+                <div style={{ fontSize: 26, fontWeight: 700 }}>{t("קמפיינים", "Campaigns")}</div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
+                  {localCampaigns.length} {t("קמפיינים", "campaigns")}
                 </div>
               </div>
-              <button style={s.btn("primary")}>+ קמפיין חדש</button>
+              <button style={s.btn("primary")}>+ {t("קמפיין חדש", "New Campaign")}</button>
             </div>
             <div style={s.card}>
               {loading ? (
@@ -619,7 +733,7 @@ export default function DashboardPage() {
               ) : (
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr>{["שם קמפיין","פלטפורמה","סטטוס","תקציב","הוצאה","ROAS","המרות","פעולות"].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
+                    <tr>{[t("שם קמפיין","Campaign"),t("פלטפורמה","Platform"),t("סטטוס","Status"),t("תקציב","Budget"),t("הוצאה","Spend"),"ROAS",t("המרות","Conv."),t("פעולות","Actions")].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {localCampaigns.map((c, i) => (
@@ -628,13 +742,13 @@ export default function DashboardPage() {
                         <td style={s.td}>
                           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <PlatformIcon platform={c.platform} size={16} />
-                            <span style={{ fontSize: 12, color: "#6b7280" }}>{platformLabels[c.platform]}</span>
+                            <span style={{ fontSize: 12, color: "#64748b" }}>{platformLabels[lang][c.platform]}</span>
                           </div>
                         </td>
                         <td style={s.td}>
                           <span style={s.badge(c.status)}>
                             <span style={{ width: 5, height: 5, borderRadius: "50%", background: statusColor[c.status], display: "inline-block" }} />
-                            {statusLabel[c.status]}
+                            {statusLabel[lang][c.status]}
                           </span>
                         </td>
                         <td style={s.td}>{c.budget.toLocaleString()}</td>
@@ -647,10 +761,10 @@ export default function DashboardPage() {
                         <td style={s.td}>{c.conversions || "—"}</td>
                         <td style={s.td}>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <button style={s.btn("sm")}>ערוך</button>
+                            <button style={s.btn("sm")}>{t("ערוך","Edit")}</button>
                             {c.status !== "draft" && (
                               <button style={{ ...s.btn("sm"), color: c.status === "active" ? "#f5a623" : "#00d4aa" }} onClick={() => toggleCampaign(c.id)}>
-                                {c.status === "active" ? "השהה" : "הפעל"}
+                                {c.status === "active" ? t("השהה","Pause") : t("הפעל","Activate")}
                               </button>
                             )}
                           </div>
@@ -668,27 +782,27 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>AI אופטימיזציה</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} המלצות</div>
+                <div style={{ fontSize: 26, fontWeight: 700 }}>{t("AI אופטימיזציה", "AI Optimization")}</div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} {t("המלצות","recommendations")}</div>
               </div>
             </div>
             {AI_SUGGESTIONS.map(sg => {
               const applied = appliedSuggestions.includes(sg.id);
               return (
-                <div key={sg.id} style={{ background: applied ? "#00d4aa08" : "#0d0f18", border: `1px solid ${applied ? "#00d4aa44" : "#181b2a"}`, borderRadius: 14, padding: "16px 20px", marginBottom: 12, display: "flex", alignItems: "flex-start", gap: 14 }}>
+                <div key={sg.id} style={{ background: applied ? "#00d4aa08" : "#ffffff", border: `1px solid ${applied ? "#00d4aa44" : "#e2e8f0"}`, borderRadius: 14, padding: "16px 20px", marginBottom: 12, display: "flex", alignItems: "flex-start", gap: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
                   <div style={{ width: 42, height: 42, borderRadius: 10, background: platformColors[sg.platform] + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <PlatformIcon platform={sg.platform} size={24} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontWeight: 600 }}>{platformLabels[sg.platform]}</span>
+                      <span style={{ fontWeight: 600 }}>{platformLabels[lang][sg.platform]}</span>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 20, background: "#7c74ff22", color: "#7c74ff" }}>{sg.impact}</span>
                     </div>
-                    <div style={{ fontSize: 13, color: "#b0b8d0", lineHeight: 1.6 }}>{sg.message}</div>
+                    <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.6 }}>{sg.message}</div>
                   </div>
                   <div style={{ flexShrink: 0 }}>
-                    {applied ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>יושם</div> :
-                      <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>יישם</button>
+                    {applied ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>{t("יושם","Applied")}</div> :
+                      <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>{t("יישם","Apply")}</button>
                     }
                   </div>
                 </div>
@@ -700,17 +814,17 @@ export default function DashboardPage() {
         {activeTab === 3 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>קהלים</div></div>
-              <button style={s.btn("primary")}>+ קהל חדש</button>
+              <div><div style={{ fontSize: 26, fontWeight: 700 }}>{t("קהלים","Audiences")}</div></div>
+              <button style={s.btn("primary")}>+ {t("קהל חדש","New Audience")}</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
               {[
-                { name: "רוכשים אחרונים 30 יום", size: "1,248", platforms: ["google","meta"], c: "#7c74ff", icon: "🛒" },
-                { name: "עזבו עגלה", size: "3,401", platforms: ["meta","tiktok"], c: "#f5a623", icon: "🛍️" },
-                { name: "Lookalike רוכשים 3%", size: "82,000", platforms: ["meta"], c: "#00d4aa", icon: "🎯" },
-                { name: "צפו במוצר 3+ פעמים", size: "2,190", platforms: ["google","meta","tiktok"], c: "#ff6b6b", icon: "👁️" },
-                { name: "לקוחות VIP", size: "340", platforms: ["meta"], c: "#f5a623", icon: "⭐" },
-                { name: "כל המבקרים", size: "24,700", platforms: ["google","meta"], c: "#7c74ff", icon: "🌐" },
+                { name: t("רוכשים אחרונים 30 יום","Buyers last 30 days"), size: "1,248", platforms: ["google","meta"], c: "#7c74ff", icon: "🛒" },
+                { name: t("עזבו עגלה","Cart Abandoners"), size: "3,401", platforms: ["meta","tiktok"], c: "#f5a623", icon: "🛍️" },
+                { name: t("Lookalike רוכשים 3%","Lookalike Buyers 3%"), size: "82,000", platforms: ["meta"], c: "#00d4aa", icon: "🎯" },
+                { name: t("צפו במוצר 3+ פעמים","Viewed product 3+ times"), size: "2,190", platforms: ["google","meta","tiktok"], c: "#ff6b6b", icon: "👁️" },
+                { name: t("לקוחות VIP","VIP Customers"), size: "340", platforms: ["meta"], c: "#f5a623", icon: "⭐" },
+                { name: t("כל המבקרים","All Visitors"), size: "24,700", platforms: ["google","meta"], c: "#7c74ff", icon: "🌐" },
               ].map((a, i) => (
                 <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(20px)", transition: `all 0.4s ease ${i * 0.08}s`, cursor: "pointer" }}>
                   <div style={{ fontSize: 28, marginBottom: 12 }}>{a.icon}</div>
@@ -727,40 +841,40 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>מילות מפתח שליליות</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {negLoading ? "טוען..." : `${negTerms.length} מילים מוצעות`}
-                  {negExistingList && <span style={{ marginRight: 10, color: "#00d4aa" }}>✓ רשימה קיימת: {negExistingList.name}</span>}
+                <div style={{ fontSize: 26, fontWeight: 700 }}>{t("מילות מפתח שליליות","Negative Keywords")}</div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
+                  {negLoading ? t("טוען...","Loading...") : `${negTerms.length} ${t("מילים מוצעות","suggested terms")}`}
+                  {negExistingList && <span style={{ marginRight: 10, color: "#00d4aa" }}>✓ {t("רשימה קיימת","Existing list")}: {negExistingList.name}</span>}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 <select
                   value={negMatchType}
                   onChange={e => setNegMatchType(e.target.value as "BROAD" | "PHRASE" | "EXACT")}
-                  style={{ background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "7px 12px", fontSize: 13, cursor: "pointer" }}
+                  style={{ background: "#f0f4f8", color: "#1e293b", border: "1px solid #e2e8f0", borderRadius: 8, padding: "7px 12px", fontSize: 13, cursor: "pointer" }}
                 >
-                  <option value="BROAD">התאמה רחבה</option>
-                  <option value="PHRASE">התאמת ביטוי</option>
-                  <option value="EXACT">התאמה מדויקת</option>
+                  <option value="BROAD">{t("התאמה רחבה","Broad Match")}</option>
+                  <option value="PHRASE">{t("התאמת ביטוי","Phrase Match")}</option>
+                  <option value="EXACT">{t("התאמה מדויקת","Exact Match")}</option>
                 </select>
                 <button style={s.btn("sm")} onClick={loadNegTerms} disabled={negLoading}>
-                  {negLoading ? "טוען..." : "רענן"}
+                  {negLoading ? t("טוען...","Loading...") : t("רענן","Refresh")}
                 </button>
                 <button
                   style={{ ...s.btn("primary"), opacity: negSelected.size === 0 || negApplying ? 0.5 : 1 }}
                   onClick={applyNegKeywords}
                   disabled={negSelected.size === 0 || negApplying}
                 >
-                  {negApplying ? "מוסיף..." : `הוסף לגוגל אדס (${negSelected.size})`}
+                  {negApplying ? t("מוסיף...","Adding...") : `${t("הוסף לגוגל אדס","Add to Google Ads")} (${negSelected.size})`}
                 </button>
               </div>
             </div>
 
             {negResult && (
               <div style={{ background: "#00d4aa12", border: "1px solid #00d4aa44", borderRadius: 12, padding: "14px 20px", marginBottom: 16, fontSize: 13 }}>
-                <span style={{ color: "#00d4aa", fontWeight: 700 }}>נוסף בהצלחה!</span>
-                {" "}{negResult.added} מילים נוספו לרשימה "{negResult.listName}"
-                {negResult.campaignsLinked > 0 && ` • הרשימה קושרה ל-${negResult.campaignsLinked} קמפיינים`}
+                <span style={{ color: "#00d4aa", fontWeight: 700 }}>{t("נוסף בהצלחה!","Added successfully!")}</span>
+                {" "}{negResult.added} {t("מילים נוספו לרשימה","terms added to list")} "{negResult.listName}"
+                {negResult.campaignsLinked > 0 && ` • ${t("הרשימה קושרה ל","List linked to")}-${negResult.campaignsLinked} ${t("קמפיינים","campaigns")}`}
               </div>
             )}
 
@@ -776,8 +890,10 @@ export default function DashboardPage() {
                   {[1,2,3,4,5].map(i => <Skeleton key={i} h={36} />)}
                 </div>
               ) : negTerms.length === 0 ? (
-                <div style={{ textAlign: "center", color: "#6b7280", padding: "40px 0" }}>
-                  {negApiErrors.length > 0 ? "שגיאה בטעינת הנתונים — בדוק חיבור Google Ads" : "לא נמצאו מילות מפתח מוצעות לתקופה זו"}
+                <div style={{ textAlign: "center", color: "#64748b", padding: "40px 0" }}>
+                  {negApiErrors.length > 0
+                    ? t("שגיאה בטעינת הנתונים — בדוק חיבור Google Ads","Error loading data — check Google Ads connection")
+                    : t("לא נמצאו מילות מפתח מוצעות לתקופה זו","No suggested keywords for this period")}
                 </div>
               ) : (
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -786,35 +902,35 @@ export default function DashboardPage() {
                       <th style={{ ...s.th, width: 32 }}>
                         <input type="checkbox" checked={negSelected.size === negTerms.length && negTerms.length > 0} onChange={selectAllNeg} style={{ cursor: "pointer" }} />
                       </th>
-                      <th style={s.th}>מילת חיפוש</th>
-                      <th style={s.th}>מקור</th>
-                      <th style={s.th}>סיבה</th>
-                      <th style={{ ...s.th, textAlign: "left" as const }}>חשיפות</th>
-                      <th style={{ ...s.th, textAlign: "left" as const }}>קליקים</th>
-                      <th style={{ ...s.th, textAlign: "left" as const }}>עלות ₪</th>
+                      <th style={s.th}>{t("מילת חיפוש","Search Term")}</th>
+                      <th style={s.th}>{t("מקור","Source")}</th>
+                      <th style={s.th}>{t("סיבה","Reason")}</th>
+                      <th style={{ ...s.th, textAlign: "left" as const }}>{t("חשיפות","Impressions")}</th>
+                      <th style={{ ...s.th, textAlign: "left" as const }}>{t("קליקים","Clicks")}</th>
+                      <th style={{ ...s.th, textAlign: "left" as const }}>{t("עלות","Cost")} ₪</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {negTerms.map((t, i) => {
-                      const selected = negSelected.has(t.term);
+                    {negTerms.map((term, i) => {
+                      const selected = negSelected.has(term.term);
                       return (
-                        <tr key={i} onClick={() => toggleNegTerm(t.term)} style={{ cursor: "pointer", background: selected ? "#7c74ff08" : "transparent" }}>
+                        <tr key={i} onClick={() => toggleNegTerm(term.term)} style={{ cursor: "pointer", background: selected ? "#7c74ff08" : "transparent" }}>
                           <td style={s.td}>
-                            <input type="checkbox" checked={selected} onChange={() => toggleNegTerm(t.term)} onClick={e => e.stopPropagation()} style={{ cursor: "pointer" }} />
+                            <input type="checkbox" checked={selected} onChange={() => toggleNegTerm(term.term)} onClick={e => e.stopPropagation()} style={{ cursor: "pointer" }} />
                           </td>
-                          <td style={{ ...s.td, fontFamily: "monospace", fontSize: 12, color: "#e8eaf6" }}>{t.term}</td>
+                          <td style={{ ...s.td, fontFamily: "monospace", fontSize: 12, color: "#1e293b" }}>{term.term}</td>
                           <td style={s.td}>
                             <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 10, fontWeight: 600,
-                              background: t.source === "google_ads" ? "#4285F422" : "#34A85322",
-                              color: t.source === "google_ads" ? "#4285F4" : "#34A853" }}>
-                              {t.source === "google_ads" ? "Google Ads" : "Search Console"}
+                              background: term.source === "google_ads" ? "#4285F422" : "#34A85322",
+                              color: term.source === "google_ads" ? "#4285F4" : "#34A853" }}>
+                              {term.source === "google_ads" ? "Google Ads" : "Search Console"}
                             </span>
                           </td>
-                          <td style={{ ...s.td, fontSize: 12, color: "#b0b8d0" }}>{t.reason}</td>
-                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12 }}>{t.impressions.toLocaleString()}</td>
-                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12 }}>{t.clicks.toLocaleString()}</td>
-                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12, color: t.cost > 0 ? "#ff6b6b" : "#6b7280" }}>
-                            {t.cost > 0 ? `₪${t.cost.toFixed(2)}` : "—"}
+                          <td style={{ ...s.td, fontSize: 12, color: "#475569" }}>{term.reason}</td>
+                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12 }}>{term.impressions.toLocaleString()}</td>
+                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12 }}>{term.clicks.toLocaleString()}</td>
+                          <td style={{ ...s.td, textAlign: "left" as const, fontSize: 12, color: term.cost > 0 ? "#ef4444" : "#94a3b8" }}>
+                            {term.cost > 0 ? `₪${term.cost.toFixed(2)}` : "—"}
                           </td>
                         </tr>
                       );
@@ -830,9 +946,9 @@ export default function DashboardPage() {
           <>
             <div style={s.header}>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 700 }}>חיבורים</div>
-                <div style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
-                  {Object.keys(connections).filter(k => Object.keys(connections[k]).length > 0).length} פלטפורמות מחוברות
+                <div style={{ fontSize: 26, fontWeight: 700 }}>{t("חיבורים","Connections")}</div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
+                  {Object.keys(connections).filter(k => Object.keys(connections[k]).length > 0).length} {t("פלטפורמות מחוברות","platforms connected")}
                 </div>
               </div>
             </div>
@@ -845,30 +961,30 @@ export default function DashboardPage() {
                     ...s.card,
                     display: "flex", alignItems: "center", gap: 16,
                     opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s`,
-                    border: isConnected ? "1px solid #00d4aa33" : "1px solid #181b2a",
+                    border: isConnected ? "1px solid #00d4aa44" : "1px solid #e2e8f0",
                   }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 14, background: "#181b2a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: "#f0f4f8", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <IntegrationIcon type={intg.iconType} size={26} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 15, fontWeight: 700 }}>{intg.name}</div>
-                      <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{intg.detail}</div>
-                      <div style={{ fontSize: 10, fontFamily: "monospace", color: "#4b5563", marginTop: 5, background: "#181b2a", padding: "2px 7px", borderRadius: 4, display: "inline-block" }}>{intg.envKey}</div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{intg.detail}</div>
+                      <div style={{ fontSize: 10, fontFamily: "monospace", color: "#94a3b8", marginTop: 5, background: "#f0f4f8", padding: "2px 7px", borderRadius: 4, display: "inline-block" }}>{intg.envKey}</div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
                       {isConnected && (
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "#00d4aa", background: "#00d4aa15", padding: "2px 9px", borderRadius: 10 }}>● מחובר</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#00d4aa", background: "#00d4aa15", padding: "2px 9px", borderRadius: 10 }}>● {t("מחובר","Connected")}</div>
                       )}
                       <button
                         onClick={() => setOpenModal(intg.id)}
                         style={{
                           padding: "6px 16px", borderRadius: 10, border: "none", cursor: "pointer",
                           fontSize: 12, fontWeight: 600,
-                          background: isConnected ? "#181b2a" : "linear-gradient(135deg,#7c74ff,#5e55e8)",
-                          color: isConnected ? "#9ca3af" : "#fff",
+                          background: isConnected ? "#f0f4f8" : "linear-gradient(135deg,#7c74ff,#5e55e8)",
+                          color: isConnected ? "#64748b" : "#fff",
                         }}
                       >
-                        {isConnected ? "ערוך" : "הגדר"}
+                        {isConnected ? t("ערוך","Edit") : t("הגדר","Setup")}
                       </button>
                     </div>
                   </div>
@@ -895,9 +1011,9 @@ export default function DashboardPage() {
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
         button:hover { opacity: 0.82; }
-        tr:hover td { background: #ffffff03; }
+        tr:hover td { background: #f8fafc; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1a1d2e; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
       `}</style>
     </div>
