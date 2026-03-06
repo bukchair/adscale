@@ -491,6 +491,7 @@ function AdCreatorTab({ s, t, lang, connections, isMobile }: {
     }
   }
 
+  const wooKey = JSON.stringify(connections.woocommerce ?? {});
   useEffect(() => {
     fetch("/api/woocommerce/products", {
       headers: { "x-connections": JSON.stringify(connections) },
@@ -501,7 +502,8 @@ function AdCreatorTab({ s, t, lang, connections, isMobile }: {
         setProductsDemo(d.isDemo);
         if (d.products?.length) setSelectedProduct(d.products[0]);
       });
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wooKey]);
 
   async function generateText() {
     if (!selectedProduct) return;
@@ -969,10 +971,33 @@ export default function DashboardPage() {
     if (typeof window === "undefined") return {};
     try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
   });
+
+  // On mount: load server-side connections (shared across devices) and merge with localStorage
+  useEffect(() => {
+    fetch("/api/connections")
+      .then(r => r.json())
+      .then((serverConns: Record<string, Record<string, string>>) => {
+        if (serverConns && Object.keys(serverConns).length > 0) {
+          setConnections(prev => {
+            const merged = { ...serverConns, ...prev };
+            localStorage.setItem("adscale_connections", JSON.stringify(merged));
+            return merged;
+          });
+        }
+      })
+      .catch(() => {}); // silently ignore if server file doesn't exist yet
+  }, []);
+
   function saveConnection(id: string, values: Record<string, string>) {
     const next = { ...connections, [id]: values };
     setConnections(next);
     if (typeof window !== "undefined") localStorage.setItem("adscale_connections", JSON.stringify(next));
+    // Persist to server so other devices (mobile/desktop) share the same connections
+    fetch("/api/connections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(next),
+    }).catch(() => {});
   }
 
   const range = { from: DATE_PRESETS[preset].from(), to: getToday() };
