@@ -972,20 +972,36 @@ export default function DashboardPage() {
     try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
   });
 
-  // On mount: load server-side connections (shared across devices) and merge with localStorage
+  // On mount: sync connections between server and localStorage
+  // - Desktop with data  → pushes localStorage to server (migration / update)
+  // - Mobile (no LS)     → pulls from server (picks up desktop's connections)
+  // - Both have data     → server wins (most up-to-date cross-device source)
   useEffect(() => {
+    const localConns = (() => {
+      try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
+    })();
+    const hasLocal = Object.keys(localConns).length > 0;
+
     fetch("/api/connections")
       .then(r => r.json())
       .then((serverConns: Record<string, Record<string, string>>) => {
-        if (serverConns && Object.keys(serverConns).length > 0) {
-          setConnections(prev => {
-            const merged = { ...serverConns, ...prev };
-            localStorage.setItem("adscale_connections", JSON.stringify(merged));
-            return merged;
-          });
+        const hasServer = serverConns && Object.keys(serverConns).length > 0;
+
+        if (hasServer) {
+          // Server is the source of truth — use it (mobile gets desktop data)
+          setConnections(serverConns);
+          localStorage.setItem("adscale_connections", JSON.stringify(serverConns));
+        } else if (hasLocal) {
+          // Server is empty but we have local data → push to server (first-time migration)
+          fetch("/api/connections", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(localConns),
+          }).catch(() => {});
+          // connections state already set from localStorage (useState initializer)
         }
       })
-      .catch(() => {}); // silently ignore if server file doesn't exist yet
+      .catch(() => {});
   }, []);
 
   function saveConnection(id: string, values: Record<string, string>) {
@@ -1624,6 +1640,26 @@ export default function DashboardPage() {
                   </div>
                 );
               })}
+            </div>
+
+            {/* ── Partner view link ── */}
+            <div style={{ ...s.card, marginTop: 14, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" as const }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#7c74ff18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>👁</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>{t("שתף עם שותף — צפייה בלבד", "Share with Partner — View Only")}</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>{t("הלינק מאפשר צפייה בנתונים ללא אפשרות עריכה", "This link allows viewing data without any editing capabilities")}</div>
+                <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" as const }}>
+                  <code style={{ fontSize: 12, background: "#f0f4f8", padding: "4px 10px", borderRadius: 6, color: "#475569", direction: "ltr", wordBreak: "break-all" as const }}>
+                    {typeof window !== "undefined" ? window.location.origin + "/view" : "/view"}
+                  </code>
+                  <button onClick={() => { if (typeof window !== "undefined") navigator.clipboard?.writeText(window.location.origin + "/view"); }} style={{ padding: "5px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: "#7c74ff", color: "#fff" }}>
+                    {t("העתק לינק", "Copy Link")}
+                  </button>
+                  <a href="/view" target="_blank" rel="noreferrer" style={{ padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: "#f0f4f8", color: "#475569", textDecoration: "none" }}>
+                    {t("פתח", "Open")} ↗
+                  </a>
+                </div>
+              </div>
             </div>
 
             {openModal && (() => {
