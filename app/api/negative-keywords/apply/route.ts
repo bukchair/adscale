@@ -1,19 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-async function getGoogleAdsToken() {
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN!,
-      grant_type: "refresh_token",
-    }),
-  });
-  const data = await res.json();
-  return data.access_token as string;
-}
+import { getGoogleAdsToken, MANAGER_ID } from "@/app/lib/google-ads";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -37,11 +23,10 @@ export async function POST(req: NextRequest) {
 
   const customerId = process.env.GOOGLE_ADS_CUSTOMER_ID!;
   const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN!;
-  const managerId = "2913379431";
   const headers = {
     Authorization: "Bearer " + accessToken,
     "developer-token": devToken,
-    "login-customer-id": managerId,
+    "login-customer-id": MANAGER_ID,
     "Content-Type": "application/json",
   };
 
@@ -126,7 +111,6 @@ export async function POST(req: NextRequest) {
       const campData = await campRes.json();
       const allCampaignIds: string[] = (campData.results || []).map((r: any) => String(r.campaign?.id)).filter(Boolean);
 
-      // Find campaigns already linked to this list
       const alreadyQuery = `
         SELECT campaign_shared_set.campaign
         FROM campaign_shared_set

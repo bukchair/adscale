@@ -1103,6 +1103,57 @@ function AdCreatorTab({ s, t, lang, connections, isMobile }: {
   );
 }
 
+const SERVICE_CONFIGS: {
+  key: string; name: string; icon: string; detail: string;
+  fields: { key: string; label: string; placeholder: string; sensitive: boolean; multiline?: boolean }[];
+}[] = [
+  {
+    key: "woocommerce", name: "WooCommerce", icon: "🛒", detail: "חנות איקומרס",
+    fields: [{ key: "url", label: "כתובת החנות", placeholder: "https://myshop.com", sensitive: false }],
+  },
+  {
+    key: "googleAds", name: "Google Ads", icon: "🔵", detail: "חיפוש, Shopping, Display",
+    fields: [
+      { key: "clientId", label: "Client ID", placeholder: "123...apps.googleusercontent.com", sensitive: false },
+      { key: "clientSecret", label: "Client Secret", placeholder: "GOCSPX-...", sensitive: true },
+      { key: "refreshToken", label: "Refresh Token", placeholder: "1//...", sensitive: true },
+      { key: "customerId", label: "Customer ID", placeholder: "1234567890", sensitive: false },
+      { key: "developerToken", label: "Developer Token", placeholder: "...", sensitive: true },
+      { key: "managerId", label: "Manager Account ID (MCC)", placeholder: "2913379431", sensitive: false },
+    ],
+  },
+  {
+    key: "meta", name: "Meta Business", icon: "📘", detail: "Facebook + Instagram",
+    fields: [
+      { key: "accessToken", label: "Access Token", placeholder: "EAA...", sensitive: true },
+      { key: "adAccountId", label: "Ad Account ID", placeholder: "1234567890", sensitive: false },
+    ],
+  },
+  {
+    key: "tiktok", name: "TikTok Ads", icon: "🎵", detail: "TikTok For Business",
+    fields: [
+      { key: "advertiserId", label: "Advertiser ID", placeholder: "...", sensitive: false },
+      { key: "accessToken", label: "Access Token", placeholder: "...", sensitive: true },
+    ],
+  },
+  {
+    key: "ga4", name: "Google Analytics 4", icon: "📊", detail: "נתוני המרה",
+    fields: [
+      { key: "propertyId", label: "Property ID", placeholder: "123456789", sensitive: false },
+      { key: "clientEmail", label: "Service Account Email", placeholder: "xxx@project.iam.gserviceaccount.com", sensitive: false },
+      { key: "privateKey", label: "Private Key", placeholder: "-----BEGIN RSA PRIVATE KEY-----\n...", sensitive: true, multiline: true },
+    ],
+  },
+  {
+    key: "gmc", name: "Google Merchant Center", icon: "🛍️", detail: "פיד מוצרים",
+    fields: [{ key: "merchantId", label: "Merchant ID", placeholder: "123456789", sensitive: false }],
+  },
+  {
+    key: "gsc", name: "Google Search Console", icon: "🔍", detail: "ניתוח חיפושים",
+    fields: [{ key: "siteUrl", label: "Site URL", placeholder: "https://myshop.com/", sensitive: false }],
+  },
+];
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [appliedSuggestions, setAppliedSuggestions] = useState<number[]>([]);
@@ -1135,6 +1186,15 @@ export default function DashboardPage() {
   const [negExistingList, setNegExistingList] = useState<{ id: string; name: string } | null>(null);
   const [negMatchType, setNegMatchType] = useState<"BROAD" | "PHRASE" | "EXACT">("BROAD");
 
+  // Settings modal state
+  const [settingsData, setSettingsData] = useState<Record<string, any>>({});
+  const [settingsStatus, setSettingsStatus] = useState<Record<string, boolean>>({});
+  const [settingsModal, setSettingsModal] = useState<string | null>(null);
+  const [modalValues, setModalValues] = useState<Record<string, string>>({});
+  const [connTestResult, setConnTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [connTesting, setConnTesting] = useState(false);
+  const [connSaving, setConnSaving] = useState(false);
+
   // Connections (settings tab)
   const [openModal, setOpenModal] = useState<string | null>(null);
   const [connections, setConnections] = useState<Record<string, Record<string, string>>>(() => {
@@ -1142,10 +1202,6 @@ export default function DashboardPage() {
     try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
   });
 
-  // On mount: sync connections between server and localStorage
-  // - Desktop with data  → pushes localStorage to server (migration / update)
-  // - Mobile (no LS)     → pulls from server (picks up desktop's connections)
-  // - Both have data     → server wins (most up-to-date cross-device source)
   useEffect(() => {
     const localConns = (() => {
       try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
@@ -1156,19 +1212,15 @@ export default function DashboardPage() {
       .then(r => r.json())
       .then((serverConns: Record<string, Record<string, string>>) => {
         const hasServer = serverConns && Object.keys(serverConns).length > 0;
-
         if (hasServer) {
-          // Server is the source of truth — use it (mobile gets desktop data)
           setConnections(serverConns);
           localStorage.setItem("adscale_connections", JSON.stringify(serverConns));
         } else if (hasLocal) {
-          // Server is empty but we have local data → push to server (first-time migration)
           fetch("/api/connections", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(localConns),
           }).catch(() => {});
-          // connections state already set from localStorage (useState initializer)
         }
       })
       .catch(() => {});
@@ -1178,7 +1230,6 @@ export default function DashboardPage() {
     const next = { ...connections, [id]: values };
     setConnections(next);
     if (typeof window !== "undefined") localStorage.setItem("adscale_connections", JSON.stringify(next));
-    // Persist to server so other devices (mobile/desktop) share the same connections
     fetch("/api/connections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1208,6 +1259,55 @@ export default function DashboardPage() {
   }
 
   useEffect(() => { if (activeTab === 4) loadNegTerms(); }, [activeTab]);
+
+  const loadSettings = async () => {
+    try {
+      const res = await fetch("/api/settings");
+      if (!res.ok) return;
+      const data = await res.json();
+      setSettingsData(data);
+      setSettingsStatus(data.status || {});
+    } catch {}
+  };
+  useEffect(() => { loadSettings(); }, []);
+
+  const openSettingsModal = (serviceKey: string) => {
+    setModalValues({ ...(settingsData[serviceKey] || {}) });
+    setConnTestResult(null);
+    setSettingsModal(serviceKey);
+  };
+
+  const testConnection = async () => {
+    setConnTesting(true);
+    setConnTestResult(null);
+    try {
+      const res = await fetch("/api/settings/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ service: settingsModal, credentials: modalValues }),
+      });
+      setConnTestResult(await res.json());
+    } catch {
+      setConnTestResult({ success: false, message: "שגיאת רשת" });
+    } finally {
+      setConnTesting(false);
+    }
+  };
+
+  const saveSettingsModal = async () => {
+    setConnSaving(true);
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [settingsModal!]: modalValues }),
+      });
+      await loadSettings();
+      setSettingsModal(null);
+    } catch {} finally {
+      setConnSaving(false);
+    }
+  };
 
   async function applyNegKeywords() {
     if (!negSelected.size) return;
@@ -1344,6 +1444,16 @@ export default function DashboardPage() {
             <span>{tab.icon}</span><span>{tab.label}</span>
           </div>
         ))}
+        {/* AI Platform Link */}
+        <a href="/modules" style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "11px 20px",
+          margin: "8px 12px 0", borderRadius: 10, textDecoration: "none",
+          background: "linear-gradient(135deg, #7c74ff22, #00d4aa11)",
+          border: "1px solid #7c74ff44", color: "#7c74ff", fontSize: 14, fontWeight: 600,
+        }}>
+          <span>🤖</span><span>פלטפורמת AI</span>
+          <span style={{ marginLeft: "auto", fontSize: 11, background: "#7c74ff22", padding: "2px 8px", borderRadius: 12 }}>חדש</span>
+        </a>
         <div style={{ margin: "auto 16px 16px", background: isLive ? "#00d4aa10" : "#7c74ff10", border: `1px solid ${isLive ? "#00d4aa33" : "#7c74ff33"}`, borderRadius: 12, padding: "12px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: isLive ? "#00d4aa" : "#7c74ff", marginBottom: 3 }}>
             {isLive ? t("נתונים חיים", "Live Data") : t("מצב דמו", "Demo Mode")}
