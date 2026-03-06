@@ -1,19 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-async function getGoogleAdsToken() {
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN!,
-      grant_type: "refresh_token",
-    }),
-  });
-  const data = await res.json();
-  return data.access_token as string;
-}
+import { getGoogleAdsToken, MANAGER_ID } from "@/app/lib/google-ads";
 
 async function getServiceAccountToken(scope: string) {
   const clientEmail = process.env.GA4_CLIENT_EMAIL!;
@@ -60,11 +46,10 @@ export async function GET(req: NextRequest) {
     const accessToken = await getGoogleAdsToken();
     const customerId = process.env.GOOGLE_ADS_CUSTOMER_ID!;
     const devToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN!;
-    const managerId = "2913379431";
     const headers = {
       Authorization: "Bearer " + accessToken,
       "developer-token": devToken,
-      "login-customer-id": managerId,
+      "login-customer-id": MANAGER_ID,
       "Content-Type": "application/json",
     };
 
@@ -89,7 +74,6 @@ export async function GET(req: NextRequest) {
       const stData = await stRes.json();
       const results: any[] = stData.results || [];
 
-      // Calculate average cost across all terms to calibrate scoring
       const totalCost = results.reduce((s, r) => s + (r.metrics?.costMicros || 0) / 1_000_000, 0);
       const avgCost = totalCost / Math.max(1, results.length);
 
@@ -101,7 +85,7 @@ export async function GET(req: NextRequest) {
         const cost = (r.metrics?.costMicros || 0) / 1_000_000;
         const conversions = Number(r.metrics?.conversions || 0);
 
-        if (conversions > 0) return; // Converting terms are valuable, skip
+        if (conversions > 0) return;
 
         let reason = "";
         let score = 0;

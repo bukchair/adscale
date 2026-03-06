@@ -104,6 +104,57 @@ const DATE_PRESETS = [
   { label: "30 ימים", from: () => getDaysAgo(30) },
 ];
 
+const SERVICE_CONFIGS: {
+  key: string; name: string; icon: string; detail: string;
+  fields: { key: string; label: string; placeholder: string; sensitive: boolean; multiline?: boolean }[];
+}[] = [
+  {
+    key: "woocommerce", name: "WooCommerce", icon: "🛒", detail: "חנות איקומרס",
+    fields: [{ key: "url", label: "כתובת החנות", placeholder: "https://myshop.com", sensitive: false }],
+  },
+  {
+    key: "googleAds", name: "Google Ads", icon: "🔵", detail: "חיפוש, Shopping, Display",
+    fields: [
+      { key: "clientId", label: "Client ID", placeholder: "123...apps.googleusercontent.com", sensitive: false },
+      { key: "clientSecret", label: "Client Secret", placeholder: "GOCSPX-...", sensitive: true },
+      { key: "refreshToken", label: "Refresh Token", placeholder: "1//...", sensitive: true },
+      { key: "customerId", label: "Customer ID", placeholder: "1234567890", sensitive: false },
+      { key: "developerToken", label: "Developer Token", placeholder: "...", sensitive: true },
+      { key: "managerId", label: "Manager Account ID (MCC)", placeholder: "2913379431", sensitive: false },
+    ],
+  },
+  {
+    key: "meta", name: "Meta Business", icon: "📘", detail: "Facebook + Instagram",
+    fields: [
+      { key: "accessToken", label: "Access Token", placeholder: "EAA...", sensitive: true },
+      { key: "adAccountId", label: "Ad Account ID", placeholder: "1234567890", sensitive: false },
+    ],
+  },
+  {
+    key: "tiktok", name: "TikTok Ads", icon: "🎵", detail: "TikTok For Business",
+    fields: [
+      { key: "advertiserId", label: "Advertiser ID", placeholder: "...", sensitive: false },
+      { key: "accessToken", label: "Access Token", placeholder: "...", sensitive: true },
+    ],
+  },
+  {
+    key: "ga4", name: "Google Analytics 4", icon: "📊", detail: "נתוני המרה",
+    fields: [
+      { key: "propertyId", label: "Property ID", placeholder: "123456789", sensitive: false },
+      { key: "clientEmail", label: "Service Account Email", placeholder: "xxx@project.iam.gserviceaccount.com", sensitive: false },
+      { key: "privateKey", label: "Private Key", placeholder: "-----BEGIN RSA PRIVATE KEY-----\n...", sensitive: true, multiline: true },
+    ],
+  },
+  {
+    key: "gmc", name: "Google Merchant Center", icon: "🛍️", detail: "פיד מוצרים",
+    fields: [{ key: "merchantId", label: "Merchant ID", placeholder: "123456789", sensitive: false }],
+  },
+  {
+    key: "gsc", name: "Google Search Console", icon: "🔍", detail: "ניתוח חיפושים",
+    fields: [{ key: "siteUrl", label: "Site URL", placeholder: "https://myshop.com/", sensitive: false }],
+  },
+];
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [appliedSuggestions, setAppliedSuggestions] = useState<number[]>([]);
@@ -120,6 +171,15 @@ export default function DashboardPage() {
   const [negApiErrors, setNegApiErrors] = useState<string[]>([]);
   const [negExistingList, setNegExistingList] = useState<{ id: string; name: string } | null>(null);
   const [negMatchType, setNegMatchType] = useState<"BROAD" | "PHRASE" | "EXACT">("BROAD");
+
+  // Settings modal state
+  const [settingsData, setSettingsData] = useState<Record<string, any>>({});
+  const [settingsStatus, setSettingsStatus] = useState<Record<string, boolean>>({});
+  const [settingsModal, setSettingsModal] = useState<string | null>(null);
+  const [modalValues, setModalValues] = useState<Record<string, string>>({});
+  const [connTestResult, setConnTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [connTesting, setConnTesting] = useState(false);
+  const [connSaving, setConnSaving] = useState(false);
 
   const range = { from: DATE_PRESETS[preset].from(), to: getToday() };
   const { data, loading, refetch } = useDashboard(range.from, range.to);
@@ -143,6 +203,55 @@ export default function DashboardPage() {
   }
 
   useEffect(() => { if (activeTab === 4) loadNegTerms(); }, [activeTab]);
+
+  const loadSettings = async () => {
+    try {
+      const res = await fetch("/api/settings");
+      if (!res.ok) return;
+      const data = await res.json();
+      setSettingsData(data);
+      setSettingsStatus(data.status || {});
+    } catch {}
+  };
+  useEffect(() => { loadSettings(); }, []);
+
+  const openSettingsModal = (serviceKey: string) => {
+    setModalValues({ ...(settingsData[serviceKey] || {}) });
+    setConnTestResult(null);
+    setSettingsModal(serviceKey);
+  };
+
+  const testConnection = async () => {
+    setConnTesting(true);
+    setConnTestResult(null);
+    try {
+      const res = await fetch("/api/settings/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ service: settingsModal, credentials: modalValues }),
+      });
+      setConnTestResult(await res.json());
+    } catch {
+      setConnTestResult({ success: false, message: "שגיאת רשת" });
+    } finally {
+      setConnTesting(false);
+    }
+  };
+
+  const saveSettingsModal = async () => {
+    setConnSaving(true);
+    try {
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [settingsModal!]: modalValues }),
+      });
+      await loadSettings();
+      setSettingsModal(null);
+    } catch {} finally {
+      setConnSaving(false);
+    }
+  };
 
   async function applyNegKeywords() {
     if (!negSelected.size) return;
@@ -232,6 +341,16 @@ export default function DashboardPage() {
             <span>{t.icon}</span><span>{t.label}</span>
           </div>
         ))}
+        {/* AI Platform Link */}
+        <a href="/modules" style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "11px 20px",
+          margin: "8px 12px 0", borderRadius: 10, textDecoration: "none",
+          background: "linear-gradient(135deg, #7c74ff22, #00d4aa11)",
+          border: "1px solid #7c74ff44", color: "#7c74ff", fontSize: 14, fontWeight: 600,
+        }}>
+          <span>🤖</span><span>פלטפורמת AI</span>
+          <span style={{ marginLeft: "auto", fontSize: 11, background: "#7c74ff22", padding: "2px 8px", borderRadius: 12 }}>חדש</span>
+        </a>
         <div style={{ margin: "auto 16px 16px", background: isLive ? "#00d4aa12" : "#7c74ff12", border: `1px solid ${isLive ? "#00d4aa33" : "#7c74ff33"}`, borderRadius: 12, padding: "12px 14px" }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: isLive ? "#00d4aa" : "#7c74ff", marginBottom: 3 }}>
             {isLive ? "נתונים חיים" : "מצב דמו"}
@@ -589,31 +708,144 @@ export default function DashboardPage() {
         {activeTab === 5 && (
           <>
             <div style={s.header}>
-              <div><div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות</div></div>
+              <div><div style={{ fontSize: 26, fontWeight: 700 }}>הגדרות חיבורים</div></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              {[
-                { name: "WooCommerce", ok: false, icon: "🛒", key: "WOOCOMMERCE_URL", detail: "חנות איקומרס" },
-                { name: "Google Ads", ok: false, icon: "🔵", key: "GOOGLE_ADS_CUSTOMER_ID", detail: "חיפוש, Shopping, Display" },
-                { name: "Meta Business", ok: false, icon: "📘", key: "META_AD_ACCOUNT_ID", detail: "Facebook + Instagram" },
-                { name: "TikTok Ads", ok: false, icon: "🎵", key: "TIKTOK_ADVERTISER_ID", detail: "TikTok For Business" },
-                { name: "Google Analytics 4", ok: false, icon: "📊", key: "GA4_PROPERTY_ID", detail: "נתוני המרה" },
-                { name: "Google Merchant Center", ok: false, icon: "🛍️", key: "GMC_MERCHANT_ID", detail: "פיד מוצרים" },
-              ].map((c, i) => (
-                <div key={i} style={{ ...s.card, display: "flex", alignItems: "center", gap: 16, opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s` }}>
-                  <div style={{ fontSize: 26 }}>{c.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>{c.name}</div>
-                    <div style={{ fontSize: 11, color: "#6b7280", marginTop: 2 }}>{c.detail}</div>
-                    <div style={{ fontSize: 10, color: "#6b7280", marginTop: 4, fontFamily: "monospace", background: "#181b2a", padding: "2px 6px", borderRadius: 4, display: "inline-block" }}>{c.key}</div>
+              {SERVICE_CONFIGS.map((svc, i) => {
+                const configured = settingsStatus[svc.key];
+                return (
+                  <div key={svc.key} style={{
+                    ...s.card, display: "flex", alignItems: "center", gap: 16, cursor: "pointer",
+                    opacity: animIn ? 1 : 0, transition: `opacity 0.4s ease ${i * 0.08}s`,
+                    border: `1px solid ${configured ? "#00d4aa22" : "#181b2a"}`,
+                  }} onClick={() => openSettingsModal(svc.key)}>
+                    <div style={{ fontSize: 26 }}>{svc.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700 }}>{svc.name}</span>
+                        <span style={{
+                          fontSize: 10, padding: "2px 8px", borderRadius: 20, fontWeight: 600,
+                          background: configured ? "#00d4aa22" : "#ff6b6b22",
+                          color: configured ? "#00d4aa" : "#ff6b6b",
+                        }}>
+                          {configured ? "● מחובר" : "○ לא מוגדר"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#6b7280" }}>{svc.detail}</div>
+                    </div>
+                    <div style={{
+                      padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                      background: configured ? "#181b2a" : "#7c74ff22",
+                      color: configured ? "#9ca3af" : "#7c74ff",
+                    }}>
+                      {configured ? "ערוך" : "הגדר"}
+                    </div>
                   </div>
-                  <div style={{ padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: "#ff6b6b22", color: "#ff6b6b" }}>הגדר</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
       </div>
+
+      {settingsModal && (() => {
+        const svc = SERVICE_CONFIGS.find(c => c.key === settingsModal)!;
+        return (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 1000, padding: 20,
+          }} onClick={() => setSettingsModal(null)}>
+            <div style={{
+              background: "#0d0f18", border: "1px solid #2a2d3e", borderRadius: 20,
+              padding: 28, width: "100%", maxWidth: 500, maxHeight: "88vh",
+              overflowY: "auto", direction: "rtl",
+            }} onClick={e => e.stopPropagation()}>
+
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 26 }}>{svc.icon}</span>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700 }}>{svc.name}</div>
+                    <div style={{ fontSize: 12, color: "#6b7280" }}>{svc.detail}</div>
+                  </div>
+                </div>
+                <button onClick={() => setSettingsModal(null)} style={{
+                  background: "none", border: "none", color: "#6b7280", fontSize: 20, cursor: "pointer", lineHeight: 1,
+                }}>✕</button>
+              </div>
+
+              {/* Fields */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {svc.fields.map(field => (
+                  <div key={field.key}>
+                    <label style={{ fontSize: 12, color: "#9ca3af", fontWeight: 500, display: "block", marginBottom: 6 }}>
+                      {field.label}
+                    </label>
+                    {field.multiline ? (
+                      <textarea
+                        value={modalValues[field.key] || ""}
+                        onChange={e => setModalValues(p => ({ ...p, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        rows={4}
+                        style={{
+                          width: "100%", background: "#181b2a", border: "1px solid #2a2d3e",
+                          borderRadius: 10, padding: "10px 14px", color: "#e8eaf6",
+                          fontSize: 12, fontFamily: "monospace", resize: "vertical",
+                          direction: "ltr", boxSizing: "border-box",
+                        }}
+                      />
+                    ) : (
+                      <input
+                        type={field.sensitive ? "password" : "text"}
+                        value={modalValues[field.key] || ""}
+                        onChange={e => setModalValues(p => ({ ...p, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        style={{
+                          width: "100%", background: "#181b2a", border: "1px solid #2a2d3e",
+                          borderRadius: 10, padding: "10px 14px", color: "#e8eaf6",
+                          fontSize: 13, direction: "ltr", boxSizing: "border-box",
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Test result */}
+              {connTestResult && (
+                <div style={{
+                  marginTop: 16, padding: "10px 14px", borderRadius: 10, fontSize: 13,
+                  background: connTestResult.success ? "#00d4aa12" : "#ff6b6b12",
+                  border: `1px solid ${connTestResult.success ? "#00d4aa44" : "#ff6b6b44"}`,
+                  color: connTestResult.success ? "#00d4aa" : "#ff6b6b",
+                }}>
+                  {connTestResult.message}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                <button
+                  onClick={testConnection}
+                  disabled={connTesting}
+                  style={{ ...s.btn("default"), flex: 1, opacity: connTesting ? 0.6 : 1 }}
+                >
+                  {connTesting ? "בודק..." : "בדוק חיבור"}
+                </button>
+                <button
+                  onClick={saveSettingsModal}
+                  disabled={connSaving}
+                  style={{ ...s.btn("primary"), flex: 1, opacity: connSaving ? 0.6 : 1 }}
+                >
+                  {connSaving ? "שומר..." : "שמור"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
