@@ -438,7 +438,7 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
       onClick={onClose}
     >
       <div
-        style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 24px 64px rgba(0,0,0,0.15)", position: "relative" }}
+        style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 64px rgba(0,0,0,0.15)", position: "relative" }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
