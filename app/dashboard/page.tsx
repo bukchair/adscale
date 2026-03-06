@@ -1,6 +1,26 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDashboard, getToday, getDaysAgo, Campaign } from "@/hooks/useDashboard";
+
+// ── Types for Ad Creator ────────────────────────────────────────────────────
+interface WooProduct {
+  id: number;
+  name: string;
+  description: string;
+  short_description: string;
+  price: string;
+  regular_price: string;
+  sale_price: string;
+  categories: { id: number; name: string }[];
+  images: { src: string; alt: string }[];
+  stock_status: string;
+}
+interface AdVariation {
+  headline: string;
+  description: string;
+  cta: string;
+  emoji: string;
+}
 
 const GoogleIcon = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24">
@@ -95,6 +115,7 @@ function getTabs(lang: "he" | "en") {
     { label: "AI אופטימיזציה", icon: "🤖" },
     { label: "קהלים", icon: "👥" },
     { label: "מילות שליליות", icon: "🚫" },
+    { label: "מחולל מודעות", icon: "🎨" },
     { label: "הגדרות", icon: "⚙️" },
   ] : [
     { label: "Dashboard", icon: "📊" },
@@ -102,6 +123,7 @@ function getTabs(lang: "he" | "en") {
     { label: "AI Optimization", icon: "🤖" },
     { label: "Audiences", icon: "👥" },
     { label: "Negative Keywords", icon: "🚫" },
+    { label: "Ad Creator", icon: "🎨" },
     { label: "Settings", icon: "⚙️" },
   ];
 }
@@ -355,6 +377,381 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Ad Creator Tab ──────────────────────────────────────────────────────────
+const AD_PLATFORMS = ["meta", "google", "tiktok"] as const;
+const AD_TONES = [
+  { value: "enthusiastic", he: "נלהב", en: "Enthusiastic" },
+  { value: "professional", he: "מקצועי", en: "Professional" },
+  { value: "playful", he: "שובב", en: "Playful" },
+];
+const AD_STYLES = [
+  { value: "modern", he: "מינימליסטי", en: "Minimalist" },
+  { value: "lifestyle", he: "לייפסטייל", en: "Lifestyle" },
+  { value: "bold", he: "בולט ועוצמתי", en: "Bold" },
+  { value: "luxury", he: "יוקרתי", en: "Luxury" },
+];
+
+function AdCreatorTab({ s, t, lang, connections }: {
+  s: Record<string, any>;
+  t: (he: string, en: string) => string;
+  lang: "he" | "en";
+  connections: Record<string, Record<string, string>>;
+}) {
+  const [products, setProducts] = useState<WooProduct[]>([]);
+  const [productsDemo, setProductsDemo] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<WooProduct | null>(null);
+  const [platform, setPlatform] = useState<"meta" | "google" | "tiktok">("meta");
+  const [tone, setTone] = useState("enthusiastic");
+  const [imageStyle, setImageStyle] = useState("modern");
+  const [variations, setVariations] = useState<AdVariation[]>([]);
+  const [selectedVar, setSelectedVar] = useState(0);
+  const [generatingText, setGeneratingText] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [textError, setTextError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/woocommerce/products", {
+      headers: { "x-connections": JSON.stringify(connections) },
+    })
+      .then(r => r.json())
+      .then(d => {
+        setProducts(d.products || []);
+        setProductsDemo(d.isDemo);
+        if (d.products?.length) setSelectedProduct(d.products[0]);
+      });
+  }, []);
+
+  async function generateText() {
+    if (!selectedProduct) return;
+    setGeneratingText(true);
+    setTextError(null);
+    setVariations([]);
+    setGeneratedImage(null);
+    try {
+      const res = await fetch("/api/ads/generate-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product: selectedProduct, platform, lang, tone }),
+      });
+      const d = await res.json();
+      if (d.error) throw new Error(d.error);
+      setVariations(d.variations || []);
+      setSelectedVar(0);
+    } catch (e: any) {
+      setTextError(e.message);
+    } finally {
+      setGeneratingText(false);
+    }
+  }
+
+  async function generateImage() {
+    if (!selectedProduct) return;
+    setGeneratingImage(true);
+    setImageError(null);
+    const headline = variations[selectedVar]?.headline || "";
+    try {
+      const res = await fetch("/api/ads/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product: selectedProduct, platform, headline, style: imageStyle }),
+      });
+      const d = await res.json();
+      if (d.error) throw new Error(d.error);
+      setGeneratedImage(d.url);
+    } catch (e: any) {
+      setImageError(e.message);
+    } finally {
+      setGeneratingImage(false);
+    }
+  }
+
+  function copyToClipboard() {
+    if (!variations[selectedVar]) return;
+    const v = variations[selectedVar];
+    const text = `${v.emoji} ${v.headline}\n\n${v.description}\n\n${v.cta}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const platformColors: Record<string, string> = { meta: "#1877F2", google: "#4285F4", tiktok: "#ff0050" };
+
+  return (
+    <>
+      <div style={s.header}>
+        <div>
+          <div style={{ fontSize: 26, fontWeight: 700 }}>🎨 {t("מחולל מודעות AI", "AI Ad Creator")}</div>
+          <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>
+            {t("טקסט ותמונות לפרסום ממוצרי WooCommerce", "Text & images from WooCommerce products")}
+          </div>
+        </div>
+      </div>
+
+      {productsDemo && (
+        <div style={{ background: "#7c74ff12", border: "1px solid #7c74ff33", borderRadius: 10, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: "#7c74ff" }}>
+          {t("מוצרים לדוגמה — חבר WooCommerce בהגדרות לנתונים אמיתיים","Demo products — connect WooCommerce in Settings for real data")}
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 20, alignItems: "start" }}>
+        {/* Left panel: controls */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* Product selector */}
+          <div style={s.card}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {t("מוצר", "Product")}
+            </div>
+            <select
+              value={selectedProduct?.id || ""}
+              onChange={e => setSelectedProduct(products.find(p => p.id === Number(e.target.value)) || null)}
+              style={{ width: "100%", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: "9px 12px", fontSize: 13, color: "#1e293b", cursor: "pointer" }}
+            >
+              {products.map(p => (
+                <option key={p.id} value={p.id}>{p.name} — ₪{p.sale_price || p.price}</option>
+              ))}
+            </select>
+            {selectedProduct?.images?.[0]?.src && (
+              <img
+                src={selectedProduct.images[0].src}
+                alt={selectedProduct.name}
+                style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 8, marginTop: 10, border: "1px solid #e2e8f0" }}
+              />
+            )}
+            {selectedProduct && (
+              <div style={{ marginTop: 8, fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
+                {(selectedProduct.short_description || selectedProduct.description || "").replace(/<[^>]+>/g, "").slice(0, 100)}...
+              </div>
+            )}
+          </div>
+
+          {/* Platform */}
+          <div style={s.card}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {t("פלטפורמה", "Platform")}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {AD_PLATFORMS.map(p => (
+                <button key={p} onClick={() => setPlatform(p)} style={{
+                  flex: 1, padding: "8px 4px", borderRadius: 8, border: `2px solid ${platform === p ? platformColors[p] : "#e2e8f0"}`,
+                  background: platform === p ? platformColors[p] + "15" : "#f8fafc",
+                  cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                }}>
+                  <PlatformIcon platform={p} size={20} />
+                  <span style={{ fontSize: 10, fontWeight: 600, color: platform === p ? platformColors[p] : "#94a3b8" }}>
+                    {p === "meta" ? "Meta" : p === "google" ? "Google" : "TikTok"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tone */}
+          <div style={s.card}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {t("סגנון כתיבה", "Writing Tone")}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {AD_TONES.map(tt => (
+                <button key={tt.value} onClick={() => setTone(tt.value)} style={{
+                  flex: 1, padding: "7px 4px", borderRadius: 8, border: `2px solid ${tone === tt.value ? "#7c74ff" : "#e2e8f0"}`,
+                  background: tone === tt.value ? "#7c74ff15" : "#f8fafc",
+                  cursor: "pointer", fontSize: 11, fontWeight: 600,
+                  color: tone === tt.value ? "#7c74ff" : "#94a3b8",
+                }}>
+                  {lang === "he" ? tt.he : tt.en}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Image style */}
+          <div style={s.card}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {t("סגנון תמונה", "Image Style")}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              {AD_STYLES.map(st => (
+                <button key={st.value} onClick={() => setImageStyle(st.value)} style={{
+                  padding: "7px 8px", borderRadius: 8, border: `2px solid ${imageStyle === st.value ? "#00d4aa" : "#e2e8f0"}`,
+                  background: imageStyle === st.value ? "#00d4aa15" : "#f8fafc",
+                  cursor: "pointer", fontSize: 11, fontWeight: 600,
+                  color: imageStyle === st.value ? "#00d4aa" : "#94a3b8",
+                }}>
+                  {lang === "he" ? st.he : st.en}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Generate buttons */}
+          <button
+            onClick={generateText}
+            disabled={generatingText || !selectedProduct}
+            style={{ ...s.btn("primary"), width: "100%", padding: "12px 0", fontSize: 14, opacity: generatingText || !selectedProduct ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+          >
+            {generatingText ? (
+              <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span> {t("מייצר טקסט...","Generating text...")}</>
+            ) : (
+              <>✨ {t("צור טקסט מודעה","Generate Ad Text")}</>
+            )}
+          </button>
+
+          {variations.length > 0 && (
+            <button
+              onClick={generateImage}
+              disabled={generatingImage}
+              style={{ width: "100%", padding: "12px 0", borderRadius: 10, border: "none", cursor: generatingImage ? "wait" : "pointer", fontSize: 14, fontWeight: 600, background: "linear-gradient(135deg,#00d4aa,#009b7d)", color: "#fff", opacity: generatingImage ? 0.7 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+            >
+              {generatingImage ? (
+                <><span style={{ display: "inline-block", animation: "spin 1s linear infinite" }}>⟳</span> {t("מייצר תמונה...","Generating image...")}</>
+              ) : (
+                <>🖼️ {t("צור תמונה","Generate Image")}</>
+              )}
+            </button>
+          )}
+        </div>
+
+        {/* Right panel: results */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+          {/* Text variations */}
+          {variations.length > 0 && (
+            <div style={s.card}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{t("וריאציות טקסט","Text Variations")}</div>
+                <button onClick={copyToClipboard} style={{ ...s.btn("sm"), background: copied ? "#00d4aa15" : "#f0f4f8", color: copied ? "#00d4aa" : "#475569" }}>
+                  {copied ? "✓ " + t("הועתק","Copied") : "📋 " + t("העתק","Copy")}
+                </button>
+              </div>
+              {/* Tab selector */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                {variations.map((_, i) => (
+                  <button key={i} onClick={() => setSelectedVar(i)} style={{
+                    padding: "5px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
+                    background: selectedVar === i ? "#7c74ff" : "#f0f4f8",
+                    color: selectedVar === i ? "#fff" : "#64748b",
+                  }}>
+                    {t("וריאציה","Variation")} {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              {variations[selectedVar] && (() => {
+                const v = variations[selectedVar];
+                return (
+                  <div style={{ background: "#f8fafc", borderRadius: 12, padding: 20, border: `2px solid ${platformColors[platform]}22` }}>
+                    {/* Ad preview mockup */}
+                    <div style={{ background: "#ffffff", borderRadius: 10, padding: 16, border: "1px solid #e2e8f0", marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                        <PlatformIcon platform={platform} size={18} />
+                        <span style={{ fontSize: 11, color: "#94a3b8" }}>{t("תצוגה מקדימה","Preview")}</span>
+                        <span style={{ marginRight: "auto", fontSize: 10, background: "#f0f4f8", padding: "2px 8px", borderRadius: 10, color: "#64748b" }}>
+                          {platform === "meta" ? "Sponsored" : platform === "google" ? "Ad" : "Promoted"}
+                        </span>
+                      </div>
+                      {selectedProduct?.images?.[0]?.src && (
+                        <img src={selectedProduct.images[0].src} alt="" style={{ width: "100%", height: 140, objectFit: "cover", borderRadius: 8, marginBottom: 10 }} />
+                      )}
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "#1e293b", marginBottom: 6 }}>
+                        {v.emoji} {v.headline}
+                      </div>
+                      <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.6, marginBottom: 10 }}>
+                        {v.description}
+                      </div>
+                      <div style={{ display: "inline-block", padding: "7px 18px", borderRadius: 6, background: platformColors[platform], color: "#fff", fontSize: 13, fontWeight: 700 }}>
+                        {v.cta}
+                      </div>
+                    </div>
+                    {/* Raw fields */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {[
+                        [t("כותרת","Headline"), v.headline, v.headline.length],
+                        [t("תיאור","Description"), v.description, v.description.length],
+                        ["CTA", v.cta, null],
+                      ].map(([label, val, len]) => (
+                        <div key={label as string} style={{ background: "#ffffff", borderRadius: 8, padding: "10px 12px", border: "1px solid #e2e8f0" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" }}>{label}</span>
+                            {len !== null && <span style={{ fontSize: 10, color: (len as number) > 50 ? "#f5a623" : "#00d4aa" }}>{len} {t("תווים","chars")}</span>}
+                          </div>
+                          <div style={{ fontSize: 13, color: "#1e293b", direction: lang === "he" ? "rtl" : "ltr" }}>{val as string}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {textError && (
+            <div style={{ background: "#ef444410", border: "1px solid #ef444433", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#ef4444" }}>
+              ⚠️ {textError}
+            </div>
+          )}
+
+          {/* Generated image */}
+          {(generatingImage || generatedImage || imageError) && (
+            <div style={s.card}>
+              <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>
+                🖼️ {t("תמונת מודעה מ-DALL-E 3","Ad Image from DALL-E 3")}
+              </div>
+              {generatingImage && (
+                <div style={{ background: "#f8fafc", borderRadius: 10, height: 300, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, border: "2px dashed #e2e8f0" }}>
+                  <div style={{ fontSize: 32, animation: "pulse 1.5s ease-in-out infinite" }}>🎨</div>
+                  <div style={{ fontSize: 14, color: "#64748b" }}>{t("DALL-E 3 יוצר תמונה...","DALL-E 3 is generating...")}</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8" }}>{t("זה לוקח כ-15 שניות","This takes about 15 seconds")}</div>
+                </div>
+              )}
+              {!generatingImage && generatedImage && (
+                <div>
+                  <img src={generatedImage} alt="Generated ad" style={{ width: "100%", borderRadius: 10, border: "1px solid #e2e8f0" }} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    <a
+                      href={generatedImage}
+                      download="ad-image.png"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ ...s.btn("primary"), textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}
+                    >
+                      ⬇️ {t("הורד תמונה","Download Image")}
+                    </a>
+                    <button onClick={generateImage} style={s.btn("default")}>
+                      ↻ {t("צור מחדש","Regenerate")}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {imageError && (
+                <div style={{ fontSize: 13, color: "#ef4444", padding: "12px 16px", background: "#ef444410", borderRadius: 8 }}>
+                  ⚠️ {imageError}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!generatingText && variations.length === 0 && !textError && (
+            <div style={{ ...s.card, textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#1e293b", marginBottom: 8 }}>
+                {t("בחר מוצר ולחץ 'צור טקסט מודעה'","Select a product and click 'Generate Ad Text'")}
+              </div>
+              <div style={{ fontSize: 13, color: "#94a3b8", maxWidth: 340, margin: "0 auto" }}>
+                {t("Claude AI יצור 3 וריאציות של טקסט פרסומי מותאם לפלטפורמה שבחרת","Claude AI will create 3 ad copy variations tailored to your chosen platform")}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -942,7 +1339,9 @@ export default function DashboardPage() {
           </>
         )}
 
-        {activeTab === 5 && (
+        {activeTab === 5 && <AdCreatorTab s={s} t={t} lang={lang} connections={connections} />}
+
+        {activeTab === 6 && (
           <>
             <div style={s.header}>
               <div>
@@ -1015,6 +1414,8 @@ export default function DashboardPage() {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.1); } }
       `}</style>
     </div>
   );
