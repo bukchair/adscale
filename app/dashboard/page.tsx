@@ -14,6 +14,7 @@ interface WooProduct {
   categories: { id: number; name: string }[];
   images: { src: string; alt: string }[];
   stock_status: string;
+  permalink?: string;
 }
 interface AdVariation {
   headline: string;
@@ -171,6 +172,9 @@ const INTEGRATIONS: IntegrationDef[] = [
       { key: "developer_token", label: "Developer Token", placeholder: "ABcd1234...", secret: true },
       { key: "client_id", label: "OAuth Client ID", placeholder: "1234.apps.googleusercontent.com" },
       { key: "client_secret", label: "OAuth Client Secret", placeholder: "GOCSPX-...", secret: true },
+      { key: "access_token", label: "Access Token", placeholder: "ya29.a0A...", secret: true, hint: "לאחר OAuth — מאפשר פרסום ישיר" },
+      { key: "campaign_id", label: "Campaign ID (אופציונלי)", placeholder: "123456789", hint: "אם ריק — תיפתח קמפיין חדשה" },
+      { key: "ad_group_id", label: "Ad Group ID (אופציונלי)", placeholder: "123456789" },
     ],
   },
   {
@@ -191,6 +195,8 @@ const INTEGRATIONS: IntegrationDef[] = [
       { key: "account_id", label: "Ad Account ID", placeholder: "act_123456789", hint: "מספר חשבון פרסום" },
       { key: "app_id", label: "App ID", placeholder: "123456789" },
       { key: "app_secret", label: "App Secret", placeholder: "...", secret: true },
+      { key: "access_token", label: "Access Token", placeholder: "EAABwzLix...", secret: true, hint: "לאחר OAuth — מאפשר פרסום ישיר" },
+      { key: "page_id", label: "Facebook Page ID", placeholder: "123456789", hint: "נדרש לפרסום" },
     ],
   },
   {
@@ -201,6 +207,7 @@ const INTEGRATIONS: IntegrationDef[] = [
       { key: "advertiser_id", label: "Advertiser ID", placeholder: "1234567890" },
       { key: "app_id", label: "App ID", placeholder: "...", hint: "מ-TikTok Business Center" },
       { key: "app_secret", label: "App Secret", placeholder: "...", secret: true },
+      { key: "access_token", label: "Access Token", placeholder: "att_...", secret: true, hint: "לאחר OAuth — מאפשר פרסום ישיר" },
     ],
   },
   {
@@ -425,11 +432,12 @@ const AD_STYLES = [
   { value: "luxury", he: "יוקרתי", en: "Luxury" },
 ];
 
-function AdCreatorTab({ s, t, lang, connections }: {
+function AdCreatorTab({ s, t, lang, connections, isMobile }: {
   s: Record<string, any>;
   t: (he: string, en: string) => string;
   lang: "he" | "en";
   connections: Record<string, Record<string, string>>;
+  isMobile: boolean;
 }) {
   const [products, setProducts] = useState<WooProduct[]>([]);
   const [productsDemo, setProductsDemo] = useState(false);
@@ -445,6 +453,43 @@ function AdCreatorTab({ s, t, lang, connections }: {
   const [textError, setTextError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishTargetUrl, setPublishTargetUrl] = useState("");
+  const [publishCampaignName, setPublishCampaignName] = useState("");
+  const [publishBudget, setPublishBudget] = useState("50");
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  async function handlePublish() {
+    if (!variations[selectedVar]) return;
+    setPublishing(true);
+    setPublishResult(null);
+    const v = variations[selectedVar];
+    try {
+      const res = await fetch("/api/ads/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform,
+          headline: v.headline,
+          description: v.description,
+          cta: v.cta,
+          imageUrl: generatedImage || undefined,
+          targetUrl: publishTargetUrl,
+          campaignName: publishCampaignName || `AdScale – ${selectedProduct?.name || "קמפיין"}`,
+          dailyBudget: Number(publishBudget) || 50,
+          connections,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) setPublishResult({ success: false, message: data.error });
+      else setPublishResult({ success: true, message: data.message });
+    } catch (e: any) {
+      setPublishResult({ success: false, message: e.message });
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/woocommerce/products", {
@@ -530,7 +575,7 @@ function AdCreatorTab({ s, t, lang, connections }: {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "340px 1fr", gap: 20, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "340px 1fr", gap: isMobile ? 12 : 20, alignItems: "start" }}>
         {/* Left panel: controls */}
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
@@ -655,9 +700,17 @@ function AdCreatorTab({ s, t, lang, connections }: {
             <div style={s.card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{t("וריאציות טקסט","Text Variations")}</div>
-                <button onClick={copyToClipboard} style={{ ...s.btn("sm"), background: copied ? "#00d4aa15" : "#f0f4f8", color: copied ? "#00d4aa" : "#475569" }}>
-                  {copied ? "✓ " + t("הועתק","Copied") : "📋 " + t("העתק","Copy")}
-                </button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={copyToClipboard} style={{ ...s.btn("sm"), background: copied ? "#00d4aa15" : "#f0f4f8", color: copied ? "#00d4aa" : "#475569" }}>
+                    {copied ? "✓ " + t("הועתק","Copied") : "📋 " + t("העתק","Copy")}
+                  </button>
+                  <button
+                    onClick={() => { setPublishOpen(true); setPublishResult(null); }}
+                    style={{ ...s.btn("sm"), background: "linear-gradient(135deg,#7c74ff,#5e55e8)", color: "#fff", fontWeight: 700 }}
+                  >
+                    🚀 {t("פרסם","Publish")}
+                  </button>
+                </div>
               </div>
               {/* Tab selector */}
               <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
@@ -780,6 +833,100 @@ function AdCreatorTab({ s, t, lang, connections }: {
           )}
         </div>
       </div>
+
+      {/* ── Publish Modal ── */}
+      {publishOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPublishOpen(false); }}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 460, boxShadow: "0 25px 60px rgba(0,0,0,0.25)" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>🚀 {t("פרסם מודעה","Publish Ad")}</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                  {platform === "google" ? "Google Ads" : platform === "meta" ? "Meta Ads" : "TikTok Ads"}
+                  {" — "}
+                  {variations[selectedVar]?.headline}
+                </div>
+              </div>
+              <button onClick={() => setPublishOpen(false)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "#94a3b8", lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Fields */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>
+                  🔗 {t("כתובת דף נחיתה","Landing Page URL")} *
+                </label>
+                <input
+                  value={publishTargetUrl}
+                  onChange={e => setPublishTargetUrl(e.target.value)}
+                  placeholder={selectedProduct?.permalink || "https://mystore.co.il/product/..."}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>
+                  📋 {t("שם קמפיין","Campaign Name")}
+                </label>
+                <input
+                  value={publishCampaignName}
+                  onChange={e => setPublishCampaignName(e.target.value)}
+                  placeholder={`AdScale – ${selectedProduct?.name || "קמפיין חדש"}`}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>
+                  💰 {t("תקציב יומי (₪)","Daily Budget (₪)")}
+                </label>
+                <input
+                  type="number" min="1" value={publishBudget}
+                  onChange={e => setPublishBudget(e.target.value)}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {/* Ad preview summary */}
+              <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 14px", border: "1px solid #e2e8f0", fontSize: 12 }}>
+                <div style={{ fontWeight: 700, color: "#475569", marginBottom: 6 }}>{t("מה יפורסם:","What will be published:")}</div>
+                <div style={{ color: "#1e293b", marginBottom: 2 }}>📝 {variations[selectedVar]?.headline}</div>
+                <div style={{ color: "#64748b" }}>📄 {variations[selectedVar]?.description?.substring(0, 80)}...</div>
+                {generatedImage && <div style={{ color: "#00d4aa", marginTop: 4 }}>🖼️ {t("כולל תמונה שנוצרה","Includes generated image")}</div>}
+              </div>
+
+              {/* Platform warning if missing credentials */}
+              {!connections[platform === "google" ? "google_ads" : platform]?.access_token && (
+                <div style={{ background: "#fef3c710", border: "1px solid #f5a62333", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#92400e" }}>
+                  ⚠️ {t("חסר Access Token — הוסף אותו בהגדרות → חיבורים","Missing Access Token — add it in Settings → Connections")}
+                </div>
+              )}
+            </div>
+
+            {/* Result */}
+            {publishResult && (
+              <div style={{ background: publishResult.success ? "#00d4aa10" : "#ef444410", border: `1px solid ${publishResult.success ? "#00d4aa33" : "#ef444433"}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, color: publishResult.success ? "#065f46" : "#b91c1c", marginBottom: 16 }}>
+                {publishResult.success ? "✅ " : "❌ "}{publishResult.message}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setPublishOpen(false)} style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid #e2e8f0", background: "transparent", color: "#64748b", cursor: "pointer", fontSize: 13 }}>
+                {t("ביטול","Cancel")}
+              </button>
+              <button
+                onClick={handlePublish}
+                disabled={publishing || !publishTargetUrl}
+                style={{ padding: "9px 24px", borderRadius: 10, border: "none", background: publishing || !publishTargetUrl ? "#94a3b8" : "linear-gradient(135deg,#7c74ff,#5e55e8)", color: "#fff", cursor: publishing || !publishTargetUrl ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700 }}
+              >
+                {publishing ? "⏳ " + t("שולח...","Publishing...") : "🚀 " + t("פרסם עכשיו","Publish Now")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -791,6 +938,15 @@ export default function DashboardPage() {
   const [preset, setPreset] = useState(0);
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
   const [lang, setLang] = useState<"he" | "en">("he");
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const TABS = getTabs(lang);
@@ -882,13 +1038,13 @@ export default function DashboardPage() {
   const dir = lang === "he" ? "rtl" : "ltr";
 
   const s: Record<string, any> = {
-    root: { minHeight: "100vh", background: "#f0f4f8", color: "#1e293b", fontFamily: "'Rubik','Heebo',sans-serif", direction: dir, display: "flex" },
-    sidebar: { width: 230, minHeight: "100vh", background: "#ffffff", borderLeft: lang === "he" ? "1px solid #e2e8f0" : "none", borderRight: lang === "en" ? "1px solid #e2e8f0" : "none", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, boxShadow: "0 0 20px rgba(0,0,0,0.06)" },
-    main: { flex: 1, padding: "32px 36px", minWidth: 0, overflowY: "auto" },
-    header: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 },
-    card: { background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 16, padding: 22, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" },
-    statsGrid: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 },
-    grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 },
+    root: { minHeight: "100vh", background: "#f0f4f8", color: "#1e293b", fontFamily: "'Rubik','Heebo',sans-serif", direction: dir, display: "flex", flexDirection: isMobile ? "column" : "row" },
+    sidebar: isMobile ? { display: "none" } : { width: 230, minHeight: "100vh", background: "#ffffff", borderLeft: lang === "he" ? "1px solid #e2e8f0" : "none", borderRight: lang === "en" ? "1px solid #e2e8f0" : "none", display: "flex", flexDirection: "column", padding: "24px 0", flexShrink: 0, boxShadow: "0 0 20px rgba(0,0,0,0.06)" },
+    main: { flex: 1, padding: isMobile ? "16px 14px 90px" : "32px 36px", minWidth: 0, overflowY: "auto" },
+    header: { display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "flex-start", marginBottom: isMobile ? 16 : 28, flexWrap: "wrap" as const, gap: isMobile ? 10 : 0 },
+    card: { background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: isMobile ? 12 : 16, padding: isMobile ? 14 : 22, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" },
+    statsGrid: { display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: isMobile ? 10 : 14, marginBottom: 20 },
+    grid2: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 10 : 14, marginBottom: 20 },
     btn: (v: string) => ({
       padding: v === "sm" ? "5px 12px" : "9px 20px", borderRadius: 10, border: "none",
       cursor: "pointer", fontSize: v === "sm" ? 11 : 13, fontWeight: 600,
@@ -915,8 +1071,31 @@ export default function DashboardPage() {
     return connections[id] && Object.keys(connections[id]).length > 0;
   });
 
+  /* mobile tabs visible in bottom nav: pick 5 most-used */
+  const MOBILE_NAV_TABS = [0, 1, 4, 5, 6]; // dashboard, campaigns, neg-kw, ad creator, settings
+
   return (
     <div style={s.root}>
+
+      {/* ── Mobile top bar ── */}
+      {isMobile && (
+        <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize: 20, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            AdScale AI
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ display: "flex", background: "#f0f4f8", borderRadius: 8, padding: 2, gap: 2 }}>
+              {(["he", "en"] as const).map(l => (
+                <button key={l} onClick={() => setLang(l)} style={{ padding: "3px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: lang === l ? "#fff" : "transparent", color: lang === l ? "#7c74ff" : "#94a3b8", boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>
+                  {l === "he" ? "ע" : "EN"}
+                </button>
+              ))}
+            </div>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: isLive ? "#00d4aa" : "#f5a623" }} title={isLive ? "Live" : "Demo"} />
+          </div>
+        </div>
+      )}
+
       <div style={s.sidebar}>
         <div style={{ padding: "0 20px 20px", borderBottom: "1px solid #e2e8f0", marginBottom: 12 }}>
           <div style={{ fontSize: 22, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -982,19 +1161,19 @@ export default function DashboardPage() {
                   {loading ? t("טוען נתונים...", "Loading...") : isLive ? t("נתונים חיים", "Live data") : t("מצב דמו", "Demo mode")}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" as const }}>
                 <div style={{ display: "flex", background: "#f0f4f8", borderRadius: 10, padding: 3, gap: 2 }}>
                   {DATE_PRESETS.map((p, i) => (
                     <button key={i} onClick={() => setPreset(i)} style={{
-                      padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer",
-                      fontSize: 12, fontWeight: 600,
+                      padding: isMobile ? "5px 10px" : "6px 14px", borderRadius: 8, border: "none", cursor: "pointer",
+                      fontSize: isMobile ? 11 : 12, fontWeight: 600,
                       background: preset === i ? "#7c74ff" : "transparent",
                       color: preset === i ? "#fff" : "#64748b",
                     }}>{p.label}</button>
                   ))}
                 </div>
                 <button style={s.btn("default")} onClick={refetch}>↻</button>
-                <button style={s.btn("primary")} onClick={() => setActiveTab(1)}>+ {t("קמפיין חדש", "New Campaign")}</button>
+                {!isMobile && <button style={s.btn("primary")} onClick={() => setActiveTab(1)}>+ {t("קמפיין חדש", "New Campaign")}</button>}
               </div>
             </div>
 
@@ -1009,7 +1188,7 @@ export default function DashboardPage() {
                 <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(18px)", transition: `all 0.45s ease ${i * 0.08}s` }}>
                   <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>{m.label}</div>
                   {loading ? <Skeleton h={32} r={6} /> :
-                    <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: "-1px", color: "#1e293b" }}>
+                    <div style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, letterSpacing: "-1px", color: "#1e293b" }}>
                       {m.prefix}{typeof m.val === "number" ? (m.label.includes("ROAS") || m.label.includes("Avg") ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()) : m.val}{m.suffix}
                     </div>
                   }
@@ -1157,7 +1336,8 @@ export default function DashboardPage() {
                   {[...Array(5)].map((_, i) => <Skeleton key={i} h={44} r={8} />)}
                 </div>
               ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: isMobile ? 560 : "unset" }}>
                   <thead>
                     <tr>{[t("שם קמפיין","Campaign"),t("פלטפורמה","Platform"),t("סטטוס","Status"),t("תקציב","Budget"),t("הוצאה","Spend"),"ROAS",t("המרות","Conv."),t("פעולות","Actions")].map(h => <th key={h} style={s.th}>{h}</th>)}</tr>
                   </thead>
@@ -1199,6 +1379,7 @@ export default function DashboardPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </div>
           </>
@@ -1368,7 +1549,7 @@ export default function DashboardPage() {
           </>
         )}
 
-        {activeTab === 5 && <AdCreatorTab s={s} t={t} lang={lang} connections={connections} />}
+        {activeTab === 5 && <AdCreatorTab s={s} t={t} lang={lang} connections={connections} isMobile={isMobile} />}
 
         {activeTab === 6 && (
           <>
@@ -1380,7 +1561,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 14 }}>
               {INTEGRATIONS.map((intg, i) => {
                 const saved = connections[intg.id] || {};
                 const isConnected = Object.keys(saved).length > 0;
@@ -1434,6 +1615,23 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {/* ── Mobile bottom nav ── */}
+      {isMobile && (
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "#fff", borderTop: "1px solid #e2e8f0", display: "flex", boxShadow: "0 -2px 12px rgba(0,0,0,0.08)" }}>
+          {MOBILE_NAV_TABS.map(tabIdx => {
+            const tab = TABS[tabIdx];
+            const active = activeTab === tabIdx;
+            return (
+              <button key={tabIdx} onClick={() => setActiveTab(tabIdx)} style={{ flex: 1, padding: "10px 4px 8px", border: "none", background: "transparent", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{tab.icon}</span>
+                <span style={{ fontSize: 9, fontWeight: active ? 700 : 400, color: active ? "#7c74ff" : "#94a3b8", maxWidth: 52, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tab.label}</span>
+                {active && <div style={{ width: 18, height: 2, borderRadius: 1, background: "#7c74ff" }} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
