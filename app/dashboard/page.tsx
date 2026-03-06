@@ -14,6 +14,7 @@ interface WooProduct {
   categories: { id: number; name: string }[];
   images: { src: string; alt: string }[];
   stock_status: string;
+  permalink?: string;
 }
 interface AdVariation {
   headline: string;
@@ -171,6 +172,9 @@ const INTEGRATIONS: IntegrationDef[] = [
       { key: "developer_token", label: "Developer Token", placeholder: "ABcd1234...", secret: true },
       { key: "client_id", label: "OAuth Client ID", placeholder: "1234.apps.googleusercontent.com" },
       { key: "client_secret", label: "OAuth Client Secret", placeholder: "GOCSPX-...", secret: true },
+      { key: "access_token", label: "Access Token", placeholder: "ya29.a0A...", secret: true, hint: "לאחר OAuth — מאפשר פרסום ישיר" },
+      { key: "campaign_id", label: "Campaign ID (אופציונלי)", placeholder: "123456789", hint: "אם ריק — תיפתח קמפיין חדשה" },
+      { key: "ad_group_id", label: "Ad Group ID (אופציונלי)", placeholder: "123456789" },
     ],
   },
   {
@@ -191,6 +195,8 @@ const INTEGRATIONS: IntegrationDef[] = [
       { key: "account_id", label: "Ad Account ID", placeholder: "act_123456789", hint: "מספר חשבון פרסום" },
       { key: "app_id", label: "App ID", placeholder: "123456789" },
       { key: "app_secret", label: "App Secret", placeholder: "...", secret: true },
+      { key: "access_token", label: "Access Token", placeholder: "EAABwzLix...", secret: true, hint: "לאחר OAuth — מאפשר פרסום ישיר" },
+      { key: "page_id", label: "Facebook Page ID", placeholder: "123456789", hint: "נדרש לפרסום" },
     ],
   },
   {
@@ -201,6 +207,7 @@ const INTEGRATIONS: IntegrationDef[] = [
       { key: "advertiser_id", label: "Advertiser ID", placeholder: "1234567890" },
       { key: "app_id", label: "App ID", placeholder: "...", hint: "מ-TikTok Business Center" },
       { key: "app_secret", label: "App Secret", placeholder: "...", secret: true },
+      { key: "access_token", label: "Access Token", placeholder: "att_...", secret: true, hint: "לאחר OAuth — מאפשר פרסום ישיר" },
     ],
   },
   {
@@ -445,6 +452,43 @@ function AdCreatorTab({ s, t, lang, connections }: {
   const [textError, setTextError] = useState<string | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [publishOpen, setPublishOpen] = useState(false);
+  const [publishTargetUrl, setPublishTargetUrl] = useState("");
+  const [publishCampaignName, setPublishCampaignName] = useState("");
+  const [publishBudget, setPublishBudget] = useState("50");
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  async function handlePublish() {
+    if (!variations[selectedVar]) return;
+    setPublishing(true);
+    setPublishResult(null);
+    const v = variations[selectedVar];
+    try {
+      const res = await fetch("/api/ads/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform,
+          headline: v.headline,
+          description: v.description,
+          cta: v.cta,
+          imageUrl: generatedImage || undefined,
+          targetUrl: publishTargetUrl,
+          campaignName: publishCampaignName || `AdScale – ${selectedProduct?.name || "קמפיין"}`,
+          dailyBudget: Number(publishBudget) || 50,
+          connections,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) setPublishResult({ success: false, message: data.error });
+      else setPublishResult({ success: true, message: data.message });
+    } catch (e: any) {
+      setPublishResult({ success: false, message: e.message });
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   useEffect(() => {
     fetch("/api/woocommerce/products", {
@@ -655,9 +699,17 @@ function AdCreatorTab({ s, t, lang, connections }: {
             <div style={s.card}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{t("וריאציות טקסט","Text Variations")}</div>
-                <button onClick={copyToClipboard} style={{ ...s.btn("sm"), background: copied ? "#00d4aa15" : "#f0f4f8", color: copied ? "#00d4aa" : "#475569" }}>
-                  {copied ? "✓ " + t("הועתק","Copied") : "📋 " + t("העתק","Copy")}
-                </button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={copyToClipboard} style={{ ...s.btn("sm"), background: copied ? "#00d4aa15" : "#f0f4f8", color: copied ? "#00d4aa" : "#475569" }}>
+                    {copied ? "✓ " + t("הועתק","Copied") : "📋 " + t("העתק","Copy")}
+                  </button>
+                  <button
+                    onClick={() => { setPublishOpen(true); setPublishResult(null); }}
+                    style={{ ...s.btn("sm"), background: "linear-gradient(135deg,#7c74ff,#5e55e8)", color: "#fff", fontWeight: 700 }}
+                  >
+                    🚀 {t("פרסם","Publish")}
+                  </button>
+                </div>
               </div>
               {/* Tab selector */}
               <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
@@ -780,6 +832,100 @@ function AdCreatorTab({ s, t, lang, connections }: {
           )}
         </div>
       </div>
+
+      {/* ── Publish Modal ── */}
+      {publishOpen && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPublishOpen(false); }}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 460, boxShadow: "0 25px 60px rgba(0,0,0,0.25)" }}>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 700 }}>🚀 {t("פרסם מודעה","Publish Ad")}</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                  {platform === "google" ? "Google Ads" : platform === "meta" ? "Meta Ads" : "TikTok Ads"}
+                  {" — "}
+                  {variations[selectedVar]?.headline}
+                </div>
+              </div>
+              <button onClick={() => setPublishOpen(false)} style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "#94a3b8", lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Fields */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>
+                  🔗 {t("כתובת דף נחיתה","Landing Page URL")} *
+                </label>
+                <input
+                  value={publishTargetUrl}
+                  onChange={e => setPublishTargetUrl(e.target.value)}
+                  placeholder={selectedProduct?.permalink || "https://mystore.co.il/product/..."}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>
+                  📋 {t("שם קמפיין","Campaign Name")}
+                </label>
+                <input
+                  value={publishCampaignName}
+                  onChange={e => setPublishCampaignName(e.target.value)}
+                  placeholder={`AdScale – ${selectedProduct?.name || "קמפיין חדש"}`}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "#475569", display: "block", marginBottom: 5 }}>
+                  💰 {t("תקציב יומי (₪)","Daily Budget (₪)")}
+                </label>
+                <input
+                  type="number" min="1" value={publishBudget}
+                  onChange={e => setPublishBudget(e.target.value)}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {/* Ad preview summary */}
+              <div style={{ background: "#f8fafc", borderRadius: 10, padding: "10px 14px", border: "1px solid #e2e8f0", fontSize: 12 }}>
+                <div style={{ fontWeight: 700, color: "#475569", marginBottom: 6 }}>{t("מה יפורסם:","What will be published:")}</div>
+                <div style={{ color: "#1e293b", marginBottom: 2 }}>📝 {variations[selectedVar]?.headline}</div>
+                <div style={{ color: "#64748b" }}>📄 {variations[selectedVar]?.description?.substring(0, 80)}...</div>
+                {generatedImage && <div style={{ color: "#00d4aa", marginTop: 4 }}>🖼️ {t("כולל תמונה שנוצרה","Includes generated image")}</div>}
+              </div>
+
+              {/* Platform warning if missing credentials */}
+              {!connections[platform === "google" ? "google_ads" : platform]?.access_token && (
+                <div style={{ background: "#fef3c710", border: "1px solid #f5a62333", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#92400e" }}>
+                  ⚠️ {t("חסר Access Token — הוסף אותו בהגדרות → חיבורים","Missing Access Token — add it in Settings → Connections")}
+                </div>
+              )}
+            </div>
+
+            {/* Result */}
+            {publishResult && (
+              <div style={{ background: publishResult.success ? "#00d4aa10" : "#ef444410", border: `1px solid ${publishResult.success ? "#00d4aa33" : "#ef444433"}`, borderRadius: 10, padding: "10px 14px", fontSize: 13, color: publishResult.success ? "#065f46" : "#b91c1c", marginBottom: 16 }}>
+                {publishResult.success ? "✅ " : "❌ "}{publishResult.message}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setPublishOpen(false)} style={{ padding: "9px 20px", borderRadius: 10, border: "1px solid #e2e8f0", background: "transparent", color: "#64748b", cursor: "pointer", fontSize: 13 }}>
+                {t("ביטול","Cancel")}
+              </button>
+              <button
+                onClick={handlePublish}
+                disabled={publishing || !publishTargetUrl}
+                style={{ padding: "9px 24px", borderRadius: 10, border: "none", background: publishing || !publishTargetUrl ? "#94a3b8" : "linear-gradient(135deg,#7c74ff,#5e55e8)", color: "#fff", cursor: publishing || !publishTargetUrl ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700 }}
+              >
+                {publishing ? "⏳ " + t("שולח...","Publishing...") : "🚀 " + t("פרסם עכשיו","Publish Now")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
