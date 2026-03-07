@@ -40,26 +40,26 @@ export default function NegativeKeywordsModule({ lang }: { lang: Lang }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div className="as-stats-grid">
-        <div style={{ background: "#1a1a2e", border: "1px solid #ef444433", borderRadius: 12, padding: 16, textAlign: "center" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #ef444433", borderRadius: 12, padding: 16, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#ef4444" }}>{suggestions.filter((s) => s.risk === "critical").length}</div>
-          <div style={{ fontSize: 12, color: "#8888aa" }}>{t("קריטי", "Critical")}</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{t("קריטי", "Critical")}</div>
         </div>
-        <div style={{ background: "#1a1a2e", border: "1px solid #f9741633", borderRadius: 12, padding: 16, textAlign: "center" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #f9741633", borderRadius: 12, padding: 16, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#f97316" }}>{suggestions.filter((s) => s.risk === "high").length}</div>
-          <div style={{ fontSize: 12, color: "#8888aa" }}>{t("גבוה", "High")}</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{t("גבוה", "High")}</div>
         </div>
-        <div style={{ background: "#1a1a2e", border: "1px solid #f59e0b33", borderRadius: 12, padding: 16, textAlign: "center" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #f59e0b33", borderRadius: 12, padding: 16, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#f59e0b" }}>₪{suggestions.reduce((s, k) => s + k.wasteEstimate, 0).toFixed(0)}</div>
-          <div style={{ fontSize: 12, color: "#8888aa" }}>{t("בזבוז מוערך", "Estimated Waste")}</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{t("בזבוז מוערך", "Estimated Waste")}</div>
         </div>
-        <div style={{ background: "#1a1a2e", border: "1px solid #10b98133", borderRadius: 12, padding: 16, textAlign: "center" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #10b98133", borderRadius: 12, padding: 16, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#10b981" }}>{applied}</div>
-          <div style={{ fontSize: 12, color: "#8888aa" }}>{t("יושמו היום", "Applied Today")}</div>
+          <div style={{ fontSize: 12, color: "#64748b" }}>{t("יושמו היום", "Applied Today")}</div>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <button onClick={() => { setAnalyzing(true); setTimeout(() => setAnalyzing(false), 2000); }} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "linear-gradient(135deg, #7c74ff, #00d4aa)", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+        <button onClick={() => { setAnalyzing(true); setTimeout(() => setAnalyzing(false), 2000); }} style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#6366f1", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
           {analyzing ? t("🔄 מנתח...", "🔄 Analyzing...") : t("🤖 נתח עם AI", "🤖 Analyze with AI")}
         </button>
         {suggestions.some((s) => s.selected) && (
@@ -67,16 +67,16 @@ export default function NegativeKeywordsModule({ lang }: { lang: Lang }) {
             🚫 {t("יישם", "Apply")} {suggestions.filter((s) => s.selected).length} {t("נבחרים", "selected")} ({t("חיסכון", "save")} ₪{totalWaste.toFixed(0)})
           </button>
         )}
-        <span style={{ fontSize: 12, color: "#8888aa", marginLeft: "auto" }}>{suggestions.length} {t("הצעות ממתינות", "pending suggestions")}</span>
+        <span style={{ fontSize: 12, color: "#64748b", marginLeft: "auto" }}>{suggestions.length} {t("הצעות ממתינות", "pending suggestions")}</span>
       </div>
 
-      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr style={{ background: "#13132a", borderBottom: "1px solid #2a2a4a" }}>
+            <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
               <th style={{ padding: "12px 16px", width: 40 }}><input type="checkbox" checked={allSelected} onChange={toggleAll} style={{ cursor: "pointer" }} /></th>
               {[t("שאילתה מקורית","Original Query"), t("מילה שלילית מוצעת","Suggested Negative"), t("סוג התאמה","Match Type"), t("סיכון","Risk"), t("ביטחון","Confidence"), t("בזבוז מוערך","Est. Waste"), t("מקור","Source")].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "right", color: "#8888aa", fontWeight: 600 }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "right", color: "#64748b", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -85,15 +85,15 @@ export default function NegativeKeywordsModule({ lang }: { lang: Lang }) {
               <tr key={s.id} onClick={() => toggle(s.id)} style={{ borderBottom: "1px solid #1e1e3a", cursor: "pointer", background: s.selected ? "#7c74ff11" : "transparent" }}>
                 <td style={{ padding: "12px 16px", textAlign: "center" }}><input type="checkbox" checked={s.selected} onChange={() => toggle(s.id)} style={{ cursor: "pointer" }} /></td>
                 <td style={{ padding: "12px 16px" }}>
-                  <div style={{ color: "#e0e0ff" }}>{s.query}</div>
-                  <div style={{ fontSize: 11, color: "#8888aa", marginTop: 2 }}>{lang === "he" ? s.reason : s.reasonEn}</div>
+                  <div style={{ color: "#1e293b" }}>{s.query}</div>
+                  <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{lang === "he" ? s.reason : s.reasonEn}</div>
                 </td>
-                <td style={{ padding: "12px 16px" }}><code style={{ background: "#7c74ff22", color: "#7c74ff", padding: "2px 8px", borderRadius: 6, fontFamily: "monospace" }}>{s.suggestedText}</code></td>
+                <td style={{ padding: "12px 16px" }}><code style={{ background: "#7c74ff22", color: "#6366f1", padding: "2px 8px", borderRadius: 6, fontFamily: "monospace" }}>{s.suggestedText}</code></td>
                 <td style={{ padding: "12px 16px" }}><span style={{ background: `${MATCH_COLORS[s.matchType]}22`, color: MATCH_COLORS[s.matchType], padding: "2px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600 }}>{s.matchType}</span></td>
                 <td style={{ padding: "12px 16px" }}><span style={{ color: RISK_COLORS[s.risk], fontWeight: 600 }}>{RISK_LABELS[s.risk]}</span></td>
                 <td style={{ padding: "12px 16px" }}>
-                  <div style={{ width: 60, height: 6, background: "#2a2a4a", borderRadius: 3 }}><div style={{ width: `${s.confidence * 100}%`, height: "100%", background: "#7c74ff", borderRadius: 3 }} /></div>
-                  <span style={{ fontSize: 11, color: "#8888aa" }}>{Math.round(s.confidence * 100)}%</span>
+                  <div style={{ width: 60, height: 6, background: "#e2e8f0", borderRadius: 3 }}><div style={{ width: `${s.confidence * 100}%`, height: "100%", background: "#6366f1", borderRadius: 3 }} /></div>
+                  <span style={{ fontSize: 11, color: "#64748b" }}>{Math.round(s.confidence * 100)}%</span>
                 </td>
                 <td style={{ padding: "12px 16px", color: "#ef4444", fontWeight: 600 }}>₪{s.wasteEstimate.toFixed(0)}</td>
                 <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 11, background: s.source === "ai" ? "#3b82f622" : "#8b5cf622", color: s.source === "ai" ? "#3b82f6" : "#8b5cf6", padding: "2px 8px", borderRadius: 6 }}>{s.source === "ai" ? "🤖 AI" : t("📏 כלל", "📏 Rule")}</span></td>

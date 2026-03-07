@@ -48,7 +48,7 @@ export default function SearchTermsModule({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 20 }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
         <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600 }}>📊 {t("התפלגות כוונת חיפוש", "Search Intent Distribution")}</h3>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {Object.entries(distribution).map(([intent, count]) => (
@@ -62,15 +62,15 @@ export default function SearchTermsModule({ lang }: { lang: Lang }) {
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("🔍 חפש שאילתה...", "🔍 Search query...")}
-          style={{ flex: 1, minWidth: 200, background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
-        <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} style={{ background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+          style={{ flex: 1, minWidth: 200, background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
+        <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="all">{t("כל רמות הסיכון", "All Risk Levels")}</option>
           <option value="critical">{t("קריטי", "Critical")}</option>
           <option value="high">{t("גבוה", "High")}</option>
           <option value="medium">{t("בינוני", "Medium")}</option>
           <option value="low">{t("נמוך", "Low")}</option>
         </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} style={{ background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="spend">{t("מיין לפי הוצאה", "Sort by Spend")}</option>
           <option value="score">{t("מיין לפי ציון", "Sort by Score")}</option>
           <option value="conversions">{t("מיין לפי המרות", "Sort by Conversions")}</option>
@@ -80,20 +80,20 @@ export default function SearchTermsModule({ lang }: { lang: Lang }) {
         </button>
       </div>
 
-      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
-              <tr style={{ background: "#13132a", borderBottom: "1px solid #2a2a4a" }}>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                 {[t("שאילתת חיפוש","Search Query"), t("כוונה","Intent"), t("ציון","Score"), t("סיכון","Risk"), t("פעולה מומלצת","Recommended Action"), t("קליקים","Clicks"), t("הוצאה","Spend"), t("המרות","Conversions"), "CVR"].map((h) => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "right", color: "#8888aa", fontWeight: 600 }}>{h}</th>
+                  <th key={h} style={{ padding: "12px 16px", textAlign: "right", color: "#64748b", fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {filtered.map((term, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid #1e1e3a" }}>
-                  <td style={{ padding: "12px 16px", color: "#e0e0ff", fontWeight: 500 }}>{term.query}</td>
+                  <td style={{ padding: "12px 16px", color: "#1e293b", fontWeight: 500 }}>{term.query}</td>
                   <td style={{ padding: "12px 16px" }}>
                     <span style={{ background: `${INTENT_COLORS[term.intent]}22`, color: INTENT_COLORS[term.intent], padding: "2px 10px", borderRadius: 12, fontSize: 11, fontWeight: 600 }}>
                       {INTENT_LABELS[term.intent]}
@@ -101,10 +101,10 @@ export default function SearchTermsModule({ lang }: { lang: Lang }) {
                   </td>
                   <td style={{ padding: "12px 16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 40, height: 6, background: "#2a2a4a", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: 40, height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
                         <div style={{ width: `${term.score}%`, height: "100%", background: term.score >= 60 ? "#10b981" : term.score >= 40 ? "#f59e0b" : "#ef4444", borderRadius: 3 }} />
                       </div>
-                      <span style={{ color: "#e0e0ff" }}>{term.score}</span>
+                      <span style={{ color: "#1e293b" }}>{term.score}</span>
                     </div>
                   </td>
                   <td style={{ padding: "12px 16px" }}>
@@ -117,10 +117,10 @@ export default function SearchTermsModule({ lang }: { lang: Lang }) {
                       {actionLabel(term.recommendedAction)}
                     </span>
                   </td>
-                  <td style={{ padding: "12px 16px", color: "#e0e0ff" }}>{term.clicks.toLocaleString()}</td>
-                  <td style={{ padding: "12px 16px", color: "#e0e0ff" }}>₪{term.spend.toFixed(0)}</td>
+                  <td style={{ padding: "12px 16px", color: "#1e293b" }}>{term.clicks.toLocaleString()}</td>
+                  <td style={{ padding: "12px 16px", color: "#1e293b" }}>₪{term.spend.toFixed(0)}</td>
                   <td style={{ padding: "12px 16px", color: term.conversions > 0 ? "#10b981" : "#ef4444", fontWeight: 600 }}>{term.conversions}</td>
-                  <td style={{ padding: "12px 16px", color: "#e0e0ff" }}>{term.cvr.toFixed(1)}%</td>
+                  <td style={{ padding: "12px 16px", color: "#1e293b" }}>{term.cvr.toFixed(1)}%</td>
                 </tr>
               ))}
             </tbody>

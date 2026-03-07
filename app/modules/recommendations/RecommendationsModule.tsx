@@ -41,13 +41,13 @@ export default function RecommendationsModule({ lang }: { lang: Lang }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <select value={mode} onChange={(e) => setMode(e.target.value)} style={{ background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+        <select value={mode} onChange={(e) => setMode(e.target.value)} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="DRY_RUN">{t("🔍 סימולציה בלבד", "🔍 Dry Run Only")}</option>
           <option value="SUGGESTION">{t("💡 הצעות בלבד", "💡 Suggestions Only")}</option>
           <option value="APPROVAL_REQUIRED">{t("✅ דורש אישור", "✅ Approval Required")}</option>
           <option value="AUTOMATED">{t("⚡ אוטומטי מלא", "⚡ Fully Automated")}</option>
         </select>
-        <button onClick={runAnalysis} disabled={running} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: running ? "#3a3a5a" : "linear-gradient(135deg, #7c74ff, #00d4aa)", color: "#fff", cursor: running ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600 }}>
+        <button onClick={runAnalysis} disabled={running} style={{ padding: "8px 20px", borderRadius: 8, border: "none", background: running ? "#e2e8f0" : "#6366f1", color: "#fff", cursor: running ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 600 }}>
           {running ? t("🔄 מנתח...", "🔄 Analyzing...") : t("🤖 הפעל ניתוח AI", "🤖 Run AI Analysis")}
         </button>
         {recs.some((r) => r.status === "PENDING") && (
@@ -57,7 +57,7 @@ export default function RecommendationsModule({ lang }: { lang: Lang }) {
         )}
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           {["all", "critical", "high", "medium", "low"].map((f) => (
-            <button key={f} onClick={() => setFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, background: filter === f ? (f === "all" ? "#7c74ff" : SEVERITY_COLORS[f as keyof typeof SEVERITY_COLORS]) : "#1a1a2e", color: filter === f ? "#fff" : "#8888aa" }}>
+            <button key={f} onClick={() => setFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, background: filter === f ? (f === "all" ? "#7c74ff" : SEVERITY_COLORS[f as keyof typeof SEVERITY_COLORS]) : "#ffffff", color: filter === f ? "#fff" : "#8888aa" }}>
               {f === "all" ? t("הכל", "All") : (lang === "he" ? SEVERITY_HE : SEVERITY_EN)[f as keyof typeof SEVERITY_HE]}
             </button>
           ))}
@@ -70,7 +70,7 @@ export default function RecommendationsModule({ lang }: { lang: Lang }) {
           return (
             <div key={s} style={{ background: `${SEVERITY_COLORS[s]}11`, border: `1px solid ${SEVERITY_COLORS[s]}33`, borderRadius: 8, padding: "8px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: SEVERITY_COLORS[s] }}>{count}</div>
-              <div style={{ fontSize: 11, color: "#8888aa" }}>{(lang === "he" ? SEVERITY_HE : SEVERITY_EN)[s]}</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{(lang === "he" ? SEVERITY_HE : SEVERITY_EN)[s]}</div>
             </div>
           );
         })}
@@ -78,13 +78,13 @@ export default function RecommendationsModule({ lang }: { lang: Lang }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {filtered.length === 0 && (
-          <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 40, textAlign: "center", color: "#8888aa" }}>
+          <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 40, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
             <div>{t("אין המלצות ממתינות — הכל מעודכן!", "No pending recommendations — everything is up to date!")}</div>
           </div>
         )}
         {filtered.map((rec) => (
-          <div key={rec.id} style={{ background: "#1a1a2e", border: `1px solid ${SEVERITY_COLORS[rec.severity]}33`, borderRight: `4px solid ${SEVERITY_COLORS[rec.severity]}`, borderRadius: 12, padding: 20 }}>
+          <div key={rec.id} style={{ background: "#ffffff", border: `1px solid ${SEVERITY_COLORS[rec.severity]}33`, borderRight: `4px solid ${SEVERITY_COLORS[rec.severity]}`, borderRadius: 12, padding: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
@@ -96,9 +96,9 @@ export default function RecommendationsModule({ lang }: { lang: Lang }) {
                 </div>
                 <div style={{ fontSize: 13, color: "#a0a0c0", marginBottom: 8 }}>{lang === "he" ? rec.reason : rec.reasonEn}</div>
                 <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                  {rec.campaign && <span style={{ fontSize: 12, color: "#7c74ff", background: "#7c74ff11", padding: "2px 10px", borderRadius: 6 }}>📊 {rec.campaign.name}</span>}
+                  {rec.campaign && <span style={{ fontSize: 12, color: "#6366f1", background: "#7c74ff11", padding: "2px 10px", borderRadius: 6 }}>📊 {rec.campaign.name}</span>}
                   <span style={{ fontSize: 12, color: "#10b981" }}>⚡ {lang === "he" ? rec.expectedImpact : rec.expectedImpactEn}</span>
-                  <span style={{ fontSize: 12, color: "#8888aa" }}>{t("ביטחון", "Confidence")}: {Math.round(rec.confidence * 100)}%</span>
+                  <span style={{ fontSize: 12, color: "#64748b" }}>{t("ביטחון", "Confidence")}: {Math.round(rec.confidence * 100)}%</span>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
@@ -107,7 +107,7 @@ export default function RecommendationsModule({ lang }: { lang: Lang }) {
                     <button onClick={() => setRecs((prev) => prev.map((r) => r.id === rec.id ? { ...r, status: "APPROVED" } : r))} style={{ padding: "7px 16px", borderRadius: 8, border: "1px solid #10b981", background: "#10b98111", color: "#10b981", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
                       ✅ {t("אשר", "Approve")}
                     </button>
-                    <button onClick={() => dismiss(rec.id)} style={{ padding: "7px 16px", borderRadius: 8, border: "1px solid #3a3a5a", background: "transparent", color: "#8888aa", cursor: "pointer", fontSize: 12 }}>✕</button>
+                    <button onClick={() => dismiss(rec.id)} style={{ padding: "7px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "transparent", color: "#64748b", cursor: "pointer", fontSize: 12 }}>✕</button>
                   </>
                 ) : (
                   <span style={{ fontSize: 12, color: "#10b981", fontWeight: 600 }}>✅ {t("אושר", "Approved")}</span>

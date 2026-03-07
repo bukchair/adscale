@@ -38,21 +38,21 @@ export default function AutomationModule({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 20 }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
         <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600 }}>⚙️ {t("מצב הפעלה גלובלי", "Global Execution Mode")}</h3>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {(Object.keys(MODE_LABELS) as Policy["mode"][]).map((mode) => (
-            <button key={mode} onClick={() => setGlobalMode(mode)} style={{ padding: "10px 20px", borderRadius: 10, border: `2px solid ${globalMode === mode ? MODE_COLORS[mode] : "#3a3a5a"}`, background: globalMode === mode ? `${MODE_COLORS[mode]}22` : "#13132a", color: globalMode === mode ? MODE_COLORS[mode] : "#8888aa", cursor: "pointer", fontSize: 13, fontWeight: globalMode === mode ? 700 : 400 }}>
+            <button key={mode} onClick={() => setGlobalMode(mode)} style={{ padding: "10px 20px", borderRadius: 10, border: `2px solid ${globalMode === mode ? MODE_COLORS[mode] : "#e2e8f0"}`, background: globalMode === mode ? `${MODE_COLORS[mode]}22` : "#f8fafc", color: globalMode === mode ? MODE_COLORS[mode] : "#8888aa", cursor: "pointer", fontSize: 13, fontWeight: globalMode === mode ? 700 : 400 }}>
               {MODE_LABELS[mode]}
             </button>
           ))}
         </div>
-        <p style={{ fontSize: 12, color: "#8888aa", marginTop: 12 }}>{globalDesc[globalMode]}</p>
+        <p style={{ fontSize: 12, color: "#64748b", marginTop: 12 }}>{globalDesc[globalMode]}</p>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {policies.map((policy) => (
-          <div key={policy.id} style={{ background: "#1a1a2e", border: `1px solid ${policy.enabled ? "#2a2a4a" : "#1a1a2a"}`, borderRadius: 12, padding: 20, opacity: policy.enabled ? 1 : 0.6 }}>
+          <div key={policy.id} style={{ background: "#ffffff", border: `1px solid ${policy.enabled ? "#e2e8f0" : "#1a1a2a"}`, borderRadius: 12, padding: 20, opacity: policy.enabled ? 1 : 0.6 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
@@ -60,21 +60,21 @@ export default function AutomationModule({ lang }: { lang: Lang }) {
                   <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 20, background: `${MODE_COLORS[policy.mode]}22`, color: MODE_COLORS[policy.mode], fontWeight: 600 }}>{MODE_LABELS[policy.mode]}</span>
                   {policy.enabled && <span style={{ fontSize: 11, color: "#10b981" }}>● {t("פעיל", "Active")}</span>}
                 </div>
-                <div style={{ fontSize: 12, color: "#6666aa", fontFamily: "monospace", background: "#13132a", padding: "6px 12px", borderRadius: 6, marginBottom: 8 }}>
-                  <span style={{ color: "#8888aa" }}>TRIGGER: </span>
-                  <span style={{ color: "#a78bfa" }}>{policy.trigger}</span>
+                <div style={{ fontSize: 12, color: "#6666aa", fontFamily: "monospace", background: "#f8fafc", padding: "6px 12px", borderRadius: 6, marginBottom: 8 }}>
+                  <span style={{ color: "#64748b" }}>TRIGGER: </span>
+                  <span style={{ color: "#8b5cf6" }}>{policy.trigger}</span>
                 </div>
-                <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#8888aa" }}>
-                  <span>🎯 {t("פעולה", "Action")}: <strong style={{ color: "#e0e0ff" }}>{policy.action}</strong></span>
-                  <span>🔢 {t("הופעל", "Triggered")}: <strong style={{ color: "#e0e0ff" }}>{policy.timesTriggered}x</strong></span>
-                  {policy.lastTriggered && <span>⏰ {t("אחרון", "Last")}: <strong style={{ color: "#e0e0ff" }}>{lang === "he" ? `לפני ${Math.floor((Date.now() - new Date(policy.lastTriggered).getTime()) / 3600000)} שעות` : `${Math.floor((Date.now() - new Date(policy.lastTriggered).getTime()) / 3600000)}h ago`}</strong></span>}
+                <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#64748b" }}>
+                  <span>🎯 {t("פעולה", "Action")}: <strong style={{ color: "#1e293b" }}>{policy.action}</strong></span>
+                  <span>🔢 {t("הופעל", "Triggered")}: <strong style={{ color: "#1e293b" }}>{policy.timesTriggered}x</strong></span>
+                  {policy.lastTriggered && <span>⏰ {t("אחרון", "Last")}: <strong style={{ color: "#1e293b" }}>{lang === "he" ? `לפני ${Math.floor((Date.now() - new Date(policy.lastTriggered).getTime()) / 3600000)} שעות` : `${Math.floor((Date.now() - new Date(policy.lastTriggered).getTime()) / 3600000)}h ago`}</strong></span>}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
-                <select value={policy.mode} onChange={(e) => updateMode(policy.id, e.target.value as Policy["mode"])} style={{ background: "#13132a", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "6px 10px", fontSize: 12 }}>
+                <select value={policy.mode} onChange={(e) => updateMode(policy.id, e.target.value as Policy["mode"])} style={{ background: "#f8fafc", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "6px 10px", fontSize: 12 }}>
                   {(Object.keys(MODE_LABELS) as Policy["mode"][]).map((m) => <option key={m} value={m}>{MODE_LABELS[m]}</option>)}
                 </select>
-                <div onClick={() => togglePolicy(policy.id)} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", background: policy.enabled ? "#10b981" : "#3a3a5a", position: "relative", transition: "background 0.2s" }}>
+                <div onClick={() => togglePolicy(policy.id)} style={{ width: 44, height: 24, borderRadius: 12, cursor: "pointer", background: policy.enabled ? "#10b981" : "#e2e8f0", position: "relative", transition: "background 0.2s" }}>
                   <div style={{ width: 18, height: 18, borderRadius: "50%", background: "#fff", position: "absolute", top: 3, left: policy.enabled ? 23 : 3, transition: "left 0.2s" }} />
                 </div>
               </div>
@@ -83,7 +83,7 @@ export default function AutomationModule({ lang }: { lang: Lang }) {
         ))}
       </div>
 
-      <button style={{ padding: "12px", borderRadius: 12, border: "2px dashed #3a3a5a", background: "transparent", color: "#8888aa", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
+      <button style={{ padding: "12px", borderRadius: 12, border: "2px dashed #3a3a5a", background: "transparent", color: "#64748b", cursor: "pointer", fontSize: 14, fontWeight: 500 }}>
         + {t("הוסף מדיניות אוטומציה חדשה", "Add New Automation Policy")}
       </button>
     </div>

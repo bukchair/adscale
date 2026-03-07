@@ -10,11 +10,11 @@ interface OverviewStats {
 }
 
 const StatCard = ({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color: string; icon: string }) => (
-  <div style={{ background: "#1a1a2e", border: `1px solid ${color}33`, borderRadius: 12, padding: "20px 24px", position: "relative", overflow: "hidden" }}>
+  <div style={{ background: "#ffffff", border: `1px solid ${color}33`, borderRadius: 12, padding: "20px 24px", position: "relative", overflow: "hidden" }}>
     <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: color, borderRadius: "12px 12px 0 0" }} />
     <div style={{ fontSize: 24, marginBottom: 8 }}>{icon}</div>
-    <div style={{ fontSize: 26, fontWeight: 700, color: "#fff" }}>{value}</div>
-    <div style={{ fontSize: 13, color: "#8888aa", marginTop: 4 }}>{label}</div>
+    <div style={{ fontSize: 26, fontWeight: 700, color: "#1e293b" }}>{value}</div>
+    <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{label}</div>
     {sub && <div style={{ fontSize: 11, color: color, marginTop: 6 }}>{sub}</div>}
   </div>
 );
@@ -24,7 +24,7 @@ const AlertBadge = ({ type, message }: { type: "warning" | "error" | "info" | "s
   return (
     <div style={{ background: `${colors[type]}11`, border: `1px solid ${colors[type]}44`, borderRadius: 8, padding: "10px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
       <span style={{ color: colors[type], fontSize: 16 }}>{type === "warning" ? "⚠️" : type === "error" ? "🚨" : type === "success" ? "✅" : "ℹ️"}</span>
-      <span style={{ fontSize: 13, color: "#d0d0f0" }}>{message}</span>
+      <span style={{ fontSize: 13, color: "#475569" }}>{message}</span>
     </div>
   );
 };
@@ -56,7 +56,7 @@ export default function OverviewModule({ lang }: { lang: Lang }) {
         <StatCard label={t("שאילתות מסווגות", "Queries Classified")} value={s.classifiedToday.toLocaleString()} sub={t("היום", "Today")} color="#3b82f6" icon="🔍" />
       </div>
 
-      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 20 }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
         <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 600 }}>🚨 {t("התראות פעילות", "Active Alerts")}</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <AlertBadge type="error" message={t("קמפיין 'Shopping - כל המוצרים' הפסיד ₪2,340 ב-7 ימים האחרונים — ממליץ לבצע אופטימיזציה מיידית", "'Shopping - All Products' lost ₪2,340 in the last 7 days — immediate optimization recommended")} />
@@ -66,11 +66,11 @@ export default function OverviewModule({ lang }: { lang: Lang }) {
         </div>
       </div>
 
-      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 20 }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
         <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 600 }}>⚡ {t("פעולות מהירות", "Quick Actions")}</h3>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {[
-            { he: "🤖 הפעל ניתוח AI",     en: "🤖 Run AI Analysis",         color: "#7c74ff" },
+            { he: "🤖 הפעל ניתוח AI",     en: "🤖 Run AI Analysis",         color: "#6366f1" },
             { he: "🔍 סווג שאילתות",       en: "🔍 Classify Queries",        color: "#3b82f6" },
             { he: "✅ אשר המלצות ממתינות", en: "✅ Approve Pending Actions", color: "#10b981" },
             { he: "📊 הפק דוח רווחיות",   en: "📊 Generate Profit Report",  color: "#f59e0b" },
@@ -89,7 +89,7 @@ function LoadingSkeleton() {
   return (
     <div className="as-stats-grid" style={{ gap: 16 }}>
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} style={{ background: "#1a1a2e", borderRadius: 12, padding: 20, height: 100, animation: "pulse 1.5s infinite" }} />
+        <div key={i} style={{ background: "#ffffff", borderRadius: 12, padding: 20, height: 100, animation: "pulse 1.5s infinite" }} />
       ))}
     </div>
   );

@@ -120,7 +120,7 @@ export function RecommendationsFeed({
             </div>
 
             {rec.expectedImpact && (
-              <div style={{ fontSize: 11, color: "#00d4aa", fontWeight: 600, marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "#10b981", fontWeight: 600, marginBottom: 8 }}>
                 {t("צפי:", "Expected:")} {rec.expectedImpact}
               </div>
             )}

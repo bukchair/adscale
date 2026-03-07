@@ -124,7 +124,7 @@ export function AuditLog({ lang }: { lang: "he" | "en" }) {
                     )}
                     {entry.after && (
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "#00d4aa", marginBottom: 6 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: "#10b981", marginBottom: 6 }}>
                           {t("אחרי", "AFTER")}
                         </div>
                         <pre style={{ margin: 0, fontSize: 11, color: "#475569", overflowX: "auto" }}>
