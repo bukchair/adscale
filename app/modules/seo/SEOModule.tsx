@@ -660,6 +660,44 @@ export default function SEOModule({ lang }: { lang: Lang }) {
   /* ── Render ───────────────────────────────────────────────────── */
   return (
     <div>
+      {/* AI sync banner */}
+      <div style={{
+        background: `linear-gradient(135deg, ${C.accentLight}, ${C.purpleLight})`,
+        border: `1px solid ${C.accent}33`,
+        borderRadius: 12,
+        padding: "12px 18px",
+        marginBottom: 16,
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        flexWrap: "wrap",
+      }}>
+        <span style={{ fontSize: 22, flexShrink: 0 }}>🤖</span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.accentHover }}>
+            {lang === "he" ? "AI SEO/GEO — ניתוח אמיתי" : "AI SEO/GEO — Real Analysis"}
+          </div>
+          <div style={{ fontSize: 12, color: C.textSub, marginTop: 2 }}>
+            {lang === "he"
+              ? "כשתחבר OpenAI / Anthropic ב'חיבורים', המערכת תקרא את האתר ותחזיר ניתוח SEO/GEO אמיתי, ציונים מדויקים והצעות תיקון חכמות."
+              : "Once you connect OpenAI / Anthropic in 'Connections', the system will crawl your site and return real SEO/GEO analysis, accurate scores, and smart fix suggestions."}
+          </div>
+        </div>
+        <button
+          onClick={runAnalysis}
+          disabled={analyzing}
+          style={{
+            padding: "8px 16px", borderRadius: 8, border: "none",
+            background: analyzing ? C.border : C.accent,
+            color: analyzing ? C.textMuted : "#fff",
+            cursor: analyzing ? "not-allowed" : "pointer",
+            fontSize: 12, fontWeight: 700, flexShrink: 0,
+          }}
+        >
+          {analyzing ? `⏳ ${lang === "he" ? "מנתח..." : "Analyzing..."}` : `▶ ${lang === "he" ? "הרץ ניתוח" : "Run Analysis"}`}
+        </button>
+      </div>
+
       {/* Section tabs */}
       <div style={{
         display: "flex", gap: 4, marginBottom: 20,

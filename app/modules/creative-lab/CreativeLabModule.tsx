@@ -1,137 +1,359 @@
 "use client";
 import { useState } from "react";
+import { C } from "../theme";
 import type { Lang } from "../page";
 
-interface CreativeVariant {
-  id: string; headlines: string[]; descriptions: string[];
-  angle: string; angleEn: string; hook: string; hookEn: string;
-  cta: string; ctaEn: string; tone: string; strengthScore: number;
+/* ── Types ──────────────────────────────────────────────────────── */
+type Platform = "meta" | "google" | "tiktok";
+type AdFormat = "story" | "feed" | "reel" | "search" | "display" | "shopping";
+type GenTab = "text" | "image";
+
+interface WCProduct {
+  id: string; name: string; nameEn: string; price: number;
+  category: string; categoryEn: string; image: string;
+  description: string; descriptionEn: string; sku: string;
+}
+interface AdVariant { headline: string; body: string; cta: string; score: number; }
+
+/* ── Data ───────────────────────────────────────────────────────── */
+const WC_PRODUCTS: WCProduct[] = [
+  { id:"1", name:"נעלי ריצה X1 מקצועיות", nameEn:"Running Shoes X1 Pro", price:299, category:"נעלי ריצה", categoryEn:"Running Shoes", image:"👟", description:"נעלי ריצה מקצועיות עם בולעי זעזועים מתקדמים, סוליה קלה ועמידה.", descriptionEn:"Professional running shoes with advanced shock absorbers, lightweight durable sole.", sku:"RS-X1-001" },
+  { id:"2", name:"נעלי ריצה X2 אולטרה",   nameEn:"Running Shoes X2 Ultra", price:449, category:"נעלי ריצה", categoryEn:"Running Shoes", image:"👟", description:"נעלי ריצה פרמיום לריצות ארוכות, ריפוד מקסימלי.", descriptionEn:"Premium long-distance running shoes with maximum cushioning.", sku:"RS-X2-001" },
+  { id:"3", name:"גרביים לריצה 3 זוגות",  nameEn:"Running Socks 3-Pack",   price:89,  category:"אביזרים", categoryEn:"Accessories", image:"🧦", description:"גרביים מקצועיות נושמות לריצה, 3 זוגות בסט.", descriptionEn:"Professional breathable running socks, 3-pack set.", sku:"SK-RUN-3P" },
+  { id:"4", name:"חגורת ריצה עם כיסים",   nameEn:"Running Belt w/ Pockets", price:129, category:"אביזרים", categoryEn:"Accessories", image:"🎽", description:"חגורת ריצה עם 3 כיסים, אידיאלית לריצות ארוכות.", descriptionEn:"Running belt with 3 pockets, ideal for long runs.", sku:"BT-RUN-001" },
+  { id:"5", name:"בקבוק מים ספורטיבי",    nameEn:"Sports Water Bottle",     price:59,  category:"אביזרים", categoryEn:"Accessories", image:"🍶", description:"בקבוק מים 750ml, ידית נוחה, חסין אצבעות.", descriptionEn:"750ml water bottle, ergonomic handle, leak-proof.", sku:"WB-SPT-001" },
+  { id:"6", name:"אוזניות ספורט אלחוטיות",nameEn:"Wireless Sport Earbuds",  price:199, category:"טכנולוגיה", categoryEn:"Tech", image:"🎧", description:"אוזניות Bluetooth ספורטיביות עמידות למים, סוללה 8 שעות.", descriptionEn:"Waterproof Bluetooth sport earbuds, 8-hour battery.", sku:"EP-SPT-BT" },
+];
+
+const PLATFORMS: { id: Platform; label: string; icon: string; color: string }[] = [
+  { id:"meta",   label:"Meta",   icon:"📘", color:"#1877f2" },
+  { id:"google", label:"Google", icon:"🔍", color:"#4285f4" },
+  { id:"tiktok", label:"TikTok", icon:"🎵", color:"#010101" },
+];
+
+const FORMATS: Record<Platform, { id: AdFormat; he: string; en: string }[]> = {
+  meta:   [{ id:"feed",    he:"פיד",    en:"Feed"     }, { id:"story",    he:"Story",   en:"Story"    }, { id:"reel",    he:"Reel",    en:"Reel"    }],
+  google: [{ id:"search",  he:"Search", en:"Search"   }, { id:"display",  he:"Display", en:"Display"  }, { id:"shopping",he:"Shopping",en:"Shopping"}],
+  tiktok: [{ id:"feed",    he:"פיד",    en:"Feed"     }, { id:"story",    he:"TopView", en:"TopView"  }, { id:"reel",    he:"Spark",   en:"Spark"   }],
+};
+
+function generateVariants(p: WCProduct, platform: Platform, lang: Lang): AdVariant[] {
+  const n = lang==="he" ? p.name : p.nameEn;
+  const desc = lang==="he" ? p.description : p.descriptionEn;
+  if (platform==="meta") return [
+    { headline: lang==="he" ? `${n} — משנה את הריצה שלך` : `${n} — Change Your Run`, body: lang==="he" ? `עם ₪${p.price} בלבד. ${desc} משלוח חינם 🚚` : `For only ₪${p.price}. ${desc} Free shipping 🚚`, cta: lang==="he" ? "קנה עכשיו" : "Shop Now", score:91 },
+    { headline: lang==="he" ? `מדוע 10,000 רצים בחרו ב-${n}?` : `Why 10,000 runners chose ${n}?`, body: lang==="he" ? `${desc} רק ₪${p.price}. 30 יום החזרה חינם.` : `${desc} Only ₪${p.price}. 30-day returns.`, cta: lang==="he" ? "גלה עכשיו" : "Discover Now", score:87 },
+    { headline: lang==="he" ? `מבצע מוגבל — ${n}` : `Limited Offer — ${n}`, body: lang==="he" ? `קנה היום ב-₪${p.price} וקבל משלוח אקספרס חינם. מלאי מוגבל!` : `Buy today for ₪${p.price}, get free express shipping. Limited stock!`, cta: lang==="he" ? "אחז את הדיל" : "Grab the Deal", score:84 },
+  ];
+  if (platform==="google") return [
+    { headline: lang==="he" ? `${n} | ₪${p.price} | משלוח חינם` : `${n} | ₪${p.price} | Free Shipping`, body: lang==="he" ? `${desc} קנה עכשיו. החזרה 30 יום.` : `${desc} Buy now. 30-day returns.`, cta: lang==="he" ? "קנה עכשיו" : "Shop Now", score:89 },
+    { headline: lang==="he" ? `קנה ${n} | מחיר מיוחד` : `Buy ${n} | Special Price`, body: lang==="he" ? `החל מ-₪${p.price}. משלוח מהיר לכל הארץ.` : `From ₪${p.price}. Fast delivery nationwide.`, cta: lang==="he" ? "קנה עכשיו" : "Buy Now", score:85 },
+    { headline: lang==="he" ? `${n} הכי זול ברשת` : `${n} Best Price Online`, body: lang==="he" ? `השווה ותראה — ₪${p.price}. ${desc}` : `Compare and see — ₪${p.price}. ${desc}`, cta: lang==="he" ? "ראה עכשיו" : "See Now", score:81 },
+  ];
+  return [
+    { headline: lang==="he" ? `POV: גילית את ה-${n} 👟` : `POV: You just found ${n} 👟`, body: lang==="he" ? `₪${p.price} בלבד. ${desc} לינק בביו ✨` : `Only ₪${p.price}. ${desc} Link in bio ✨`, cta: lang==="he" ? "הזמן עכשיו" : "Order Now", score:93 },
+    { headline: lang==="he" ? `#ריצה ${n}` : `#running ${n}`, body: lang==="he" ? `החיים קצרים מדי לציוד גרוע 🔥 ${desc} ₪${p.price}` : `Life's too short for bad gear 🔥 ${desc} ₪${p.price}`, cta: lang==="he" ? "קנה עכשיו" : "Buy Now", score:90 },
+    { headline: lang==="he" ? `זה מה שחסר לאימון שלך` : `This is what your workout is missing`, body: lang==="he" ? `${desc} רק ₪${p.price} ⚡` : `${desc} Just ₪${p.price} ⚡`, cta: lang==="he" ? "גלה עוד" : "Learn More", score:86 },
+  ];
 }
 
-export default function CreativeLabModule({ lang }: { lang: Lang }) {
-  const t = (he: string, en: string) => lang === "he" ? he : en;
-  const [productName, setProductName] = useState("");
-  const [description, setDescription] = useState("");
-  const [usp, setUsp] = useState("");
-  const [tone, setTone] = useState("professional");
-  const [language, setLanguage] = useState("he");
-  const [generating, setGenerating] = useState(false);
-  const [variants, setVariants] = useState<CreativeVariant[]>([]);
+function generateImagePrompt(p: WCProduct, platform: Platform, format: AdFormat): string {
+  const styles: Record<Platform, string> = {
+    meta:   "clean product photography, lifestyle, bright studio, white background, social media ad",
+    google: "professional product shot, clean white background, e-commerce style, high resolution",
+    tiktok: "vibrant lifestyle photography, dynamic, trendy color palette, vertical 9:16",
+  };
+  return `${p.nameEn} — ${styles[platform]}, ${format==="story"||format==="reel" ? "vertical 9:16" : "square 1:1"}, premium, photorealistic`;
+}
 
-  const generate = async () => {
-    if (!productName) return;
+/* ── Ad Previews ────────────────────────────────────────────────── */
+function MetaPreview({ p, v, lang }: { p: WCProduct; v: AdVariant; lang: Lang }) {
+  return (
+    <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${C.border}`, overflow:"hidden", maxWidth:360, margin:"0 auto" }}>
+      <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", gap:8 }}>
+        <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🛍️</div>
+        <div><div style={{ fontSize:13, fontWeight:700, color:C.text }}>AdScale Store</div><div style={{ fontSize:10, color:C.textMuted }}>{lang==="he"?"ממומן":"Sponsored"}</div></div>
+      </div>
+      <div style={{ padding:"0 14px 10px", fontSize:13, color:C.text, lineHeight:1.5 }}>{v.body}</div>
+      <div style={{ height:220, background:`linear-gradient(135deg,${C.accentLight},${C.purpleLight})`, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8 }}>
+        <span style={{ fontSize:56 }}>{p.image}</span>
+        <div style={{ fontSize:12, color:C.textSub, fontWeight:600 }}>{lang==="he"?p.name:p.nameEn}</div>
+      </div>
+      <div style={{ padding:"10px 14px", borderTop:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+        <div style={{ minWidth:0 }}>
+          <div style={{ fontSize:12, color:C.textMuted, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v.headline}</div>
+          <div style={{ fontSize:14, fontWeight:700, color:C.text }}>₪{p.price}</div>
+        </div>
+        <button style={{ padding:"7px 14px", background:"#1877f2", color:"#fff", border:"none", borderRadius:6, fontWeight:700, fontSize:12, cursor:"pointer", flexShrink:0 }}>{v.cta}</button>
+      </div>
+    </div>
+  );
+}
+
+function GooglePreview({ p, v, lang }: { p: WCProduct; v: AdVariant; lang: Lang }) {
+  return (
+    <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${C.border}`, padding:20, maxWidth:560, margin:"0 auto" }}>
+      <div style={{ fontSize:11, color:"#188038", marginBottom:4, display:"flex", alignItems:"center", gap:6 }}>
+        <span style={{ background:"#188038", color:"#fff", fontSize:9, fontWeight:700, padding:"1px 4px", borderRadius:2 }}>Ad</span>
+        <span>store.co.il › {lang==="he"?p.category:p.categoryEn}</span>
+      </div>
+      <div style={{ fontSize:17, color:"#1a0dab", fontWeight:500, marginBottom:4, lineHeight:1.3 }}>{v.headline}</div>
+      <div style={{ fontSize:13, color:"#4d5156", lineHeight:1.5 }}>{v.body}</div>
+    </div>
+  );
+}
+
+function TikTokPreview({ p, v, lang }: { p: WCProduct; v: AdVariant; lang: Lang }) {
+  return (
+    <div style={{ background:"#010101", borderRadius:16, overflow:"hidden", maxWidth:200, margin:"0 auto", position:"relative", height:360 }}>
+      <div style={{ position:"absolute", inset:0, background:"linear-gradient(135deg,#1a1a2e,#16213e)", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8 }}>
+        <span style={{ fontSize:56 }}>{p.image}</span>
+        <div style={{ fontSize:11, color:"#aaa", fontWeight:600, textAlign:"center", padding:"0 12px" }}>{lang==="he"?p.name:p.nameEn}</div>
+      </div>
+      <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"16px 12px 14px", background:"linear-gradient(transparent,rgba(0,0,0,0.85))" }}>
+        <div style={{ fontSize:12, color:"#fff", fontWeight:700, marginBottom:4 }}>{v.headline}</div>
+        <div style={{ fontSize:10, color:"#ccc", marginBottom:8, lineHeight:1.4 }}>{v.body.slice(0,70)}…</div>
+        <button style={{ padding:"6px 14px", background:"#ff0050", color:"#fff", border:"none", borderRadius:4, fontWeight:700, fontSize:11, cursor:"pointer" }}>{v.cta}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Step bar ────────────────────────────────────────────────────── */
+function StepBar({ step, lang }: { step: number; lang: Lang }) {
+  const steps = [{ n:1,he:"מוצר",en:"Product"},{n:2,he:"פלטפורמה",en:"Platform"},{n:3,he:"יצירה",en:"Generate"},{n:4,he:"פרסום",en:"Publish"}];
+  return (
+    <div className="as-wizard-steps" style={{ marginBottom:20 }}>
+      {steps.map((s,i) => (
+        <div key={s.n} style={{ flex:1, padding:"13px 8px", textAlign:"center", background:step===s.n?C.accent:step>s.n?C.green:C.card, color:step>=s.n?"#fff":C.textMuted, fontSize:13, fontWeight:600, borderRight:i<3?`1px solid ${C.border}`:"none", transition:"all 0.2s" }}>
+          <div style={{ fontSize:16, marginBottom:2 }}>{step>s.n?"✓":s.n}</div>
+          <div style={{ fontSize:11 }}>{lang==="he"?s.he:s.en}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Main ───────────────────────────────────────────────────────── */
+export default function CreativeLabModule({ lang }: { lang: Lang }) {
+  const t = (he: string, en: string) => lang==="he" ? he : en;
+  const [step, setStep] = useState(1);
+  const [product, setProduct] = useState<WCProduct | null>(null);
+  const [platform, setPlatform] = useState<Platform>("meta");
+  const [format, setFormat] = useState<AdFormat>("feed");
+  const [genTab, setGenTab] = useState<GenTab>("text");
+  const [generating, setGenerating] = useState(false);
+  const [variants, setVariants] = useState<AdVariant[]>([]);
+  const [chosen, setChosen] = useState(0);
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [imgGenerating, setImgGenerating] = useState(false);
+  const [imgDone, setImgDone] = useState(false);
+  const [imgPrompt, setImgPrompt] = useState("");
+
+  const doGenerate = async () => {
+    if (!product) return;
     setGenerating(true);
-    await new Promise((r) => setTimeout(r, 2500));
-    setVariants([
-      { id: "1", angle: "מחיר + ערך", angleEn: "Price + Value", hook: "למה לשלם יותר?", hookEn: "Why pay more?",
-        headlines: ["נעלי ריצה ₪299 בלבד", "משלוח חינם עד הבית", "800+ לקוחות מרוצים", "החזר כסף 30 יום", "איכות פרמיום - מחיר נגיש"],
-        descriptions: ["נעלי ריצה איכותיות במחיר שמתאים לכולם. משלוח מהיר, החזר קל, שירות אישי.", "הרגש את ההבדל בכל צעד. טכנולוגיית ריצה מתקדמת - כאן, עכשיו."],
-        cta: "הזמן עכשיו", ctaEn: "Order Now", tone: "urgent", strengthScore: 87 },
-      { id: "2", angle: "ביצועים + מקצועיות", angleEn: "Performance + Pro", hook: "הטכנולוגיה שאלופים בוחרים", hookEn: "The tech champions choose",
-        headlines: ["נעלי ריצה מקצועיות", "טכנולוגיית Carbon Fiber", "מאושר אלופי ישראל", "תמיכת קשת מתקדמת", "0-10 ק'מ בנוחות מושלמת"],
-        descriptions: ["עוצב עם ספורטאים מקצועיים. כל תכונה תורמת לביצועים שלך ברמה הבאה.", "תמיכה מלאה, חומרים מהמוביל בתחום, גמישות אופטימלית."],
-        cta: "גלה את ההבדל", ctaEn: "Discover the Difference", tone: "professional", strengthScore: 82 },
-      { id: "3", angle: "דחיפות + רגש", angleEn: "Urgency + Emotion", hook: "הריצה שלך מתחילה עכשיו", hookEn: "Your run starts now",
-        headlines: ["עצור לחלום - התחל לרוץ", "כל צעד מתחיל כאן", "הרגש חופשי - רוץ!", "הזמינו לפני שיגמר"],
-        descriptions: ["נעלי ריצה שגורמות לך לרצות לצאת ולרוץ. קל, נוח, מהיר.", "הפעם תצא לאימון. נעלים שמרגישות כמו חלק מגופך."],
-        cta: "צא לרוץ עכשיו", ctaEn: "Start Running Now", tone: "friendly", strengthScore: 79 },
-    ]);
+    await new Promise(r => setTimeout(r, 1800));
+    setVariants(generateVariants(product, platform, lang));
     setGenerating(false);
+    setStep(4);
   };
 
+  const doPublish = async () => {
+    setPublishing(true);
+    await new Promise(r => setTimeout(r, 1400));
+    setPublishing(false);
+    setPublished(true);
+  };
+
+  const doGenerateImage = async () => {
+    setImgGenerating(true);
+    await new Promise(r => setTimeout(r, 2400));
+    setImgGenerating(false);
+    setImgDone(true);
+  };
+
+  const pl = PLATFORMS.find(p => p.id===platform)!;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 24 }}>
-        <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 600 }}>✍️ {t("יצירת קריאייטיב חדש", "Create New Creative")}</h3>
-        <div className="as-creative-form-grid">
-          <div>
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 6 }}>{t("שם המוצר *", "Product Name *")}</label>
-            <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder={t("לדוגמה: נעלי ריצה ProRun X1", "e.g. ProRun X1 Running Shoes")}
-              style={{ width: "100%", background: "#f8fafc", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "10px 14px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 6 }}>{t("טון הקריאייטיב", "Creative Tone")}</label>
-            <select value={tone} onChange={(e) => setTone(e.target.value)} style={{ width: "100%", background: "#f8fafc", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
-              <option value="professional">{t("מקצועי", "Professional")}</option>
-              <option value="friendly">{t("ידידותי", "Friendly")}</option>
-              <option value="urgent">{t("דחוף", "Urgent")}</option>
-              <option value="luxury">{t("יוקרה", "Luxury")}</option>
-              <option value="bold">{t("נועז", "Bold")}</option>
-            </select>
-          </div>
-          <div className="as-col-span-2">
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 6 }}>{t("תיאור קצר + יתרונות", "Short Description + Benefits")}</label>
-            <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("תאר את המוצר, היתרונות הייחודיים, קהל יעד...", "Describe the product, unique benefits, target audience...")} rows={3}
-              style={{ width: "100%", background: "#f8fafc", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "10px 14px", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 6 }}>{t("יתרונות ייחודיים (מופרד בפסיק)", "Unique Selling Points (comma separated)")}</label>
-            <input value={usp} onChange={(e) => setUsp(e.target.value)} placeholder={t("משלוח חינם, אחריות 5 שנים, החזר 30 יום", "Free shipping, 5-year warranty, 30-day return")}
-              style={{ width: "100%", background: "#f8fafc", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "10px 14px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: "#64748b", display: "block", marginBottom: 6 }}>{t("שפת הקריאייטיב", "Creative Language")}</label>
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} style={{ width: "100%", background: "#f8fafc", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
-              <option value="he">עברית 🇮🇱</option>
-              <option value="en">English 🇺🇸</option>
-            </select>
+    <div>
+      <StepBar step={step} lang={lang} />
+
+      {/* ── Step 1: Product selection ───────────────────────────── */}
+      {step===1 && (
+        <div className="as-card" style={{ padding:20 }}>
+          <div style={{ fontSize:16, fontWeight:700, color:C.text, marginBottom:4 }}>🛍️ {t("בחר מוצר מ-WooCommerce","Select WooCommerce Product")}</div>
+          <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("המערכת תשתמש בפרטי המוצר ליצירת מודעות מותאמות","Product data will be used to create tailored ads")}</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {WC_PRODUCTS.map(p => (
+              <button key={p.id} onClick={() => { setProduct(p); setImgPrompt(generateImagePrompt(p, platform, format)); setStep(2); }} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 14px", border:`2px solid ${C.border}`, borderRadius:10, background:C.card, cursor:"pointer", textAlign:"start", transition:"all 0.15s" }}>
+                <div style={{ width:40, height:40, borderRadius:8, background:C.accentLight, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{p.image}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{lang==="he"?p.name:p.nameEn}</div>
+                  <div style={{ fontSize:11, color:C.textMuted }}>{lang==="he"?p.category:p.categoryEn} · {p.sku} · <span style={{ color:C.green, fontWeight:600 }}>₪{p.price}</span></div>
+                </div>
+                <span style={{ color:C.accent }}>›</span>
+              </button>
+            ))}
           </div>
         </div>
-        <button onClick={generate} disabled={!productName || generating}
-          style={{ marginTop: 20, padding: "10px 28px", borderRadius: 8, border: "none", background: generating || !productName ? "#e2e8f0" : "#6366f1", color: "#fff", cursor: generating || !productName ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 600 }}>
-          {generating ? t("🔄 יוצר קריאייטיב עם AI...", "🔄 Generating with AI...") : `✨ ${t("צור קריאייטיב", "Create Creative")}`}
-        </button>
-      </div>
+      )}
 
-      {variants.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {variants.map((v) => (
-            <div key={v.id} style={{ background: "#ffffff", border: "1px solid #7c74ff33", borderRadius: 12, padding: 24 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                <div>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>{t("זווית", "Angle")}: {lang === "he" ? v.angle : v.angleEn}</span>
-                  <span style={{ marginLeft: 12, fontSize: 13, color: "#8b5cf6" }}>🎣 {lang === "he" ? v.hook : v.hookEn}</span>
-                </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <div style={{ fontSize: 13, color: "#10b981", fontWeight: 700 }}>💪 {v.strengthScore}/100</div>
-                  <button style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #10b981", background: "#10b98111", color: "#10b981", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
-                    📋 {t("העתק", "Copy")}
-                  </button>
-                  <button style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid #7c74ff", background: "#7c74ff11", color: "#6366f1", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
-                    🚀 {t("שלח לקמפיין", "Send to Campaign")}
-                  </button>
-                </div>
-              </div>
-              <div className="as-creative-form-grid">
-                <div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8, fontWeight: 600 }}>📌 {t("כותרות", "Headlines")} ({v.headlines.length})</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {v.headlines.map((h, j) => (
-                      <div key={j} style={{ background: "#f8fafc", borderRadius: 6, padding: "7px 12px", fontSize: 13, color: "#1e293b", display: "flex", justifyContent: "space-between" }}>
-                        <span>{h}</span>
-                        <span style={{ fontSize: 11, color: h.length > 25 ? "#ef4444" : "#10b981" }}>{h.length}/30</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8, fontWeight: 600 }}>📝 {t("תיאורים", "Descriptions")} ({v.descriptions.length})</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {v.descriptions.map((d, j) => (
-                      <div key={j} style={{ background: "#f8fafc", borderRadius: 6, padding: "7px 12px", fontSize: 13, color: "#1e293b" }}>
-                        <span>{d}</span>
-                        <div style={{ fontSize: 11, color: d.length > 80 ? "#ef4444" : "#10b981", marginTop: 2 }}>{d.length}/90 {t("תווים", "chars")}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ marginTop: 12, background: "#7c74ff22", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
-                    <span style={{ color: "#64748b" }}>CTA: </span>
-                    <strong style={{ color: "#6366f1" }}>{lang === "he" ? v.cta : v.ctaEn}</strong>
-                  </div>
-                </div>
-              </div>
+      {/* ── Step 2: Platform + format ───────────────────────────── */}
+      {step===2 && product && (
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          {/* product recap */}
+          <div className="as-card" style={{ padding:12, display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:24 }}>{product.image}</span>
+            <div style={{ flex:1 }}><div style={{ fontSize:13, fontWeight:700, color:C.text }}>{lang==="he"?product.name:product.nameEn}</div><div style={{ fontSize:11, color:C.textMuted }}>₪{product.price}</div></div>
+            <button onClick={()=>setStep(1)} style={{ fontSize:12, color:C.accent, background:"none", border:"none", cursor:"pointer" }}>{t("שנה","Change")}</button>
+          </div>
+
+          <div className="as-card" style={{ padding:20 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:18 }}>📱 {t("בחר פלטפורמה ופורמט","Choose Platform & Format")}</div>
+
+            <div style={{ fontSize:12, fontWeight:700, color:C.textMuted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>{t("פלטפורמה","Platform")}</div>
+            <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+              {PLATFORMS.map(pl => (
+                <button key={pl.id} onClick={() => { setPlatform(pl.id); setFormat(FORMATS[pl.id][0].id); }} style={{ flex:1, minWidth:80, display:"flex", flexDirection:"column", alignItems:"center", gap:6, padding:"12px 8px", borderRadius:10, border:`2px solid ${platform===pl.id?pl.color:C.border}`, background:platform===pl.id?`${pl.color}11`:C.card, cursor:"pointer", fontSize:12, fontWeight:700, color:platform===pl.id?pl.color:C.textSub, transition:"all 0.15s" }}>
+                  <span style={{ fontSize:22 }}>{pl.icon}</span>{pl.label}
+                </button>
+              ))}
             </div>
-          ))}
+
+            <div style={{ fontSize:12, fontWeight:700, color:C.textMuted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>{t("פורמט","Format")}</div>
+            <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:20 }}>
+              {FORMATS[platform].map(f => (
+                <button key={f.id} onClick={()=>setFormat(f.id)} style={{ padding:"7px 16px", borderRadius:20, border:`1px solid ${format===f.id?C.accent:C.border}`, background:format===f.id?C.accentLight:C.card, color:format===f.id?C.accent:C.textSub, cursor:"pointer", fontSize:13, fontWeight:600 }}>{lang==="he"?f.he:f.en}</button>
+              ))}
+            </div>
+
+            <div style={{ fontSize:12, fontWeight:700, color:C.textMuted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>{t("סוג יצירה","Generator Type")}</div>
+            <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+              {(["text","image"] as const).map(tab => (
+                <button key={tab} onClick={()=>setGenTab(tab)} style={{ flex:1, minWidth:130, padding:"10px 16px", borderRadius:8, border:`2px solid ${genTab===tab?C.accent:C.border}`, background:genTab===tab?C.accent:C.card, color:genTab===tab?"#fff":C.textSub, cursor:"pointer", fontSize:13, fontWeight:700 }}>
+                  {tab==="text"?`✍️ ${t("מחולל טקסט","Text Generator")}` : `🎨 ${t("מחולל תמונה","Image Generator")}`}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={()=>setStep(1)} style={{ padding:"10px 18px", borderRadius:8, border:`1px solid ${C.border}`, background:C.card, color:C.textSub, cursor:"pointer", fontWeight:600 }}>← {t("חזור","Back")}</button>
+              <button onClick={()=>setStep(3)} style={{ flex:1, padding:"10px 18px", borderRadius:8, border:"none", background:C.accent, color:"#fff", cursor:"pointer", fontWeight:700, fontSize:14 }}>{t("המשך","Continue")} →</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 3: Generate ─────────────────────────────────────── */}
+      {step===3 && product && (
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          <div className="as-card" style={{ padding:12, display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
+            <span style={{ fontSize:22 }}>{product.image}</span>
+            <div style={{ flex:1 }}><div style={{ fontSize:13, fontWeight:700, color:C.text }}>{lang==="he"?product.name:product.nameEn}</div><div style={{ fontSize:11, color:C.textMuted }}>{pl.label} · {format}</div></div>
+            <button onClick={()=>setStep(2)} style={{ fontSize:12, color:C.accent, background:"none", border:"none", cursor:"pointer" }}>{t("שנה","Change")}</button>
+          </div>
+
+          {genTab==="text" && (
+            <div className="as-card" style={{ padding:24, textAlign:"center" }}>
+              <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:6 }}>✍️ {t("מחולל טקסט מודעה","Ad Text Generator")}</div>
+              <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("AI יייצר 3 גרסאות מודעה בהתאם למוצר ולפלטפורמה","AI will create 3 ad variants tailored to the product and platform")}</div>
+              <button onClick={doGenerate} disabled={generating} style={{ padding:"13px 32px", borderRadius:10, border:"none", background:generating?C.border:`linear-gradient(135deg,${C.accent},${C.purple})`, color:generating?C.textMuted:"#fff", cursor:generating?"not-allowed":"pointer", fontWeight:700, fontSize:15, boxShadow:C.shadowMd }}>
+                {generating ? `⏳ ${t("מייצר עם AI...","Generating...")}` : `🤖 ${t("צור 3 גרסאות","Generate 3 Variants")}`}
+              </button>
+              {generating && (
+                <div style={{ marginTop:20, display:"inline-flex", flexDirection:"column", gap:6, textAlign:"start" }}>
+                  {[t("ניתוח פרטי מוצר...","Analyzing product..."), t("יוצר כותרות...","Creating headlines..."), t("מייצר גרסאות...","Generating variants...")].map((msg,i)=>(
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:C.textSub }}><div style={{ width:6, height:6, borderRadius:"50%", background:C.green }} />{msg}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {genTab==="image" && (
+            <div className="as-card" style={{ padding:20 }}>
+              <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:16 }}>🎨 {t("מחולל תמונה","Image Generator")}</div>
+              <div style={{ fontSize:12, fontWeight:700, color:C.textMuted, marginBottom:6 }}>{t("פרומפט AI (ניתן לעריכה)","AI Prompt (editable)")}</div>
+              <textarea value={imgPrompt} onChange={e=>setImgPrompt(e.target.value)} rows={3} style={{ width:"100%", padding:"10px 12px", border:`1px solid ${C.border}`, borderRadius:8, background:C.inputBg, color:C.text, fontSize:13, fontFamily:"inherit", resize:"vertical", boxSizing:"border-box", marginBottom:12 }} />
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center", marginBottom:16 }}>
+                <button onClick={doGenerateImage} disabled={imgGenerating} style={{ padding:"10px 22px", borderRadius:8, border:"none", background:imgGenerating?C.border:`linear-gradient(135deg,${C.accent},${C.purple})`, color:imgGenerating?C.textMuted:"#fff", cursor:imgGenerating?"not-allowed":"pointer", fontWeight:700, fontSize:13 }}>
+                  {imgGenerating?`⏳ ${t("מייצר...","Generating...")}`:`🎨 ${t("צור תמונה","Generate Image")}`}
+                </button>
+                <div style={{ fontSize:11, color:C.textMuted }}>{t("מופעל ע\"י OpenAI DALL·E 3 (נדרש API Key בחיבורים)","Powered by OpenAI DALL·E 3 (requires API key in Connections)")}</div>
+              </div>
+              {imgGenerating && (
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10, padding:30 }}>
+                  <div style={{ width:36, height:36, border:`3px solid ${C.accent}`, borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+                  <div style={{ fontSize:13, color:C.textSub }}>{t("מייצר תמונה עם AI...","Generating image with AI...")}</div>
+                </div>
+              )}
+              {imgDone && !imgGenerating && (
+                <div>
+                  <div style={{ height:200, background:`linear-gradient(135deg,${C.accentLight},${C.purpleLight})`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8, marginBottom:12 }}>
+                    <span style={{ fontSize:56 }}>{product.image}</span>
+                    <div style={{ fontSize:12, color:C.textSub, fontWeight:600 }}>{lang==="he"?product.name:product.nameEn}</div>
+                    <div style={{ fontSize:10, color:C.textMuted }}>{pl.label} · {format}</div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    <button style={{ padding:"8px 18px", borderRadius:8, border:"none", background:C.green, color:"#fff", cursor:"pointer", fontWeight:700, fontSize:13 }}>⬇️ {t("הורד","Download")}</button>
+                    <button onClick={()=>setImgDone(false)} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.border}`, background:C.card, color:C.textSub, cursor:"pointer", fontSize:13 }}>🔄 {t("צור מחדש","Regenerate")}</button>
+                    <button onClick={()=>setStep(4)} style={{ padding:"8px 18px", borderRadius:8, border:"none", background:C.accent, color:"#fff", cursor:"pointer", fontWeight:700, fontSize:13 }}>→ {t("המשך לפרסום","Continue to Publish")}</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Step 4: Preview + Publish ─────────────────────────────── */}
+      {step===4 && product && variants.length>0 && (
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          {/* variant selector */}
+          <div className="as-card" style={{ padding:20 }}>
+            <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:14 }}>✅ {t("3 גרסאות מודעה נוצרו","3 Ad Variants Generated")}</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:10 }}>
+              {variants.map((v,i) => (
+                <button key={i} onClick={()=>setChosen(i)} style={{ display:"flex", gap:12, padding:"11px 14px", border:`2px solid ${chosen===i?C.accent:C.border}`, borderRadius:10, background:chosen===i?C.accentLight:C.card, cursor:"pointer", textAlign:"start", alignItems:"center", transition:"all 0.15s" }}>
+                  <div style={{ width:26, height:26, borderRadius:"50%", background:chosen===i?C.accent:C.border, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, flexShrink:0 }}>{i+1}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:2 }}>{v.headline}</div>
+                    <div style={{ fontSize:12, color:C.textSub, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v.body}</div>
+                  </div>
+                  <div style={{ background:v.score>=90?C.greenLight:C.amberLight, color:v.score>=90?C.greenText:C.amberText, fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:6, flexShrink:0 }}>{v.score}</div>
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>{setStep(3);setVariants([]);}} style={{ fontSize:12, color:C.accent, background:"none", border:"none", cursor:"pointer" }}>🔄 {t("צור מחדש","Regenerate")}</button>
+          </div>
+
+          {/* Preview */}
+          <div className="as-card" style={{ padding:20 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:16 }}>👁️ {t("תצוגה מקדימה","Preview")} — {pl.label}</div>
+            {platform==="meta"   && <MetaPreview   p={product} v={variants[chosen]} lang={lang} />}
+            {platform==="google" && <GooglePreview p={product} v={variants[chosen]} lang={lang} />}
+            {platform==="tiktok" && <TikTokPreview p={product} v={variants[chosen]} lang={lang} />}
+          </div>
+
+          {/* Publish */}
+          <div className="as-card" style={{ padding:20 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:12 }}>🚀 {t("פרסום ישיר","Direct Publish")}</div>
+            {published ? (
+              <div style={{ background:C.greenLight, border:`1px solid ${C.green}33`, borderRadius:10, padding:"14px 18px", color:C.greenText, fontWeight:700, fontSize:14 }}>
+                ✅ {t(`המודעה פורסמה ב-${pl.label}!`,`Ad published to ${pl.label}!`)}
+              </div>
+            ) : (
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                <button onClick={doPublish} disabled={publishing} style={{ flex:1, minWidth:160, padding:"12px 20px", borderRadius:10, border:"none", background:publishing?C.border:pl.color, color:"#fff", cursor:publishing?"not-allowed":"pointer", fontWeight:700, fontSize:14 }}>
+                  {publishing?`⏳ ${t("מפרסם...","Publishing...")}`:`🚀 ${t("פרסם ב-","Publish to ")}${pl.label}`}
+                </button>
+                <button style={{ padding:"12px 16px", borderRadius:10, border:`1px solid ${C.border}`, background:C.card, color:C.textSub, cursor:"pointer", fontWeight:600 }}>💾 {t("טיוטה","Draft")}</button>
+                <button onClick={()=>{setStep(1);setProduct(null);setVariants([]);setPublished(false);setImgDone(false);}} style={{ padding:"12px 16px", borderRadius:10, border:`1px solid ${C.border}`, background:C.card, color:C.textSub, cursor:"pointer" }}>+ {t("מודעה חדשה","New Ad")}</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

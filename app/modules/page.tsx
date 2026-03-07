@@ -15,6 +15,7 @@ import AutomationModule from "./automation/AutomationModule";
 import IntegrationsModule from "./integrations/IntegrationsModule";
 import SEOModule from "./seo/SEOModule";
 import ProductsModule from "./products/ProductsModule";
+import AudiencesModule from "./audiences/AudiencesModule";
 
 export type Lang = "he" | "en";
 
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   // group: growth
   { id: "seo",               icon: "🎯", he: "מרכז SEO / GEO",  en: "SEO / GEO Center",   group: "growth" },
   { id: "products",          icon: "🛍️", he: "מוצרים",          en: "Products",            group: "growth" },
+  { id: "audiences",         icon: "👥", he: "קהלים",            en: "Audiences",           group: "growth" },
   { id: "creative-lab",      icon: "✍️", he: "Creative Lab",    en: "Creative Lab",        group: "growth" },
   // group: manage
   { id: "approvals",         icon: "✅", he: "אישורים",         en: "Approvals",           group: "manage" },
@@ -64,9 +66,10 @@ const DATE_PRESETS = [
 
 // Badge counts per tab (notifications)
 const BADGES: Partial<Record<TabId, { count: number; color: string }>> = {
-  approvals:         { count: 5,  color: C.amber },
-  seo:               { count: 12, color: C.red   },
-  "negative-keywords": { count: 8, color: C.orange },
+  approvals:           { count: 5,  color: C.amber  },
+  seo:                 { count: 12, color: C.red    },
+  "negative-keywords": { count: 8,  color: C.orange },
+  audiences:           { count: 1,  color: C.blue   },
 };
 
 /* ── Sidebar component ─────────────────────────────────────────── */
@@ -371,6 +374,7 @@ export default function ModulesPage() {
           {activeTab === "creative-lab"      && <CreativeLabModule lang={lang} />}
           {activeTab === "seo"               && <SEOModule lang={lang} />}
           {activeTab === "products"          && <ProductsModule lang={lang} />}
+          {activeTab === "audiences"         && <AudiencesModule lang={lang} />}
           {activeTab === "approvals"         && <ApprovalsModule lang={lang} />}
           {activeTab === "audit-log"         && <AuditLogModule lang={lang} />}
           {activeTab === "automation"        && <AutomationModule lang={lang} />}
