@@ -11,8 +11,8 @@ interface LogEntry {
   action:    string;
   entity:    string;
   entityId:  string | null;
-  before:    unknown;
-  after:     unknown;
+  before:    Record<string, unknown> | null;
+  after:     Record<string, unknown> | null;
   createdAt: string;
   user?:     { email: string; name: string | null } | null;
 }
