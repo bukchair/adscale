@@ -1179,14 +1179,12 @@ export default function DashboardPage() {
   const AI_SUGGESTIONS = lang === "he" ? AI_SUGGESTIONS_HE : AI_SUGGESTIONS_EN;
   const DATE_PRESETS = lang === "he" ? DATE_PRESETS_HE : DATE_PRESETS_EN;
 
-  // Settings status state
-  const [settingsStatus, setSettingsStatus] = useState<any>(null);
   const [settingsLoading, setSettingsLoading] = useState(false);
 
   // AI suggestions state
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiApplied, setAiApplied] = useState<Set<string>>(new Set());
+  const [aiApplied, setAiApplied] = useState<Set<string | number>>(new Set());
   const [aiErrors, setAiErrors] = useState<string[]>([]);
 
   // Audiences tab state
