@@ -1,0 +1,852 @@
+// ============================================================
+// AdScale — Production Prisma Schema
+// PostgreSQL + Prisma ORM
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// USERS & ORGANIZATIONS
+// ============================================================
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  passwordHash  String
+  role          UserRole @default(MEMBER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships   OrganizationMember[]
+  approvals     ApprovalRequest[]    @relation("ReviewedBy")
+  auditLogs     AuditLog[]
+  sessions      UserSession[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model UserSession {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("user_sessions")
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  plan        OrgPlan  @default(STARTER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     OrganizationMember[]
+  adAccounts  AdAccount[]
+  storeIntegrations StoreIntegration[]
+  featureFlags FeatureFlag[]
+  settings    OrgSetting[]
+  alerts      Alert[]
+
+  @@index([slug])
+  @@map("organizations")
+}
+
+enum OrgPlan {
+  STARTER
+  GROWTH
+  PRO
+  ENTERPRISE
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  role           MemberRole   @default(MEMBER)
+  invitedAt      DateTime     @default(now())
+  joinedAt       DateTime?
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+enum MemberRole {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// ============================================================
+// AD ACCOUNTS
+// ============================================================
+
+model AdAccount {
+  id             String          @id @default(cuid())
+  organizationId String
+  platform       AdPlatform
+  externalId     String          // platform account ID
+  name           String
+  currency       String          @default("USD")
+  timezone       String          @default("UTC")
+  status         AccountStatus   @default(ACTIVE)
+  credentials    Json            // encrypted: access_token, refresh_token, etc.
+  lastSyncAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaigns      Campaign[]
+  syncJobs       SyncJob[]
+
+  @@unique([organizationId, platform, externalId])
+  @@index([organizationId, platform])
+  @@map("ad_accounts")
+}
+
+enum AdPlatform {
+  GOOGLE_ADS
+  META_ADS
+  TIKTOK_ADS
+}
+
+enum AccountStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+  DISCONNECTED
+}
+
+// ============================================================
+// STORE INTEGRATIONS
+// ============================================================
+
+model StoreIntegration {
+  id             String        @id @default(cuid())
+  organizationId String
+  platform       StorePlatform
+  shopUrl        String
+  name           String
+  credentials    Json          // encrypted
+  status         AccountStatus @default(ACTIVE)
+  lastSyncAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  products       Product[]
+  orders         Order[]
+  syncJobs       SyncJob[]
+
+  @@unique([organizationId, platform, shopUrl])
+  @@map("store_integrations")
+}
+
+enum StorePlatform {
+  WOOCOMMERCE
+  SHOPIFY
+}
+
+// ============================================================
+// CAMPAIGNS & AD STRUCTURE
+// ============================================================
+
+model Campaign {
+  id              String         @id @default(cuid())
+  adAccountId     String
+  externalId      String
+  name            String
+  status          CampaignStatus @default(ACTIVE)
+  type            String?        // SEARCH, DISPLAY, SHOPPING, etc.
+  budgetAmountMicros BigInt?
+  budgetType      String?        // DAILY, LIFETIME
+  targetRoas      Float?
+  targetCpa       Float?
+  startDate       DateTime?
+  endDate         DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  adAccount       AdAccount      @relation(fields: [adAccountId], references: [id], onDelete: Cascade)
+  adGroups        AdGroup[]
+  dailyMetrics    DailyMetric[]
+  hourlyMetrics   HourlyMetric[]
+  searchTerms     SearchTerm[]
+  optimizationActions OptimizationAction[]
+  recommendations AiRecommendation[]
+
+  @@unique([adAccountId, externalId])
+  @@index([adAccountId, status])
+  @@map("campaigns")
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  REMOVED
+  ENDED
+}
+
+model AdGroup {
+  id          String         @id @default(cuid())
+  campaignId  String
+  externalId  String
+  name        String
+  status      CampaignStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  campaign    Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  ads         Ad[]
+  keywords    Keyword[]
+  searchTerms SearchTerm[]
+
+  @@unique([campaignId, externalId])
+  @@index([campaignId])
+  @@map("ad_groups")
+}
+
+model Ad {
+  id          String   @id @default(cuid())
+  adGroupId   String
+  externalId  String
+  type        String
+  headlines   String[]
+  descriptions String[]
+  finalUrls   String[]
+  status      CampaignStatus @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  adGroup     AdGroup  @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
+  creativeVariants CreativeVariant[]
+
+  @@unique([adGroupId, externalId])
+  @@map("ads")
+}
+
+model Keyword {
+  id          String        @id @default(cuid())
+  adGroupId   String
+  externalId  String
+  text        String
+  matchType   KeywordMatch
+  status      CampaignStatus @default(ACTIVE)
+  bidMicros   BigInt?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  adGroup     AdGroup       @relation(fields: [adGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([adGroupId, externalId])
+  @@index([adGroupId, text])
+  @@map("keywords")
+}
+
+enum KeywordMatch {
+  EXACT
+  PHRASE
+  BROAD
+}
+
+// ============================================================
+// SEARCH TERMS
+// ============================================================
+
+model SearchTerm {
+  id              String      @id @default(cuid())
+  campaignId      String
+  adGroupId       String?
+  query           String
+  date            DateTime    @db.Date
+  impressions     Int         @default(0)
+  clicks          Int         @default(0)
+  costMicros      BigInt      @default(0)
+  conversions     Float       @default(0)
+  conversionValue Float       @default(0)
+
+  // AI classification
+  intent          SearchIntent?
+  intentConfidence Float?
+  intentReason    String?
+  score           Int?        // 0-100
+  riskLevel       RiskLevel?
+  recommendedAction String?
+
+  classifiedAt    DateTime?
+  createdAt       DateTime    @default(now())
+
+  campaign        Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  adGroup         AdGroup?    @relation(fields: [adGroupId], references: [id])
+  negativeKeywordSuggestions NegativeKeywordSuggestion[]
+
+  @@unique([campaignId, query, date])
+  @@index([campaignId, date])
+  @@index([intent, score])
+  @@map("search_terms")
+}
+
+enum SearchIntent {
+  BUYER
+  RESEARCH
+  COMPETITOR
+  SUPPORT
+  IRRELEVANT
+  LOW_INTENT
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ============================================================
+// PRODUCTS & ORDERS (STORE DATA)
+// ============================================================
+
+model Product {
+  id              String   @id @default(cuid())
+  storeId         String
+  externalId      String
+  sku             String?
+  name            String
+  status          String   @default("publish")
+  price           Float
+  salePrice       Float?
+  stockStatus     String?
+  categories      String[]
+  tags            String[]
+  imageUrl        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  store           StoreIntegration @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productCosts    ProductCost[]
+  orderItems      OrderItem[]
+
+  @@unique([storeId, externalId])
+  @@index([storeId, sku])
+  @@map("products")
+}
+
+model ProductCost {
+  id              String   @id @default(cuid())
+  productId       String
+  cogsCost        Float    @default(0)   // cost of goods sold
+  shippingCost    Float    @default(0)
+  platformFee     Float    @default(0)   // WC/Shopify fee
+  otherCost       Float    @default(0)
+  effectiveFrom   DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, effectiveFrom])
+  @@map("product_costs")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  storeId         String
+  externalId      String
+  status          String
+  currency        String      @default("USD")
+  subtotal        Float
+  shippingTotal   Float       @default(0)
+  taxTotal        Float       @default(0)
+  discountTotal   Float       @default(0)
+  totalAmount     Float
+  refundTotal     Float       @default(0)
+  customerId      String?
+  customerEmail   String?
+  placedAt        DateTime
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  store           StoreIntegration @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items           OrderItem[]
+  conversions     Conversion[]
+
+  @@unique([storeId, externalId])
+  @@index([storeId, placedAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String?
+  externalId  String
+  sku         String?
+  name        String
+  quantity    Int
+  unitPrice   Float
+  totalPrice  Float
+  createdAt   DateTime @default(now())
+
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product? @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Conversion {
+  id              String   @id @default(cuid())
+  orderId         String?
+  campaignId      String?
+  adGroupId       String?
+  platform        AdPlatform?
+  conversionType  String
+  value           Float    @default(0)
+  currency        String   @default("USD")
+  occurredAt      DateTime
+  createdAt       DateTime @default(now())
+
+  order           Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([campaignId, occurredAt])
+  @@map("conversions")
+}
+
+// ============================================================
+// METRICS (DAILY & HOURLY SNAPSHOTS)
+// ============================================================
+
+model DailyMetric {
+  id              String   @id @default(cuid())
+  campaignId      String
+  date            DateTime @db.Date
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  costMicros      BigInt   @default(0)
+  conversions     Float    @default(0)
+  conversionValue Float    @default(0)
+  revenue         Float    @default(0)
+  profit          Float    @default(0)
+  roas            Float    @default(0)
+  ctr             Float    @default(0)
+  cpc             Float    @default(0)
+  cpa             Float    @default(0)
+  createdAt       DateTime @default(now())
+
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date])
+  @@index([campaignId, date])
+  @@map("daily_metrics")
+}
+
+model HourlyMetric {
+  id              String   @id @default(cuid())
+  campaignId      String
+  hour            DateTime // full timestamp truncated to hour
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  costMicros      BigInt   @default(0)
+  conversions     Float    @default(0)
+  createdAt       DateTime @default(now())
+
+  campaign        Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, hour])
+  @@index([campaignId, hour])
+  @@map("hourly_metrics")
+}
+
+// ============================================================
+// NEGATIVE KEYWORDS
+// ============================================================
+
+model NegativeKeyword {
+  id              String         @id @default(cuid())
+  adAccountId     String?
+  campaignId      String?
+  adGroupId       String?
+  text            String
+  matchType       KeywordMatch
+  level           NegKwLevel
+  appliedAt       DateTime       @default(now())
+  appliedBy       String?        // userId or "automation"
+  source          String?        // "ai", "manual", "suggestion"
+  createdAt       DateTime       @default(now())
+
+  @@index([campaignId, text])
+  @@map("negative_keywords")
+}
+
+enum NegKwLevel {
+  ACCOUNT
+  CAMPAIGN
+  AD_GROUP
+}
+
+model NegativeKeywordSuggestion {
+  id              String         @id @default(cuid())
+  searchTermId    String?
+  query           String
+  suggestedText   String
+  matchType       KeywordMatch
+  confidence      Float          // 0-1
+  risk            RiskLevel
+  reason          String
+  wasteEstimate   Float?         // estimated wasted spend
+  status          SuggestionStatus @default(PENDING)
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  createdAt       DateTime       @default(now())
+
+  searchTerm      SearchTerm?    @relation(fields: [searchTermId], references: [id])
+
+  @@index([status, confidence])
+  @@map("negative_keyword_suggestions")
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  APPLIED
+}
+
+// ============================================================
+// OPTIMIZATION
+// ============================================================
+
+model OptimizationAction {
+  id              String         @id @default(cuid())
+  campaignId      String?
+  adGroupId       String?
+  adId            String?
+  type            ActionType
+  title           String
+  reason          String
+  confidence      Float          // 0-1
+  severity        RiskLevel
+  expectedImpact  String?
+  payload         Json           // action-specific data
+  status          ActionStatus   @default(PENDING)
+  executedAt      DateTime?
+  executedBy      String?        // userId or "automation"
+  result          Json?
+  createdAt       DateTime       @default(now())
+
+  campaign        Campaign?      @relation(fields: [campaignId], references: [id])
+  approvalRequest ApprovalRequest?
+
+  @@index([status, severity])
+  @@index([campaignId, type])
+  @@map("optimization_actions")
+}
+
+enum ActionType {
+  RAISE_BUDGET
+  LOWER_BUDGET
+  PAUSE_CAMPAIGN
+  ENABLE_CAMPAIGN
+  PAUSE_KEYWORD
+  ENABLE_KEYWORD
+  ADD_NEGATIVE_KEYWORD
+  SUGGEST_CREATIVE
+  PROMOTE_PRODUCT
+  FLAG_ISSUE
+  ADJUST_BID
+  CHANGE_TARGETING
+}
+
+enum ActionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXECUTING
+  EXECUTED
+  FAILED
+  CANCELLED
+}
+
+model AiRecommendation {
+  id              String         @id @default(cuid())
+  campaignId      String?
+  type            RecommendationType
+  title           String
+  summary         String
+  details         Json
+  confidence      Float
+  severity        RiskLevel
+  expectedImpact  String?
+  status          SuggestionStatus @default(PENDING)
+  dismissedAt     DateTime?
+  dismissedBy     String?
+  createdAt       DateTime       @default(now())
+
+  campaign        Campaign?      @relation(fields: [campaignId], references: [id])
+
+  @@index([status, severity, createdAt])
+  @@map("ai_recommendations")
+}
+
+enum RecommendationType {
+  BUDGET_OPTIMIZATION
+  NEGATIVE_KEYWORD
+  CREATIVE_REFRESH
+  BID_ADJUSTMENT
+  AUDIENCE_EXPANSION
+  PRODUCT_PROMOTION
+  CAMPAIGN_RESTRUCTURE
+  PROFIT_IMPROVEMENT
+  QUALITY_SCORE
+  SEASONALITY
+}
+
+// ============================================================
+// CREATIVE VARIANTS
+// ============================================================
+
+model CreativeVariant {
+  id          String   @id @default(cuid())
+  adId        String?
+  campaignId  String?
+  type        String   // HEADLINE, DESCRIPTION, RSA, etc.
+  headlines   String[]
+  descriptions String[]
+  angle       String?  // value prop angle
+  hook        String?
+  cta         String?
+  aiModel     String?
+  prompt      String?
+  status      SuggestionStatus @default(PENDING)
+  score       Float?
+  createdAt   DateTime @default(now())
+
+  ad          Ad?      @relation(fields: [adId], references: [id])
+
+  @@index([campaignId, status])
+  @@map("creative_variants")
+}
+
+// ============================================================
+// SYNC JOBS
+// ============================================================
+
+model SyncJob {
+  id              String      @id @default(cuid())
+  adAccountId     String?
+  storeId         String?
+  type            SyncType
+  status          JobStatus   @default(QUEUED)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  errorMessage    String?
+  recordsProcessed Int        @default(0)
+  metadata        Json?
+  createdAt       DateTime    @default(now())
+
+  adAccount       AdAccount?  @relation(fields: [adAccountId], references: [id])
+  store           StoreIntegration? @relation(fields: [storeId], references: [id])
+
+  @@index([status, type])
+  @@index([adAccountId, type])
+  @@map("sync_jobs")
+}
+
+enum SyncType {
+  CAMPAIGNS
+  AD_GROUPS
+  ADS
+  KEYWORDS
+  SEARCH_TERMS
+  METRICS_DAILY
+  METRICS_HOURLY
+  PRODUCTS
+  ORDERS
+  CONVERSIONS
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ============================================================
+// APPROVAL WORKFLOW
+// ============================================================
+
+model ApprovalRequest {
+  id                  String         @id @default(cuid())
+  optimizationActionId String?       @unique
+  requestedBy         String?        // userId or "automation"
+  reviewerId          String?
+  status              ApprovalStatus @default(PENDING)
+  riskLevel           RiskLevel
+  autoApproveAt       DateTime?      // for time-limited auto-approval
+  reviewedAt          DateTime?
+  notes               String?
+  createdAt           DateTime       @default(now())
+
+  action              OptimizationAction? @relation(fields: [optimizationActionId], references: [id])
+  reviewer            User?          @relation("ReviewedBy", fields: [reviewerId], references: [id])
+
+  @@index([status, riskLevel])
+  @@map("approval_requests")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  AUTO_APPROVED
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  orgId       String?
+  action      String
+  entityType  String?
+  entityId    String?
+  before      Json?
+  after       Json?
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([orgId, createdAt])
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// FEATURE FLAGS & SETTINGS
+// ============================================================
+
+model FeatureFlag {
+  id             String       @id @default(cuid())
+  organizationId String
+  key            String
+  enabled        Boolean      @default(false)
+  value          Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@map("feature_flags")
+}
+
+model OrgSetting {
+  id             String       @id @default(cuid())
+  organizationId String
+  key            String
+  value          Json
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, key])
+  @@map("org_settings")
+}
+
+// ============================================================
+// AUTOMATION POLICIES
+// ============================================================
+
+model AutomationPolicy {
+  id             String         @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  triggerType    String         // "search_term_score", "budget_pacing", "profit_drop", etc.
+  conditions     Json           // array of condition objects
+  action         ActionType
+  executionMode  ExecutionMode  @default(SUGGESTION)
+  riskThreshold  RiskLevel      @default(MEDIUM)
+  enabled        Boolean        @default(true)
+  lastTriggeredAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([organizationId, enabled])
+  @@map("automation_policies")
+}
+
+enum ExecutionMode {
+  DRY_RUN
+  SUGGESTION
+  APPROVAL_REQUIRED
+  AUTOMATED
+}
+
+// ============================================================
+// ALERTS
+// ============================================================
+
+model Alert {
+  id             String      @id @default(cuid())
+  organizationId String
+  type           AlertType
+  severity       RiskLevel
+  title          String
+  message        String
+  entityType     String?
+  entityId       String?
+  metadata       Json?
+  read           Boolean     @default(false)
+  resolvedAt     DateTime?
+  createdAt      DateTime    @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, read, createdAt])
+  @@map("alerts")
+}
+
+enum AlertType {
+  BUDGET_OVERSPEND
+  BUDGET_UNDERSPEND
+  PROFIT_DROP
+  ROAS_DROP
+  SYNC_FAILURE
+  APPROVAL_PENDING
+  HIGH_WASTE_DETECTED
+  CREATIVE_FATIGUE
+  ACCOUNT_DISCONNECTED
+}

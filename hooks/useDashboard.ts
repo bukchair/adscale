@@ -99,7 +99,7 @@ export function getDaysAgo(days: number): string {
 }
 
 export function useDashboard(from: string, to?: string) {
-const [data, setData] = useState<DashboardData>(DEMO_DATA);
+  const [data, setData] = useState<DashboardData>(DEMO_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
@@ -107,15 +107,17 @@ const [data, setData] = useState<DashboardData>(DEMO_DATA);
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const res = await fetch(`/api/dashboard?from=${from}&to=${to}`);
-        if (!res.ok) throw new Error("API error");
+        if (!res.ok) throw new Error(`API error ${res.status}`);
         const json = await res.json();
         if (json && json.summary) {
           setData(json);
         }
-      } catch {
-        // Use demo data on error
+      } catch (e) {
+        setError(String(e));
+        // Keep demo data on error
       } finally {
         setLoading(false);
       }
