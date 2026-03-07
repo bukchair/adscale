@@ -649,33 +649,189 @@ model Alert {
 // ENUMS
 // ─────────────────────────────────────────────────────────────────────────────
 
-enum UserRole    { ADMIN MEMBER }
-enum OrgRole     { OWNER ADMIN EDITOR VIEWER }
-enum OrgPlan     { FREE PRO ENTERPRISE }
-enum Platform    { GOOGLE META TIKTOK }
-enum StorePlatform { WOOCOMMERCE SHOPIFY }
-enum CampaignStatus { ACTIVE PAUSED REMOVED DRAFT }
-enum CampaignType   { SEARCH DISPLAY SHOPPING VIDEO PMAX }
-enum BudgetType     { DAILY LIFETIME }
-enum AdType         { RSA DSA }
-enum MatchType      { EXACT PHRASE BROAD }
-enum OrderStatus    { PENDING PROCESSING COMPLETED CANCELLED REFUNDED }
-enum SearchIntent   { BUYER RESEARCH COMPETITOR SUPPORT IRRELEVANT LOW_INTENT UNKNOWN }
-enum RiskLevel      { LOW MEDIUM HIGH CRITICAL }
-enum Severity       { LOW MEDIUM HIGH CRITICAL }
-enum SuggestionStatus { PENDING APPLIED DISMISSED }
-enum RecommendationType {
-  RAISE_BUDGET LOWER_BUDGET PAUSE_CAMPAIGN PAUSE_KEYWORD
-  ADD_NEGATIVE_KEYWORD SUGGEST_CREATIVE PROMOTE_PRODUCT FLAG_ISSUE
-  INCREASE_BID DECREASE_BID
+enum UserRole {
+  ADMIN
+  MEMBER
 }
-enum RecommendationStatus { PENDING APPROVED REJECTED EXECUTED EXPIRED }
-enum ApprovalStatus  { PENDING APPROVED REJECTED EXPIRED }
-enum ActionType      { BUDGET_CHANGE BID_CHANGE STATUS_CHANGE NEGATIVE_KW_ADD CREATIVE_UPDATE }
-enum ActionStatus    { PENDING EXECUTING DONE FAILED ROLLED_BACK }
-enum ExecutionMode   { DRY_RUN SUGGEST APPROVAL_REQUIRED AUTOMATED }
-enum NegKwLevel      { CAMPAIGN AD_GROUP ACCOUNT }
-enum NegKwSource     { MANUAL AI_SUGGESTED IMPORTED }
-enum SyncType        { GOOGLE_ADS_CAMPAIGNS GOOGLE_ADS_SEARCH_TERMS META_CAMPAIGNS WOOCOMMERCE_PRODUCTS WOOCOMMERCE_ORDERS SHOPIFY_PRODUCTS SHOPIFY_ORDERS }
-enum JobStatus       { QUEUED RUNNING DONE FAILED CANCELLED }
-enum AlertType       { BUDGET_DEPLETED HIGH_CPA ZERO_CONVERSIONS ANOMALY SYSTEM }
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum OrgPlan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Platform {
+  GOOGLE
+  META
+  TIKTOK
+}
+
+enum StorePlatform {
+  WOOCOMMERCE
+  SHOPIFY
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  REMOVED
+  DRAFT
+}
+
+enum CampaignType {
+  SEARCH
+  DISPLAY
+  SHOPPING
+  VIDEO
+  PMAX
+}
+
+enum BudgetType {
+  DAILY
+  LIFETIME
+}
+
+enum AdType {
+  RSA
+  DSA
+}
+
+enum MatchType {
+  EXACT
+  PHRASE
+  BROAD
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum SearchIntent {
+  BUYER
+  RESEARCH
+  COMPETITOR
+  SUPPORT
+  IRRELEVANT
+  LOW_INTENT
+  UNKNOWN
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+}
+
+enum RecommendationType {
+  RAISE_BUDGET
+  LOWER_BUDGET
+  PAUSE_CAMPAIGN
+  PAUSE_KEYWORD
+  ADD_NEGATIVE_KEYWORD
+  SUGGEST_CREATIVE
+  PROMOTE_PRODUCT
+  FLAG_ISSUE
+  INCREASE_BID
+  DECREASE_BID
+}
+
+enum RecommendationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXECUTED
+  EXPIRED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ActionType {
+  BUDGET_CHANGE
+  BID_CHANGE
+  STATUS_CHANGE
+  NEGATIVE_KW_ADD
+  CREATIVE_UPDATE
+}
+
+enum ActionStatus {
+  PENDING
+  EXECUTING
+  DONE
+  FAILED
+  ROLLED_BACK
+}
+
+enum ExecutionMode {
+  DRY_RUN
+  SUGGEST
+  APPROVAL_REQUIRED
+  AUTOMATED
+}
+
+enum NegKwLevel {
+  CAMPAIGN
+  AD_GROUP
+  ACCOUNT
+}
+
+enum NegKwSource {
+  MANUAL
+  AI_SUGGESTED
+  IMPORTED
+}
+
+enum SyncType {
+  GOOGLE_ADS_CAMPAIGNS
+  GOOGLE_ADS_SEARCH_TERMS
+  META_CAMPAIGNS
+  WOOCOMMERCE_PRODUCTS
+  WOOCOMMERCE_ORDERS
+  SHOPIFY_PRODUCTS
+  SHOPIFY_ORDERS
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+enum AlertType {
+  BUDGET_DEPLETED
+  HIGH_CPA
+  ZERO_CONVERSIONS
+  ANOMALY
+  SYSTEM
+}
