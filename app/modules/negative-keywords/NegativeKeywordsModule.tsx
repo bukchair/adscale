@@ -39,7 +39,7 @@ export default function NegativeKeywordsModule({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div className="as-stats-grid">
         <div style={{ background: "#1a1a2e", border: "1px solid #ef444433", borderRadius: 12, padding: 16, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "#ef4444" }}>{suggestions.filter((s) => s.risk === "critical").length}</div>
           <div style={{ fontSize: 12, color: "#8888aa" }}>{t("קריטי", "Critical")}</div>

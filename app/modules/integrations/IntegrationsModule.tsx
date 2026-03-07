@@ -32,22 +32,22 @@ export default function IntegrationsModule({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", gap: 12 }}>
-        <div style={{ background: "#1a1a2e", border: "1px solid #10b98133", borderRadius: 12, padding: "16px 24px", display: "flex", gap: 16, alignItems: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#10b981" }}>{INTEGRATIONS.filter((i) => i.status === "connected").length}</div>
+      <div className="as-integrations-summary">
+        <div style={{ background: "#1a1a2e", border: "1px solid #10b98133", borderRadius: 12, padding: "14px 20px", display: "flex", gap: 12, alignItems: "center", flex: "1 1 auto" }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#10b981" }}>{INTEGRATIONS.filter((i) => i.status === "connected").length}</div>
           <div style={{ fontSize: 12, color: "#8888aa" }}>{t("מחוברים", "Connected")}</div>
         </div>
-        <div style={{ background: "#1a1a2e", border: "1px solid #ef444433", borderRadius: 12, padding: "16px 24px", display: "flex", gap: 16, alignItems: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#ef4444" }}>{INTEGRATIONS.filter((i) => i.status === "error").length}</div>
+        <div style={{ background: "#1a1a2e", border: "1px solid #ef444433", borderRadius: 12, padding: "14px 20px", display: "flex", gap: 12, alignItems: "center", flex: "1 1 auto" }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#ef4444" }}>{INTEGRATIONS.filter((i) => i.status === "error").length}</div>
           <div style={{ fontSize: 12, color: "#8888aa" }}>{t("שגיאות", "Errors")}</div>
         </div>
-        <div style={{ background: "#1a1a2e", border: "1px solid #3a3a5a", borderRadius: 12, padding: "16px 24px", display: "flex", gap: 16, alignItems: "center" }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#8888aa" }}>{INTEGRATIONS.filter((i) => i.status === "disconnected").length}</div>
+        <div style={{ background: "#1a1a2e", border: "1px solid #3a3a5a", borderRadius: 12, padding: "14px 20px", display: "flex", gap: 12, alignItems: "center", flex: "1 1 auto" }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#8888aa" }}>{INTEGRATIONS.filter((i) => i.status === "disconnected").length}</div>
           <div style={{ fontSize: 12, color: "#8888aa" }}>{t("לא מחוברים", "Disconnected")}</div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))", gap: 16 }}>
         {INTEGRATIONS.map((intg) => {
           const status = STATUS_CONFIG[intg.status];
           return (

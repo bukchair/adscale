@@ -108,10 +108,9 @@ export function AuditLog({ lang }: { lang: "he" | "en" }) {
 
                 {/* Expanded diff */}
                 {expanded.has(entry.id) && (entry.before || entry.after) && (
-                  <div style={{
+                  <div className="as-creative-form-grid" style={{
                     background: "#f1f5f9", border: "1px solid #e2e8f0", borderTop: "none",
                     borderRadius: "0 0 8px 8px", padding: "12px 14px",
-                    display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12,
                   }}>
                     {entry.before && (
                       <div>

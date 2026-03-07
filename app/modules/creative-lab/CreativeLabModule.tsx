@@ -43,7 +43,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, padding: 24 }}>
         <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 600 }}>✍️ {t("יצירת קריאייטיב חדש", "Create New Creative")}</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="as-creative-form-grid">
           <div>
             <label style={{ fontSize: 12, color: "#8888aa", display: "block", marginBottom: 6 }}>{t("שם המוצר *", "Product Name *")}</label>
             <input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder={t("לדוגמה: נעלי ריצה ProRun X1", "e.g. ProRun X1 Running Shoes")}
@@ -59,7 +59,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
               <option value="bold">{t("נועז", "Bold")}</option>
             </select>
           </div>
-          <div style={{ gridColumn: "span 2" }}>
+          <div className="as-col-span-2">
             <label style={{ fontSize: 12, color: "#8888aa", display: "block", marginBottom: 6 }}>{t("תיאור קצר + יתרונות", "Short Description + Benefits")}</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("תאר את המוצר, היתרונות הייחודיים, קהל יעד...", "Describe the product, unique benefits, target audience...")} rows={3}
               style={{ width: "100%", background: "#13132a", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "10px 14px", fontSize: 13, outline: "none", resize: "vertical", boxSizing: "border-box" }} />
@@ -102,7 +102,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
                   </button>
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div className="as-creative-form-grid">
                 <div>
                   <div style={{ fontSize: 12, color: "#8888aa", marginBottom: 8, fontWeight: 600 }}>📌 {t("כותרות", "Headlines")} ({v.headlines.length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
