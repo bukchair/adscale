@@ -1,36 +1,14 @@
 /**
  * Google Ads Sync Service
- * Ingests campaigns, ad groups, search terms, and daily metrics.
- * Handles rate limiting with exponential backoff.
+ * Ingests campaigns, ad groups, keywords, search terms, and daily metrics.
+ * Uses shared retry util with exponential back-off for rate limits.
  */
 import { GoogleAdsApi } from "google-ads-api";
 import { prisma } from "../../db/client.js";
 import { logger } from "../../logger/index.js";
+import { withRetry } from "../../utils/retry.js";
+import { safeDecrypt } from "../../utils/encryption.js";
 import type { AdAccount } from "@prisma/client";
-
-const RETRY_BASE_MS = 1_000;
-const MAX_RETRIES   = 5;
-
-async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
-  let attempt = 0;
-  while (true) {
-    try {
-      return await fn();
-    } catch (err: any) {
-      attempt++;
-      const isRateLimit =
-        err?.message?.includes("RATE_EXCEEDED") ||
-        err?.message?.includes("RESOURCE_EXHAUSTED") ||
-        err?.status === 429;
-
-      if (attempt >= retries || !isRateLimit) throw err;
-
-      const delay = RETRY_BASE_MS * Math.pow(2, attempt - 1);
-      logger.warn({ attempt, delay, err: err.message }, "Rate limited — retrying");
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-}
 
 function buildClient(account: AdAccount) {
   return new GoogleAdsApi({
@@ -39,7 +17,7 @@ function buildClient(account: AdAccount) {
     developer_token: process.env.GOOGLE_DEVELOPER_TOKEN!,
   }).Customer({
     customer_id:   account.externalId,
-    refresh_token: account.refreshToken ?? "",
+    refresh_token: safeDecrypt(account.refreshToken),
   });
 }
 
@@ -88,6 +66,125 @@ export async function syncCampaigns(account: AdAccount): Promise<number> {
     });
     upserted++;
   }
+  logger.info({ adAccountId: account.id, upserted }, "Google campaigns synced");
+  return upserted;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AD GROUPS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function syncAdGroups(account: AdAccount): Promise<number> {
+  const client = buildClient(account);
+
+  const rows = await withRetry(() =>
+    client.query(`
+      SELECT
+        ad_group.id,
+        ad_group.name,
+        ad_group.status,
+        ad_group.cpc_bid_micros,
+        campaign.id
+      FROM ad_group
+      WHERE ad_group.status != 'REMOVED'
+        AND campaign.status != 'REMOVED'
+    `)
+  );
+
+  let upserted = 0;
+  for (const row of rows) {
+    const ag = row.ad_group!;
+    const campaignExternalId = String(row.campaign?.id ?? "");
+
+    const campaign = await prisma.campaign.findFirst({
+      where: { adAccountId: account.id, externalId: campaignExternalId },
+    });
+    if (!campaign) continue;
+
+    await prisma.adGroup.upsert({
+      where:  { campaignId_externalId: { campaignId: campaign.id, externalId: String(ag.id) } },
+      create: {
+        campaignId: campaign.id,
+        externalId: String(ag.id),
+        name:       ag.name ?? "",
+        status:     mapCampaignStatus(ag.status),
+        bidAmount:  ag.cpc_bid_micros ? ag.cpc_bid_micros / 1_000_000 : null,
+      },
+      update: {
+        name:      ag.name ?? "",
+        status:    mapCampaignStatus(ag.status),
+        bidAmount: ag.cpc_bid_micros ? ag.cpc_bid_micros / 1_000_000 : null,
+      },
+    });
+    upserted++;
+  }
+  logger.info({ adAccountId: account.id, upserted }, "Google ad groups synced");
+  return upserted;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KEYWORDS
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function syncKeywords(account: AdAccount): Promise<number> {
+  const client = buildClient(account);
+
+  const rows = await withRetry(() =>
+    client.query(`
+      SELECT
+        ad_group_criterion.criterion_id,
+        ad_group_criterion.keyword.text,
+        ad_group_criterion.keyword.match_type,
+        ad_group_criterion.status,
+        ad_group_criterion.cpc_bid_micros,
+        ad_group_criterion.quality_info.quality_score,
+        ad_group.id,
+        campaign.id
+      FROM ad_group_criterion
+      WHERE ad_group_criterion.type = 'KEYWORD'
+        AND ad_group_criterion.status != 'REMOVED'
+        AND campaign.status != 'REMOVED'
+    `)
+  );
+
+  let upserted = 0;
+  for (const row of rows) {
+    const kw                 = row.ad_group_criterion!;
+    const adGroupExternalId  = String(row.ad_group?.id  ?? "");
+    const campaignExternalId = String(row.campaign?.id  ?? "");
+
+    const campaign = await prisma.campaign.findFirst({
+      where: { adAccountId: account.id, externalId: campaignExternalId },
+    });
+    if (!campaign) continue;
+
+    const adGroup = await prisma.adGroup.findFirst({
+      where: { campaignId: campaign.id, externalId: adGroupExternalId },
+    });
+    if (!adGroup) continue;
+
+    const kwId = `${adGroup.id}:${kw.criterion_id}`;
+    await prisma.keyword.upsert({
+      where:  { id: kwId },
+      create: {
+        id:           kwId,
+        adGroupId:    adGroup.id,
+        externalId:   String(kw.criterion_id),
+        text:         kw.keyword?.text ?? "",
+        matchType:    mapMatchType(kw.keyword?.match_type),
+        status:       mapCampaignStatus(kw.status),
+        bidAmount:    kw.cpc_bid_micros ? kw.cpc_bid_micros / 1_000_000 : null,
+        qualityScore: kw.quality_info?.quality_score ?? null,
+      },
+      update: {
+        status:       mapCampaignStatus(kw.status),
+        bidAmount:    kw.cpc_bid_micros ? kw.cpc_bid_micros / 1_000_000 : null,
+        qualityScore: kw.quality_info?.quality_score ?? null,
+      },
+    });
+    upserted++;
+  }
+  logger.info({ adAccountId: account.id, upserted }, "Google keywords synced");
   return upserted;
 }
 
@@ -97,7 +194,7 @@ export async function syncCampaigns(account: AdAccount): Promise<number> {
 
 export async function syncSearchTerms(
   account: AdAccount,
-  dateFrom: string,   // YYYY-MM-DD
+  dateFrom: string,
   dateTo:   string
 ): Promise<number> {
   const client = buildClient(account);
@@ -132,15 +229,15 @@ export async function syncSearchTerms(
     });
     if (!campaign) continue;
 
-    const cost = (metrics.cost_micros ?? 0) / 1_000_000;
-    const clicks = Number(metrics.clicks ?? 0);
+    const cost        = (metrics.cost_micros ?? 0) / 1_000_000;
+    const clicks      = Number(metrics.clicks ?? 0);
     const conversions = Number(metrics.conversions ?? 0);
+    const stId        = `${campaign.id}:${st.search_term}:${dateFrom}:${dateTo}`;
 
     await prisma.searchTerm.upsert({
-      where: {
-        id: `${campaign.id}:${st.search_term}:${dateFrom}:${dateTo}`,
-      },
+      where:  { id: stId },
       create: {
+        id:              stId,
         campaignId:      campaign.id,
         query:           st.search_term ?? "",
         impressions:     Number(metrics.impressions ?? 0),
@@ -161,15 +258,18 @@ export async function syncSearchTerms(
         conversions,
         conversionValue: Number(metrics.conversions_value ?? 0),
         ctr:             Number(metrics.ctr ?? 0),
+        cpc:             clicks > 0 ? cost / clicks : null,
+        cpa:             conversions > 0 ? cost / conversions : null,
       },
     });
     upserted++;
   }
+  logger.info({ adAccountId: account.id, upserted, dateFrom, dateTo }, "Google search terms synced");
   return upserted;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DAILY METRICS
+// DAILY METRICS (campaign-level)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function syncDailyMetrics(
@@ -190,8 +290,7 @@ export async function syncDailyMetrics(
         metrics.conversions,
         metrics.conversions_value,
         metrics.ctr,
-        metrics.average_cpc,
-        metrics.cost_per_conversion
+        metrics.average_cpc
       FROM campaign
       WHERE segments.date BETWEEN '${dateFrom}' AND '${dateTo}'
         AND campaign.status != 'REMOVED'
@@ -200,7 +299,7 @@ export async function syncDailyMetrics(
 
   let upserted = 0;
   for (const row of rows) {
-    const m = row.metrics!;
+    const m    = row.metrics!;
     const date = new Date(row.segments?.date ?? dateFrom);
     const campaignExternalId = String(row.campaign?.id ?? "");
 
@@ -209,39 +308,40 @@ export async function syncDailyMetrics(
     });
     if (!campaign) continue;
 
-    const cost = (m.cost_micros ?? 0) / 1_000_000;
+    const cost        = (m.cost_micros ?? 0) / 1_000_000;
     const conversions = Number(m.conversions ?? 0);
-    const revenue = Number(m.conversions_value ?? 0);
+    const revenue     = Number(m.conversions_value ?? 0);
 
     await prisma.dailyMetric.upsert({
       where:  { campaignId_date: { campaignId: campaign.id, date } },
       create: {
-        campaignId:  campaign.id,
-        adAccountId: account.id,
+        campaignId:      campaign.id,
+        adAccountId:     account.id,
         date,
-        impressions: Number(m.impressions ?? 0),
-        clicks:      Number(m.clicks ?? 0),
+        impressions:     Number(m.impressions ?? 0),
+        clicks:          Number(m.clicks ?? 0),
         cost,
         conversions,
         conversionValue: revenue,
         revenue,
-        ctr:         Number(m.ctr ?? 0),
-        cpc:         (m.average_cpc ?? 0) / 1_000_000,
-        cpa:         conversions > 0 ? cost / conversions : null,
-        roas:        cost > 0 ? revenue / cost : null,
+        ctr:             Number(m.ctr ?? 0),
+        cpc:             (m.average_cpc ?? 0) / 1_000_000,
+        cpa:             conversions > 0 ? cost / conversions : null,
+        roas:            cost > 0 ? revenue / cost : null,
       },
       update: {
-        impressions: Number(m.impressions ?? 0),
-        clicks:      Number(m.clicks ?? 0),
+        impressions:     Number(m.impressions ?? 0),
+        clicks:          Number(m.clicks ?? 0),
         cost,
         conversions,
         conversionValue: revenue,
         revenue,
-        roas: cost > 0 ? revenue / cost : null,
+        roas:            cost > 0 ? revenue / cost : null,
       },
     });
     upserted++;
   }
+  logger.info({ adAccountId: account.id, upserted, dateFrom, dateTo }, "Google daily metrics synced");
   return upserted;
 }
 
@@ -262,4 +362,11 @@ function mapCampaignType(t: any): "SEARCH" | "DISPLAY" | "SHOPPING" | "VIDEO" | 
     VIDEO: "VIDEO", PERFORMANCE_MAX: "PMAX",
   };
   return map[String(t)] ?? "SEARCH";
+}
+
+function mapMatchType(t: any): "EXACT" | "PHRASE" | "BROAD" {
+  const map: Record<string, "EXACT" | "PHRASE" | "BROAD"> = {
+    EXACT: "EXACT", PHRASE: "PHRASE", BROAD: "BROAD",
+  };
+  return map[String(t)] ?? "BROAD";
 }

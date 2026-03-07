@@ -7,15 +7,27 @@ import { Worker } from "bullmq";
 import { config } from "../config/index.js";
 import { logger } from "../logger/index.js";
 import { prisma } from "../db/client.js";
-import type { SyncJobPayload, EngineJobPayload, ActionJobPayload } from "./queues.js";
+import {
+  dlQueue,
+  type SyncJobPayload,
+  type EngineJobPayload,
+  type ActionJobPayload,
+} from "./queues.js";
 
-// Services
-import { syncCampaigns, syncSearchTerms, syncDailyMetrics } from "../services/google-ads/sync.js";
-import { syncProducts, syncOrders } from "../services/woocommerce/sync.js";
+// ── Sync services ─────────────────────────────────────────────────────────────
+import {
+  syncCampaigns,
+  syncAdGroups,
+  syncKeywords,
+  syncSearchTerms,
+  syncDailyMetrics,
+} from "../services/google-ads/sync.js";
+import { syncMetaCampaigns, syncMetaDailyMetrics } from "../services/meta-ads/sync.js";
+import { syncProducts, syncOrders, syncRefunds } from "../services/woocommerce/sync.js";
+import { runFullSync, runIncrementalSync } from "../services/sync-orchestrator.js";
 
-// Engines
+// ── Engine services ───────────────────────────────────────────────────────────
 import { classifyIntents } from "../engines/intent-classifier.js";
-import { analyzeTerms } from "../engines/negative-keyword.js";
 import { generateRecommendations, persistRecommendations } from "../engines/recommendation-engine.js";
 
 const connection = { url: config.REDIS_URL };
@@ -28,49 +40,68 @@ const syncWorker = new Worker<SyncJobPayload>(
   "sync",
   async (job) => {
     const { type, orgId, adAccountId, storeId, dateFrom, dateTo } = job.data;
-    logger.info({ type, orgId }, "Sync job started");
+    logger.info({ type, orgId, jobId: job.id }, "Sync job started");
 
     const syncJob = await prisma.syncJob.create({
       data: {
-        type:       mapSyncType(type),
-        status:     "RUNNING",
-        startedAt:  new Date(),
+        type:        mapSyncType(type),
+        status:      "RUNNING",
+        startedAt:   new Date(),
         orgId,
         adAccountId: adAccountId ?? null,
-        storeId:     storeId ?? null,
+        storeId:     storeId     ?? null,
       },
     });
 
-    try {
-      let records = 0;
+    let records = 0;
 
-      if (type === "google_campaigns" && adAccountId) {
+    try {
+      const from = dateFrom ?? daysAgo(30);
+      const to   = dateTo   ?? today();
+
+      // ── Orchestrated ──
+      if (type === "full_sync") {
+        const summary = await runFullSync(orgId, from, to);
+        records = Object.values(summary.results).reduce((a, b) => a + b, 0);
+      } else if (type === "incremental_sync") {
+        const summary = await runIncrementalSync(orgId);
+        records = Object.values(summary.results).reduce((a, b) => a + b, 0);
+
+      // ── Google Ads ──
+      } else if (type === "google_campaigns" && adAccountId) {
         const account = await prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
         records = await syncCampaigns(account);
-      }
-
-      if (type === "google_search_terms" && adAccountId) {
+      } else if (type === "google_ad_groups" && adAccountId) {
         const account = await prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
-        const from = dateFrom ?? daysAgo(30);
-        const to   = dateTo   ?? today();
+        records = await syncAdGroups(account);
+      } else if (type === "google_keywords" && adAccountId) {
+        const account = await prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
+        records = await syncKeywords(account);
+      } else if (type === "google_search_terms" && adAccountId) {
+        const account = await prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
         records = await syncSearchTerms(account, from, to);
-      }
-
-      if (type === "google_metrics" && adAccountId) {
+      } else if (type === "google_metrics" && adAccountId) {
         const account = await prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
-        const from = dateFrom ?? daysAgo(30);
-        const to   = dateTo   ?? today();
         records = await syncDailyMetrics(account, from, to);
-      }
 
-      if (type === "woo_products" && storeId) {
+      // ── Meta Ads ──
+      } else if (type === "meta_campaigns" && adAccountId) {
+        const account = await prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
+        records = await syncMetaCampaigns(account);
+      } else if (type === "meta_metrics" && adAccountId) {
+        const account = await prisma.adAccount.findUniqueOrThrow({ where: { id: adAccountId } });
+        records = await syncMetaDailyMetrics(account, from, to);
+
+      // ── WooCommerce ──
+      } else if (type === "woo_products" && storeId) {
         const store = await prisma.storeIntegration.findUniqueOrThrow({ where: { id: storeId } });
         records = await syncProducts(store);
-      }
-
-      if (type === "woo_orders" && storeId) {
+      } else if (type === "woo_orders" && storeId) {
         const store = await prisma.storeIntegration.findUniqueOrThrow({ where: { id: storeId } });
         records = await syncOrders(store, dateFrom);
+      } else if (type === "woo_refunds" && storeId) {
+        const store = await prisma.storeIntegration.findUniqueOrThrow({ where: { id: storeId } });
+        records = await syncRefunds(store, dateFrom);
       }
 
       await prisma.syncJob.update({
@@ -78,13 +109,13 @@ const syncWorker = new Worker<SyncJobPayload>(
         data:  { status: "DONE", completedAt: new Date(), recordsOut: records },
       });
 
-      logger.info({ type, orgId, records }, "Sync job completed");
+      logger.info({ type, orgId, records, jobId: job.id }, "Sync job completed");
     } catch (err: any) {
       await prisma.syncJob.update({
         where: { id: syncJob.id },
         data:  { status: "FAILED", completedAt: new Date(), errorMsg: String(err.message) },
       });
-      throw err;
+      throw err; // BullMQ will retry per queue defaultJobOptions
     }
   },
   { connection, concurrency: 3, limiter: { max: 10, duration: 60_000 } }
@@ -98,20 +129,18 @@ const engineWorker = new Worker<EngineJobPayload>(
   "engines",
   async (job) => {
     const { type, orgId, dateFrom, dateTo } = job.data;
-    logger.info({ type, orgId }, "Engine job started");
+    logger.info({ type, orgId, jobId: job.id }, "Engine job started");
 
     const from = new Date(dateFrom);
-    const to   = new Date(dateTo);
 
     if (type === "classify_intents") {
-      // Load unclassified search terms
       const terms = await prisma.searchTerm.findMany({
         where: {
-          campaign: { adAccount: { orgId } },
+          campaign:     { adAccount: { orgId } },
           classifiedAt: null,
           dateFrom:     { gte: from },
         },
-        take: 1000,
+        take:    1000,
         orderBy: { cost: "desc" },
       });
 
@@ -135,6 +164,7 @@ const engineWorker = new Worker<EngineJobPayload>(
     }
 
     if (type === "generate_recommendations") {
+      const to = new Date(dateTo);
       const recs = await generateRecommendations(orgId, from, to);
       await persistRecommendations(recs);
       logger.info({ count: recs.length }, "Recommendations generated");
@@ -151,7 +181,7 @@ const actionWorker = new Worker<ActionJobPayload>(
   "actions",
   async (job) => {
     const { type, recommendationId, payload } = job.data;
-    logger.info({ type, recommendationId }, "Action job started");
+    logger.info({ type, recommendationId, jobId: job.id }, "Action job started");
 
     const action = await prisma.optimizationAction.create({
       data: {
@@ -166,16 +196,9 @@ const actionWorker = new Worker<ActionJobPayload>(
     try {
       let result: Record<string, unknown> = {};
 
-      // Execute the action (API calls to ad platforms)
-      if (type === "BUDGET_CHANGE") {
-        result = await executeBudgetChange(payload);
-      }
-      if (type === "STATUS_CHANGE") {
-        result = await executeStatusChange(payload);
-      }
-      if (type === "NEGATIVE_KW_ADD") {
-        result = await executeNegativeKwAdd(payload);
-      }
+      if (type === "BUDGET_CHANGE")   result = await executeBudgetChange(payload);
+      if (type === "STATUS_CHANGE")   result = await executeStatusChange(payload);
+      if (type === "NEGATIVE_KW_ADD") result = await executeNegativeKwAdd(payload);
 
       await prisma.optimizationAction.update({
         where: { id: action.id },
@@ -208,11 +231,37 @@ const actionWorker = new Worker<ActionJobPayload>(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Action executors (stubs — implement with real API calls)
+// Dead-letter queue — park permanently-failed jobs for manual review
+// ─────────────────────────────────────────────────────────────────────────────
+
+for (const worker of [syncWorker, engineWorker, actionWorker]) {
+  worker.on("failed", async (job, err) => {
+    logger.error({ jobId: job?.id, queue: worker.name, err: err.message }, "Job failed");
+
+    // If exhausted all retries, park in DLQ
+    if (job && (job.attemptsMade ?? 0) >= (job.opts?.attempts ?? 1)) {
+      await dlQueue.add("failed", {
+        originalQueue: worker.name,
+        jobId:         job.id,
+        jobName:       job.name,
+        data:          job.data,
+        error:         err.message,
+        failedAt:      new Date().toISOString(),
+      });
+      logger.warn({ jobId: job.id }, "Job moved to dead-letter queue");
+    }
+  });
+
+  worker.on("completed", (job) => {
+    logger.info({ jobId: job.id, queue: worker.name }, "Job completed");
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Action executors (DRY RUN — real API calls implemented in action service)
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function executeBudgetChange(payload: any) {
-  // TODO: call Google Ads / Meta API to update budget
   logger.info({ payload }, "[DRY RUN] Budget change");
   return { applied: true, newBudget: payload.recommendedBudget };
 }
@@ -228,40 +277,47 @@ async function executeNegativeKwAdd(payload: any) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Error handlers
+// Graceful shutdown
 // ─────────────────────────────────────────────────────────────────────────────
 
-for (const worker of [syncWorker, engineWorker, actionWorker]) {
-  worker.on("failed", (job, err) => {
-    logger.error({ jobId: job?.id, err }, "Job failed");
-  });
-  worker.on("completed", (job) => {
-    logger.info({ jobId: job.id }, "Job completed");
-  });
-}
-
 process.on("SIGTERM", async () => {
-  await Promise.all([syncWorker.close(), engineWorker.close(), actionWorker.close()]);
+  logger.info("SIGTERM received — shutting down workers");
+  await Promise.all([
+    syncWorker.close(),
+    engineWorker.close(),
+    actionWorker.close(),
+  ]);
   process.exit(0);
 });
 
-logger.info("⚙️  AdScale workers running");
+logger.info("AdScale workers running");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function today(): string { return new Date().toISOString().slice(0, 10); }
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 function daysAgo(n: number): string {
-  const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10);
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
 }
 function mapSyncType(t: string): any {
   const m: Record<string, string> = {
+    full_sync:           "GOOGLE_ADS_CAMPAIGNS",
+    incremental_sync:    "GOOGLE_ADS_CAMPAIGNS",
     google_campaigns:    "GOOGLE_ADS_CAMPAIGNS",
+    google_ad_groups:    "GOOGLE_ADS_CAMPAIGNS",
+    google_keywords:     "GOOGLE_ADS_CAMPAIGNS",
     google_search_terms: "GOOGLE_ADS_SEARCH_TERMS",
     google_metrics:      "GOOGLE_ADS_CAMPAIGNS",
+    meta_campaigns:      "META_CAMPAIGNS",
+    meta_metrics:        "META_CAMPAIGNS",
     woo_products:        "WOOCOMMERCE_PRODUCTS",
     woo_orders:          "WOOCOMMERCE_ORDERS",
+    woo_refunds:         "WOOCOMMERCE_ORDERS",
   };
   return m[t] ?? "GOOGLE_ADS_CAMPAIGNS";
 }

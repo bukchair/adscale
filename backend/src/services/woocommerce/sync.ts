@@ -1,13 +1,17 @@
 /**
  * WooCommerce Sync Service
- * Ingests products and orders with pagination and retry.
+ * Ingests products, orders, and refunds with pagination and retry.
  */
 import { prisma } from "../../db/client.js";
 import { logger } from "../../logger/index.js";
+import { withRetry } from "../../utils/retry.js";
 import type { StoreIntegration } from "@prisma/client";
 
-const PAGE_SIZE   = 100;
-const RETRY_LIMIT = 4;
+const PAGE_SIZE = 100;
+
+function authHeader(store: StoreIntegration): string {
+  return "Basic " + Buffer.from(`${store.apiKey}:${store.apiSecret}`).toString("base64");
+}
 
 async function wcFetch(
   store: StoreIntegration,
@@ -20,28 +24,18 @@ async function wcFetch(
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
 
   const headers = {
-    Authorization:
-      "Basic " +
-      Buffer.from(`${store.apiKey}:${store.apiSecret}`).toString("base64"),
+    Authorization:  authHeader(store),
     "Content-Type": "application/json",
   };
 
-  let attempt = 0;
-  while (true) {
-    try {
+  return withRetry(
+    async () => {
       const res = await fetch(url.toString(), { headers });
-      if (!res.ok) {
-        throw new Error(`WC API ${res.status}: ${await res.text()}`);
-      }
-      return res.json();
-    } catch (err: any) {
-      attempt++;
-      if (attempt >= RETRY_LIMIT) throw err;
-      const delay = 1_000 * Math.pow(2, attempt - 1);
-      logger.warn({ attempt, delay }, "WooCommerce fetch failed — retrying");
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
+      if (!res.ok) throw new Error(`WC API ${res.status}: ${await res.text()}`);
+      return res.json() as Promise<any[]>;
+    },
+    { maxRetries: 4, baseDelayMs: 1_000 }
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -174,6 +168,66 @@ export async function syncOrders(
   }
   return total;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REFUNDS
+// Fetches orders modified after `afterDate` that carry a non-zero refund and
+// updates the corresponding Order.refundTotal from the per-order refunds sub-resource.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function syncRefunds(
+  store: StoreIntegration,
+  afterDate?: string   // ISO date — only process orders modified since this date
+): Promise<number> {
+  let page  = 1;
+  let total = 0;
+
+  while (true) {
+    const params: Record<string, string | number> = {
+      per_page:    PAGE_SIZE,
+      page,
+      orderby:     "modified",
+      order:       "asc",
+      // Only orders that have been fully or partially refunded
+      status:      "refunded",
+    };
+    if (afterDate) params.after = afterDate;
+
+    const orders = await wcFetch(store, "orders", params);
+    if (!orders.length) break;
+
+    for (const o of orders) {
+      const dbOrder = await prisma.order.findFirst({
+        where: { storeId: store.id, externalId: String(o.id) },
+      });
+      if (!dbOrder) continue;
+
+      // Fetch the refund line-items for this specific order
+      const refunds = await wcFetch(store, `orders/${o.id}/refunds`, {
+        per_page: 100,
+      });
+
+      const refundTotal = refunds.reduce(
+        (sum: number, r: any) => sum + Math.abs(parseFloat(r.amount ?? "0")),
+        0
+      );
+
+      await prisma.order.update({
+        where: { id: dbOrder.id },
+        data:  { refundTotal, status: "REFUNDED" },
+      });
+      total++;
+    }
+
+    if (orders.length < PAGE_SIZE) break;
+    page++;
+  }
+
+  logger.info({ storeId: store.id, total }, "WooCommerce refunds synced");
+  return total;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function mapOrderStatus(s: string): "PENDING" | "PROCESSING" | "COMPLETED" | "CANCELLED" | "REFUNDED" {
   const m: Record<string, any> = {
