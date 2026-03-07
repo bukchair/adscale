@@ -33,7 +33,7 @@ export default function BudgetModule({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div className="as-stats-grid">
         {[
           { label: t("תקציב יומי כולל", "Total Daily Budget"),   value: `₪${CAMPAIGNS.reduce((s, c) => s + c.dailyBudget, 0).toLocaleString()}`, color: "#7c74ff" },
           { label: t("הוצאה ממוצעת/יום", "Avg Spend/Day"),       value: `₪${CAMPAIGNS.reduce((s, c) => s + c.avgSpend, 0).toLocaleString()}`,    color: "#00d4aa" },

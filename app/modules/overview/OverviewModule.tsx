@@ -87,7 +87,7 @@ export default function OverviewModule({ lang }: { lang: Lang }) {
 
 function LoadingSkeleton() {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+    <div className="as-stats-grid" style={{ gap: 16 }}>
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} style={{ background: "#1a1a2e", borderRadius: 12, padding: 20, height: 100, animation: "pulse 1.5s infinite" }} />
       ))}
