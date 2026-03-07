@@ -142,6 +142,10 @@ const AI_SUGGESTIONS_EN = [
   { id: 4, platform: "google", impact: "-8% CPA",   message: "Switch to Target CPA of 42 – AI detected new conversion patterns", priority: "low" },
 ];
 
+const PRIORITY_COLORS: Record<string, string> = { high: "#ff6b6b", medium: "#f5a623", low: "#7c74ff" };
+const PRIORITY_LABELS: Record<string, string> = { high: "דחוף", medium: "בינוני", low: "נמוך" };
+const CATEGORY_LABELS: Record<string, string> = { budget: "תקציב", creative: "קריאייטיב", bidding: "הצעות מחיר", audience: "קהל", structure: "מבנה" };
+
 const DATE_PRESETS_HE = [
   { label: "7 ימים", from: () => getDaysAgo(7) },
   { label: "14 ימים", from: () => getDaysAgo(14) },
@@ -1156,7 +1160,6 @@ const SERVICE_CONFIGS: {
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState(0);
-  const [appliedSuggestions, setAppliedSuggestions] = useState<number[]>([]);
   const [animIn, setAnimIn] = useState(false);
   const [preset, setPreset] = useState(0);
   const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
@@ -1175,6 +1178,29 @@ export default function DashboardPage() {
   const TABS = getTabs(lang);
   const AI_SUGGESTIONS = lang === "he" ? AI_SUGGESTIONS_HE : AI_SUGGESTIONS_EN;
   const DATE_PRESETS = lang === "he" ? DATE_PRESETS_HE : DATE_PRESETS_EN;
+
+  // Settings status state
+  const [settingsStatus, setSettingsStatus] = useState<any>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+
+  // AI suggestions state
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiApplied, setAiApplied] = useState<Set<string>>(new Set());
+  const [aiErrors, setAiErrors] = useState<string[]>([]);
+
+  // Audiences tab state
+  const [audiencesData, setAudiencesData] = useState<any>(null);
+  const [audiencesLoading, setAudiencesLoading] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", type: "website", retentionDays: 30, sourceAudienceId: "", ratio: 0.01 });
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createResult, setCreateResult] = useState<{ id: string; name: string } | null>(null);
+  const [audienceFilter, setAudienceFilter] = useState<"all" | "meta" | "google">("all");
+
+  // Merchant Center tab state
+  const [merchantData, setMerchantData] = useState<any>(null);
+  const [merchantLoading, setMerchantLoading] = useState(false);
 
   // Negative keywords tab state
   const [negTerms, setNegTerms] = useState<any[]>([]);
@@ -1258,7 +1284,78 @@ export default function DashboardPage() {
     }
   }
 
+  useEffect(() => { if (activeTab === 3) loadAudiences(); }, [activeTab]);
   useEffect(() => { if (activeTab === 4) loadNegTerms(); }, [activeTab]);
+
+  async function loadAudiences() {
+    setAudiencesLoading(true);
+    try {
+      const res = await fetch("/api/audiences");
+      const d = await res.json();
+      setAudiencesData(d);
+    } finally {
+      setAudiencesLoading(false);
+    }
+  }
+
+  async function createAudience() {
+    if (!createForm.name.trim()) return;
+    setCreateLoading(true);
+    setCreateResult(null);
+    try {
+      const res = await fetch("/api/audiences/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(createForm),
+      });
+      const d = await res.json();
+      if (d.success) {
+        setCreateResult({ id: d.id, name: d.name });
+        setShowCreateForm(false);
+        setCreateForm({ name: "", type: "website", retentionDays: 30, sourceAudienceId: "", ratio: 0.01 });
+        await loadAudiences();
+      }
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
+  async function loadAiSuggestions() {
+    setAiLoading(true);
+    try {
+      const res = await fetch(`/api/ai-suggestions?from=${range.from}&to=${range.to}`);
+      const d = await res.json();
+      setAiSuggestions(d.suggestions || []);
+      setAiErrors(d.errors || []);
+    } finally {
+      setAiLoading(false);
+    }
+  }
+  useEffect(() => { if (activeTab === 2) loadAiSuggestions(); }, [activeTab]);
+
+  async function loadSettingsStatus() {
+    setSettingsLoading(true);
+    try {
+      const res = await fetch("/api/settings/status");
+      const d = await res.json();
+      setSettingsStatus(d);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }
+  useEffect(() => { if (activeTab === 6) loadSettingsStatus(); }, [activeTab]);
+
+  async function loadMerchantData() {
+    setMerchantLoading(true);
+    try {
+      const res = await fetch(`/api/merchant?from=${range.from}&to=${range.to}`);
+      const d = await res.json();
+      setMerchantData(d);
+    } finally {
+      setMerchantLoading(false);
+    }
+  }
+  useEffect(() => { if (activeTab === 5) loadMerchantData(); }, [activeTab]);
 
   const loadSettings = async () => {
     try {
@@ -1266,7 +1363,6 @@ export default function DashboardPage() {
       if (!res.ok) return;
       const data = await res.json();
       setSettingsData(data);
-      setSettingsStatus(data.status || {});
     } catch {}
   };
   useEffect(() => { loadSettings(); }, []);
@@ -1596,9 +1692,14 @@ export default function DashboardPage() {
                       <div style={{ fontSize: 12, lineHeight: 1.5, color: "#475569" }}>{sg.message}</div>
                       <div style={{ fontSize: 11, color: "#00d4aa", fontWeight: 700, marginTop: 3 }}>{t("צפי","Est.")}: {sg.impact}</div>
                     </div>
-                    <button style={s.btn("sm")} onClick={() => { setAppliedSuggestions(p => [...p, sg.id]); setActiveTab(2); }}>{t("יישם","Apply")}</button>
+                    <button style={s.btn("sm")} onClick={() => { setAiApplied(prev => new Set([...prev, sg.id])); setActiveTab(2); }}>{t("יישם","Apply")}</button>
                   </div>
                 ))}
+                {aiSuggestions.filter(sg => sg.priority === "high").length === 0 && !aiLoading && (
+                  <div style={{ fontSize: 13, color: "#6b7280", textAlign: "center", padding: "16px 0" }}>
+                    {aiLoading ? "טוען..." : "אין המלצות דחופות כרגע"}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1711,15 +1812,41 @@ export default function DashboardPage() {
             <div style={s.header}>
               <div>
                 <div style={{ fontSize: 26, fontWeight: 700 }}>{t("AI אופטימיזציה", "AI Optimization")}</div>
-                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>{AI_SUGGESTIONS.length - appliedSuggestions.length} {t("המלצות","recommendations")}</div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 3 }}>{AI_SUGGESTIONS.length - aiApplied.size} {t("המלצות","recommendations")}</div>
               </div>
+              <button style={s.btn("sm")} onClick={loadAiSuggestions} disabled={aiLoading}>
+                {aiLoading ? "טוען..." : "נתח מחדש"}
+              </button>
             </div>
-            {AI_SUGGESTIONS.map(sg => {
-              const applied = appliedSuggestions.includes(sg.id);
+
+            {aiErrors.length > 0 && (
+              <div style={{ background: "#f5a62310", border: "1px solid #f5a62333", borderRadius: 10, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#f5a623" }}>
+                {aiErrors.join(" | ")}
+              </div>
+            )}
+
+            {aiLoading && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {[1,2,3,4].map(i => <Skeleton key={i} h={88} r={14} />)}
+              </div>
+            )}
+
+            {!aiLoading && aiSuggestions.length === 0 && (
+              <div style={{ ...s.card, textAlign: "center", padding: "48px 0", color: "#6b7280" }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>אין המלצות כרגע</div>
+                <div style={{ fontSize: 13 }}>כל הקמפיינים מבצעים בצורה טובה, או שהנתונים עדיין בטעינה</div>
+              </div>
+            )}
+
+            {!aiLoading && aiSuggestions.map(sg => {
+              const applied = aiApplied.has(sg.id);
+              const prioColor = PRIORITY_COLORS[sg.priority] || "#7c74ff";
               return (
                 <div key={sg.id} style={{ background: applied ? "#00d4aa08" : "#ffffff", border: `1px solid ${applied ? "#00d4aa44" : "#e2e8f0"}`, borderRadius: 14, padding: "16px 20px", marginBottom: 12, display: "flex", alignItems: "flex-start", gap: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
                   <div style={{ width: 42, height: 42, borderRadius: 10, background: platformColors[sg.platform] + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <PlatformIcon platform={sg.platform} size={24} />
+                    <div style={{ position: "absolute", top: -4, right: -4, width: 10, height: 10, borderRadius: "50%", background: prioColor, border: "2px solid #090b12" }} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -1730,7 +1857,7 @@ export default function DashboardPage() {
                   </div>
                   <div style={{ flexShrink: 0 }}>
                     {applied ? <div style={{ color: "#00d4aa", fontSize: 13, fontWeight: 600 }}>{t("יושם","Applied")}</div> :
-                      <button style={s.btn("primary")} onClick={() => setAppliedSuggestions(p => [...p, sg.id])}>{t("יישם","Apply")}</button>
+                      <button style={s.btn("primary")} onClick={() => setAiApplied(prev => new Set([...prev, sg.id]))}>{t("יישם","Apply")}</button>
                     }
                   </div>
                 </div>
@@ -1762,6 +1889,160 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
+
+            {createResult && (
+              <div style={{ background: "#00d4aa12", border: "1px solid #00d4aa44", borderRadius: 12, padding: "12px 20px", marginBottom: 16, fontSize: 13 }}>
+                <span style={{ color: "#00d4aa", fontWeight: 700 }}>✓ קהל נוצר!</span> "{createResult.name}" (ID: {createResult.id})
+              </div>
+            )}
+
+            {showCreateForm && (
+              <div style={{ ...s.card, marginBottom: 20, border: "1px solid #7c74ff44" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>יצירת קהל חדש ב-Meta</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>שם הקהל</div>
+                    <input
+                      value={createForm.name}
+                      onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
+                      placeholder="לדוגמה: מבקרי אתר 30 יום"
+                      style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>סוג קהל</div>
+                    <select
+                      value={createForm.type}
+                      onChange={e => setCreateForm(p => ({ ...p, type: e.target.value }))}
+                      style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, cursor: "pointer" }}
+                    >
+                      <option value="website">מבקרי אתר (Pixel)</option>
+                      <option value="engagement">מעורבות</option>
+                      <option value="lookalike">לוקאלייק</option>
+                    </select>
+                  </div>
+                  {createForm.type !== "lookalike" && (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>תקופת שמירה (ימים)</div>
+                      <select
+                        value={createForm.retentionDays}
+                        onChange={e => setCreateForm(p => ({ ...p, retentionDays: parseInt(e.target.value) }))}
+                        style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, cursor: "pointer" }}
+                      >
+                        {[7, 14, 30, 60, 90, 180].map(d => <option key={d} value={d}>{d} יום</option>)}
+                      </select>
+                    </div>
+                  )}
+                  {createForm.type === "lookalike" && (
+                    <>
+                      <div>
+                        <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>ID קהל מקור</div>
+                        <input
+                          value={createForm.sourceAudienceId}
+                          onChange={e => setCreateForm(p => ({ ...p, sourceAudienceId: e.target.value }))}
+                          placeholder="הדבק ID של קהל קיים"
+                          style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>אחוז לוקאלייק</div>
+                        <select
+                          value={createForm.ratio}
+                          onChange={e => setCreateForm(p => ({ ...p, ratio: parseFloat(e.target.value) }))}
+                          style={{ width: "100%", background: "#181b2a", color: "#e8eaf6", border: "1px solid #2a2d3e", borderRadius: 8, padding: "8px 12px", fontSize: 13, cursor: "pointer" }}
+                        >
+                          <option value={0.01}>1%</option>
+                          <option value={0.02}>2%</option>
+                          <option value={0.03}>3%</option>
+                          <option value={0.05}>5%</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button style={{ ...s.btn("primary"), opacity: createLoading ? 0.5 : 1 }} onClick={createAudience} disabled={createLoading}>
+                    {createLoading ? "יוצר..." : "צור קהל"}
+                  </button>
+                  <button style={s.btn("default")} onClick={() => setShowCreateForm(false)}>ביטול</button>
+                </div>
+              </div>
+            )}
+
+            {audiencesLoading && !audiencesData && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+                {[1,2,3,4,5,6].map(i => <Skeleton key={i} h={120} r={16} />)}
+              </div>
+            )}
+
+            {audiencesData?.errors?.length > 0 && (
+              <div style={{ background: "#f5a62310", border: "1px solid #f5a62333", borderRadius: 10, padding: "10px 16px", marginBottom: 14, fontSize: 12, color: "#f5a623" }}>
+                {audiencesData.errors.join(" | ")}
+              </div>
+            )}
+
+            {audiencesData && (() => {
+              const allAudiences = [
+                ...(audiencesData.meta || []),
+                ...(audiencesData.google || []),
+              ].filter(a => audienceFilter === "all" || a.platform === audienceFilter)
+               .sort((a: any, b: any) => (b.sizeRaw || 0) - (a.sizeRaw || 0));
+
+              const subtypeIcon: Record<string, string> = {
+                WEBSITE: "🌐", LOOKALIKE: "🎯", CUSTOM: "📋", APP: "📱", VIDEO: "🎬",
+                ENGAGEMENT: "❤️", REMARKETING: "🔄", CRM_BASED: "👥", SIMILAR_USERS: "✨",
+              };
+
+              if (!allAudiences.length) {
+                return (
+                  <div style={{ ...s.card, textAlign: "center" as const, padding: "48px 0", color: "#6b7280" }}>
+                    <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>אין קהלים {audienceFilter !== "all" ? `ב-${audienceFilter}` : ""}</div>
+                    <div style={{ fontSize: 13 }}>בדוק שה-API Keys מוגדרים נכון בהגדרות</div>
+                  </div>
+                );
+              }
+
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+                  {allAudiences.map((a: any, i: number) => {
+                    const platColor = a.platform === "meta" ? "#1877F2" : "#4285F4";
+                    return (
+                      <div key={a.id || i} style={{ ...s.card, cursor: "default", border: `1px solid ${platColor}22`, opacity: animIn ? 1 : 0, transition: `opacity 0.35s ease ${Math.min(i, 8) * 0.06}s` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                          <span style={{ fontSize: 22 }}>{subtypeIcon[a.subtype] || "👥"}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                            <PlatformIcon platform={a.platform} size={16} />
+                            {a.hasLookalike && <span style={{ fontSize: 9, padding: "1px 6px", borderRadius: 8, background: "#00d4aa22", color: "#00d4aa" }}>LAL</span>}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.4 }}>{a.name}</div>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: platColor, marginBottom: 6 }}>{a.size}</div>
+                        <div style={{ fontSize: 11, color: "#6b7280", display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+                          <span style={{ background: "#181b2a", padding: "1px 7px", borderRadius: 8 }}>{a.type}</span>
+                          {a.retentionDays && <span style={{ background: "#181b2a", padding: "1px 7px", borderRadius: 8 }}>{a.retentionDays}י'</span>}
+                        </div>
+                        {a.subtype !== "LOOKALIKE" && a.platform === "meta" && (
+                          <button
+                            style={{ ...s.btn("sm"), marginTop: 10, fontSize: 10, padding: "3px 8px" }}
+                            onClick={() => { setCreateForm(p => ({ ...p, type: "lookalike", sourceAudienceId: a.id, name: `LAL ${a.name} 1%` })); setShowCreateForm(true); }}
+                          >
+                            + צור LAL
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {!audiencesData && !audiencesLoading && (
+              <div style={{ ...s.card, textAlign: "center" as const, padding: "48px 0", color: "#6b7280" }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>👥</div>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>טוען קהלים...</div>
+              </div>
+            )}
           </>
         )}
 

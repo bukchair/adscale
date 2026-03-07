@@ -173,6 +173,118 @@ export async function GET(req: NextRequest) {
     }
   } catch (e) { apiErrors.push("meta:" + String(e).slice(0, 100)); }
 
+  // TikTok Ads - summary + campaigns + daily breakdown
+  let tiktokSpent = 0, tiktokClicks = 0, tiktokImpressions = 0, tiktokConversions = 0;
+  const tiktokCampaigns: any[] = [];
+  const tiktokDailyMap: Record<string, { spent: number; clicks: number; conversions: number }> = {};
+  try {
+    const tiktokToken = process.env.TIKTOK_ACCESS_TOKEN;
+    const advertiserId = process.env.TIKTOK_ADVERTISER_ID;
+    if (tiktokToken && advertiserId) {
+      const ttHeaders = { "Access-Token": tiktokToken, "Content-Type": "application/json" };
+
+      // Campaign list
+      const campRes = await fetch(
+        `https://business-api.tiktok.com/open_api/v1.3/campaign/get/?advertiser_id=${advertiserId}&fields=["campaign_id","campaign_name","status","budget","budget_mode","objective_type"]&page_size=50`,
+        { headers: ttHeaders, signal: AbortSignal.timeout(8000) }
+      );
+      const campData = campRes.ok ? await campRes.json() : { code: -1 };
+      const campaignMap: Record<string, any> = {};
+      if (campData.code === 0) {
+        (campData.data?.list || []).forEach((c: any) => { campaignMap[c.campaign_id] = c; });
+      }
+
+      // Campaign performance report
+      const reportRes = await fetch("https://business-api.tiktok.com/open_api/v1.3/report/integrated/get/", {
+        method: "POST",
+        headers: ttHeaders,
+        body: JSON.stringify({
+          advertiser_id: advertiserId,
+          report_type: "BASIC",
+          dimensions: ["campaign_id"],
+          metrics: ["spend", "clicks", "impressions", "conversion", "cpc", "ctr", "cost_per_conversion"],
+          data_level: "AUCTION_CAMPAIGN",
+          start_date: from,
+          end_date: to,
+          page_size: 50,
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (reportRes.ok) {
+        const reportData = await reportRes.json();
+        if (reportData.code === 0) {
+          (reportData.data?.list || []).forEach((r: any) => {
+            const m = r.metrics || {};
+            const d = r.dimensions || {};
+            const spent = parseFloat(m.spend || "0");
+            const clicks = parseInt(m.clicks || "0");
+            const impressions = parseInt(m.impressions || "0");
+            const conversions = parseFloat(m.conversion || "0");
+            tiktokSpent += spent;
+            tiktokClicks += clicks;
+            tiktokImpressions += impressions;
+            tiktokConversions += conversions;
+            const camp = campaignMap[d.campaign_id] || {};
+            const statusMap: Record<string, string> = {
+              CAMPAIGN_STATUS_ENABLE: "active",
+              CAMPAIGN_STATUS_DISABLE: "paused",
+              CAMPAIGN_STATUS_DELETE: "removed",
+            };
+            tiktokCampaigns.push({
+              id: `tiktok_${d.campaign_id}`,
+              name: camp.campaign_name || `TikTok Campaign ${d.campaign_id}`,
+              platform: "tiktok",
+              status: statusMap[camp.status] || "paused",
+              budget: parseFloat(camp.budget || "0"),
+              spent,
+              impressions,
+              clicks,
+              conversions,
+              revenue: 0,
+              roas: 0,
+              ctr: parseFloat(m.ctr || "0"),
+              cpc: parseFloat(m.cpc || "0"),
+              cpa: parseFloat(m.cost_per_conversion || "0"),
+            });
+          });
+        } else {
+          apiErrors.push(`tiktok_report:${reportData.code}:${reportData.message?.slice(0, 150)}`);
+        }
+      }
+
+      // Daily breakdown
+      const dailyRes = await fetch("https://business-api.tiktok.com/open_api/v1.3/report/integrated/get/", {
+        method: "POST",
+        headers: ttHeaders,
+        body: JSON.stringify({
+          advertiser_id: advertiserId,
+          report_type: "BASIC",
+          dimensions: ["stat_time_day"],
+          metrics: ["spend", "clicks", "conversion"],
+          data_level: "AUCTION_ADVERTISER",
+          start_date: from,
+          end_date: to,
+          page_size: 100,
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (dailyRes.ok) {
+        const dailyData = await dailyRes.json();
+        if (dailyData.code === 0) {
+          (dailyData.data?.list || []).forEach((r: any) => {
+            const rawDate: string = r.dimensions?.stat_time_day || "";
+            const date = rawDate.split(" ")[0]; // "2024-01-01 00:00:00" → "2024-01-01"
+            if (!date) return;
+            if (!tiktokDailyMap[date]) tiktokDailyMap[date] = { spent: 0, clicks: 0, conversions: 0 };
+            tiktokDailyMap[date].spent += parseFloat(r.metrics?.spend || "0");
+            tiktokDailyMap[date].clicks += parseInt(r.metrics?.clicks || "0");
+            tiktokDailyMap[date].conversions += parseFloat(r.metrics?.conversion || "0");
+          });
+        }
+      }
+    }
+  } catch(e) { apiErrors.push(`tiktok:${String(e).slice(0,150)}`); }
+
   // GA4
   let ga4Sessions = 0, ga4Users = 0, ga4Revenue = 0;
   try {
@@ -195,30 +307,39 @@ export async function GET(req: NextRequest) {
     if (ga4Res.ok) { const ga4Data = await ga4Res.json(); const row = ga4Data.rows?.[0]?.metricValues; if (row) { ga4Sessions = parseFloat(row[0]?.value || "0"); ga4Users = parseFloat(row[1]?.value || "0"); ga4Revenue = parseFloat(row[2]?.value || "0"); } }
   } catch (e) { apiErrors.push("ga4:" + String(e).slice(0, 150)); }
 
-  // Distribute WooCommerce revenue proportionally by conversions
-  const totalPlatformConversions = googleConversions + metaConversions;
-  const googleRevenue = totalPlatformConversions > 0 ? (googleConversions / totalPlatformConversions) * totalRevenue : 0;
-  const metaRevenue = totalPlatformConversions > 0 ? (metaConversions / totalPlatformConversions) * totalRevenue : 0;
+  // Distribute WooCommerce revenue proportionally by conversions across all platforms
+  const totalPlatformConversions = googleConversions + metaConversions + tiktokConversions;
+  const googleRevenue  = totalPlatformConversions > 0 ? (googleConversions  / totalPlatformConversions) * totalRevenue : 0;
+  const metaRevenue    = totalPlatformConversions > 0 ? (metaConversions    / totalPlatformConversions) * totalRevenue : 0;
+  const tiktokRevenue  = totalPlatformConversions > 0 ? (tiktokConversions  / totalPlatformConversions) * totalRevenue : 0;
 
   // Assign revenue & roas to each campaign proportionally
-  const allCampaignConversions = [...googleCampaigns, ...metaCampaigns].reduce((s, c) => s + c.conversions, 0);
+  const allCampaignConversions = [...googleCampaigns, ...metaCampaigns, ...tiktokCampaigns].reduce((s, c) => s + c.conversions, 0);
   const withRevenue = (c: any) => {
     const rev = allCampaignConversions > 0 ? (c.conversions / allCampaignConversions) * totalRevenue : 0;
     return { ...c, revenue: rev, roas: c.spent > 0 ? rev / c.spent : 0 };
   };
-  const campaigns = [...googleCampaigns.map(withRevenue), ...metaCampaigns.map(withRevenue)];
+  const campaigns = [
+    ...googleCampaigns.map(withRevenue),
+    ...metaCampaigns.map(withRevenue),
+    ...tiktokCampaigns.map(withRevenue),
+  ];
 
   // Build timeSeries with revenue distributed proportionally by daily conversions
   const dates = dateRange(from, to);
   const hebrewDays = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
   const totalDailyConversions = dates.reduce((sum, date) => {
-    return sum + (googleDailyMap[date]?.conversions || 0) + (metaDailyMap[date]?.conversions || 0);
+    return sum +
+      (googleDailyMap[date]?.conversions  || 0) +
+      (metaDailyMap[date]?.conversions    || 0) +
+      (tiktokDailyMap[date]?.conversions  || 0);
   }, 0);
   const timeSeries = dates.map(date => {
-    const gDay = googleDailyMap[date] || { spent: 0, clicks: 0, conversions: 0 };
-    const mDay = metaDailyMap[date] || { spent: 0, clicks: 0, conversions: 0 };
-    const totalDaySpent = gDay.spent + mDay.spent;
-    const totalDayConversions = gDay.conversions + mDay.conversions;
+    const gDay = googleDailyMap[date]  || { spent: 0, clicks: 0, conversions: 0 };
+    const mDay = metaDailyMap[date]    || { spent: 0, clicks: 0, conversions: 0 };
+    const tDay = tiktokDailyMap[date]  || { spent: 0, clicks: 0, conversions: 0 };
+    const totalDaySpent       = gDay.spent       + mDay.spent       + tDay.spent;
+    const totalDayConversions = gDay.conversions  + mDay.conversions  + tDay.conversions;
     const dayRevenue = totalDailyConversions > 0 ? (totalDayConversions / totalDailyConversions) * totalRevenue : 0;
     const dayOfWeek = new Date(date).getDay();
     return {
@@ -227,20 +348,20 @@ export async function GET(req: NextRequest) {
       spent: totalDaySpent,
       revenue: dayRevenue,
       roas: totalDaySpent > 0 ? dayRevenue / totalDaySpent : 0,
-      clicks: gDay.clicks + mDay.clicks,
+      clicks: gDay.clicks + mDay.clicks + tDay.clicks,
       conversions: totalDayConversions,
     };
   });
 
-  const totalSpent = googleSpent + metaSpent;
+  const totalSpent = googleSpent + metaSpent + tiktokSpent;
 
   return NextResponse.json({
     summary: { totalSpent, totalRevenue, avgRoas: totalSpent > 0 ? totalRevenue / totalSpent : 0, totalConversions },
     timeSeries,
     byPlatform: [
       { platform: "google", spent: googleSpent, revenue: googleRevenue, roas: googleSpent > 0 ? googleRevenue / googleSpent : 0, clicks: googleClicks, conversions: googleConversions, impressions: googleImpressions },
-      { platform: "meta", spent: metaSpent, revenue: metaRevenue, roas: metaSpent > 0 ? metaRevenue / metaSpent : 0, clicks: metaClicks, conversions: metaConversions, impressions: metaImpressions },
-      { platform: "tiktok", spent: 0, revenue: 0, roas: 0, clicks: 0, conversions: 0, impressions: 0 },
+      { platform: "meta",   spent: metaSpent,   revenue: metaRevenue,   roas: metaSpent   > 0 ? metaRevenue   / metaSpent   : 0, clicks: metaClicks,   conversions: metaConversions,   impressions: metaImpressions   },
+      { platform: "tiktok", spent: tiktokSpent,  revenue: tiktokRevenue, roas: tiktokSpent > 0 ? tiktokRevenue / tiktokSpent : 0, clicks: tiktokClicks, conversions: tiktokConversions, impressions: tiktokImpressions },
     ],
     campaigns,
     isLive: true,
