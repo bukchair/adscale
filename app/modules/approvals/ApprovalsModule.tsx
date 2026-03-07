@@ -42,7 +42,7 @@ export default function ApprovalsModule({ lang }: { lang: Lang }) {
           {(["critical", "high", "medium", "low"] as const).map((r) => (
             <div key={r} style={{ background: `${RISK_COLORS[r]}11`, border: `1px solid ${RISK_COLORS[r]}33`, borderRadius: 8, padding: "8px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: RISK_COLORS[r] }}>{pending.filter((req) => req.riskLevel === r).length}</div>
-              <div style={{ fontSize: 11, color: "#8888aa" }}>{RISK_LABELS[r]}</div>
+              <div style={{ fontSize: 11, color: "#64748b" }}>{RISK_LABELS[r]}</div>
             </div>
           ))}
         </div>
@@ -55,7 +55,7 @@ export default function ApprovalsModule({ lang }: { lang: Lang }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {requests.map((req) => (
-          <div key={req.id} style={{ background: "#1a1a2e", border: `1px solid ${RISK_COLORS[req.riskLevel]}33`, borderRight: `4px solid ${RISK_COLORS[req.riskLevel]}`, borderRadius: 12, padding: 20, opacity: req.status !== "PENDING" ? 0.6 : 1 }}>
+          <div key={req.id} style={{ background: "#ffffff", border: `1px solid ${RISK_COLORS[req.riskLevel]}33`, borderRight: `4px solid ${RISK_COLORS[req.riskLevel]}`, borderRadius: 12, padding: 20, opacity: req.status !== "PENDING" ? 0.6 : 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
@@ -71,7 +71,7 @@ export default function ApprovalsModule({ lang }: { lang: Lang }) {
                   )}
                 </div>
                 <div style={{ fontSize: 13, color: "#a0a0c0", marginBottom: 8 }}>{lang === "he" ? req.reason : req.reasonEn}</div>
-                <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#8888aa" }}>
+                <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#64748b" }}>
                   <span>📊 {req.campaign}</span>
                   <span style={{ color: "#10b981" }}>⚡ {lang === "he" ? req.expectedImpact : req.expectedImpactEn}</span>
                   <span>{t("ביטחון", "Confidence")}: {Math.round(req.confidence * 100)}%</span>
@@ -80,7 +80,7 @@ export default function ApprovalsModule({ lang }: { lang: Lang }) {
               </div>
               {req.status === "PENDING" && (
                 <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => setExpanded(expanded === req.id ? null : req.id)} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #3a3a5a", background: "transparent", color: "#8888aa", cursor: "pointer", fontSize: 12 }}>
+                  <button onClick={() => setExpanded(expanded === req.id ? null : req.id)} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #e2e8f0", background: "transparent", color: "#64748b", cursor: "pointer", fontSize: 12 }}>
                     👁️ {t("פרטים", "Details")}
                   </button>
                   <button onClick={() => reject(req.id)} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #ef4444", background: "#ef444411", color: "#ef4444", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
@@ -93,11 +93,11 @@ export default function ApprovalsModule({ lang }: { lang: Lang }) {
               )}
             </div>
             {expanded === req.id && (
-              <div style={{ marginTop: 16, padding: 16, background: "#13132a", borderRadius: 8 }}>
+              <div style={{ marginTop: 16, padding: 16, background: "#f8fafc", borderRadius: 8 }}>
                 <pre style={{ fontSize: 12, color: "#a0a0c0", margin: 0, overflow: "auto" }}>{JSON.stringify(req.payload, null, 2)}</pre>
                 <div style={{ marginTop: 12 }}>
                   <input value={notes[req.id] || ""} onChange={(e) => setNotes((prev) => ({ ...prev, [req.id]: e.target.value }))} placeholder={t("הוסף הערה (אופציונלי)...", "Add a note (optional)...")}
-                    style={{ width: "100%", background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    style={{ width: "100%", background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
               </div>
             )}

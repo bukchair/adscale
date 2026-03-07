@@ -41,21 +41,21 @@ export default function AuditLogModule({ lang }: { lang: Lang }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("🔍 חפש פעולה, משתמש...", "🔍 Search action, user...")}
-          style={{ flex: 1, background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
-        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} style={{ background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+          style={{ flex: 1, background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
+        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="all">{t("כל הפעולות", "All Actions")}</option>
           <option value="APPROVAL_APPROVED">{t("אישורים", "Approvals")}</option>
           <option value="SYNC_COMPLETED">{t("סנכרון", "Sync")}</option>
           <option value="OPTIMIZATION_RUN_TRIGGERED">{t("אופטימיזציה", "Optimization")}</option>
         </select>
-        <button style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #3a3a5a", background: "#1a1a2e", color: "#8888aa", cursor: "pointer", fontSize: 13 }}>
+        <button style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#ffffff", color: "#64748b", cursor: "pointer", fontSize: 13 }}>
           📥 {t("ייצוא CSV", "Export CSV")}
         </button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {filtered.map((log) => (
-          <div key={log.id} style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 10, padding: "14px 18px", cursor: "pointer" }} onClick={() => setExpanded(expanded === log.id ? null : log.id)}>
+          <div key={log.id} style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "14px 18px", cursor: "pointer" }} onClick={() => setExpanded(expanded === log.id ? null : log.id)}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, background: `${ACTION_COLORS[log.action] || "#8888aa"}22` }}>
                 {ACTION_ICONS[log.action] || "📋"}
@@ -63,17 +63,17 @@ export default function AuditLogModule({ lang }: { lang: Lang }) {
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 3 }}>
                   <span style={{ fontSize: 13, fontWeight: 600, color: ACTION_COLORS[log.action] || "#e0e0ff" }}>{ACTION_LABELS[log.action] || log.action}</span>
-                  {log.entityType && <span style={{ fontSize: 11, color: "#8888aa", background: "#2a2a4a", padding: "1px 8px", borderRadius: 6 }}>{log.entityType}</span>}
+                  {log.entityType && <span style={{ fontSize: 11, color: "#64748b", background: "#e2e8f0", padding: "1px 8px", borderRadius: 6 }}>{log.entityType}</span>}
                 </div>
-                <div style={{ fontSize: 12, color: "#8888aa" }}>
+                <div style={{ fontSize: 12, color: "#64748b" }}>
                   {log.user ? `👤 ${log.user.name} (${log.user.email})` : `⚡ ${t("מערכת אוטומטית", "Automated System")}`}
                   {" · "}{timeAgo(log.createdAt)}
                 </div>
               </div>
-              <span style={{ fontSize: 11, color: "#8888aa" }}>{expanded === log.id ? "▲" : "▼"}</span>
+              <span style={{ fontSize: 11, color: "#64748b" }}>{expanded === log.id ? "▲" : "▼"}</span>
             </div>
             {expanded === log.id && (
-              <div style={{ marginTop: 12, padding: 12, background: "#13132a", borderRadius: 8 }}>
+              <div style={{ marginTop: 12, padding: 12, background: "#f8fafc", borderRadius: 8 }}>
                 <pre style={{ fontSize: 12, color: "#a0a0c0", margin: 0 }}>{JSON.stringify(log.metadata, null, 2)}</pre>
               </div>
             )}

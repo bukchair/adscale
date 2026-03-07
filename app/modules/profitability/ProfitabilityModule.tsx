@@ -30,30 +30,30 @@ export default function ProfitabilityModule({ lang }: { lang: Lang }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
         {[
-          { label: t("הוצאה כוללת", "Total Spend"),    value: `₪${totals.spend.toLocaleString()}`,   color: "#7c74ff" },
-          { label: t("הכנסה", "Revenue"),               value: `₪${totals.revenue.toLocaleString()}`, color: "#00d4aa" },
+          { label: t("הוצאה כוללת", "Total Spend"),    value: `₪${totals.spend.toLocaleString()}`,   color: "#6366f1" },
+          { label: t("הכנסה", "Revenue"),               value: `₪${totals.revenue.toLocaleString()}`, color: "#10b981" },
           { label: t("עלות מוצרים", "Cost of Goods"),  value: `₪${totals.cogs.toLocaleString()}`,    color: "#f59e0b" },
           { label: t("רווח נקי", "Net Profit"),         value: `₪${totals.profit.toLocaleString()}`,  color: totals.profit > 0 ? "#10b981" : "#ef4444" },
-          { label: t("POAS כולל", "Total POAS"),        value: `${(totals.profit / totals.spend).toFixed(2)}x`, color: "#a78bfa" },
+          { label: t("POAS כולל", "Total POAS"),        value: `${(totals.profit / totals.spend).toFixed(2)}x`, color: "#8b5cf6" },
         ].map((c) => (
-          <div key={c.label} style={{ background: "#1a1a2e", border: `1px solid ${c.color}33`, borderRadius: 12, padding: "16px 20px" }}>
+          <div key={c.label} style={{ background: "#ffffff", border: `1px solid ${c.color}33`, borderRadius: 12, padding: "16px 20px" }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: c.color }}>{c.value}</div>
-            <div style={{ fontSize: 12, color: "#8888aa", marginTop: 4 }}>{c.label}</div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{c.label}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ background: "#13132a", border: "1px solid #3a3a5a", borderRadius: 12, padding: 16, fontSize: 13, color: "#a0a0c0" }}>
-        <span style={{ color: "#7c74ff", fontWeight: 600 }}>📐 {t("נוסחת רווח", "Profit Formula")}: </span>
+      <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 16, fontSize: 13, color: "#a0a0c0" }}>
+        <span style={{ color: "#6366f1", fontWeight: 600 }}>📐 {t("נוסחת רווח", "Profit Formula")}: </span>
         {t("הכנסה − הוצאת פרסום − עלות מוצר − משלוח − עמלות פלטפורמה − החזרות = ", "Revenue − Ad Spend − COGS − Shipping − Platform Fees − Returns = ")}
         <span style={{ color: "#10b981", fontWeight: 600 }}>{t("רווח נקי", "Net Profit")}</span>
       </div>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
         {["7d", "14d", "30d", "90d"].map((d) => (
-          <button key={d} onClick={() => setDateRange(d)} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: dateRange === d ? "#7c74ff" : "#1a1a2e", color: dateRange === d ? "#fff" : "#8888aa", cursor: "pointer", fontSize: 12 }}>{d}</button>
+          <button key={d} onClick={() => setDateRange(d)} style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: dateRange === d ? "#7c74ff" : "#ffffff", color: dateRange === d ? "#fff" : "#8888aa", cursor: "pointer", fontSize: 12 }}>{d}</button>
         ))}
-        <select value={String(sortBy)} onChange={(e) => setSortBy(e.target.value as any)} style={{ marginLeft: "auto", background: "#1a1a2e", border: "1px solid #3a3a5a", color: "#e0e0ff", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+        <select value={String(sortBy)} onChange={(e) => setSortBy(e.target.value as any)} style={{ marginLeft: "auto", background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="profit">{t("מיין לפי רווח", "Sort by Profit")}</option>
           <option value="poas">{t("מיין לפי POAS", "Sort by POAS")}</option>
           <option value="roas">{t("מיין לפי ROAS", "Sort by ROAS")}</option>
@@ -62,31 +62,31 @@ export default function ProfitabilityModule({ lang }: { lang: Lang }) {
         </select>
       </div>
 
-      <div style={{ background: "#1a1a2e", border: "1px solid #2a2a4a", borderRadius: 12, overflow: "hidden" }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
-            <tr style={{ background: "#13132a", borderBottom: "1px solid #2a2a4a" }}>
+            <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
               {[t("קמפיין","Campaign"), t("ציון רווח","Profit Score"), t("הוצאה","Spend"), t("הכנסה","Revenue"), t("עלות מוצרים","COGS"), t("רווח נקי","Net Profit"), "Margin", "ROAS", "POAS", t("המלצה","Action")].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "right", color: "#8888aa", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
+                <th key={h} style={{ padding: "12px 16px", textAlign: "right", color: "#64748b", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {sorted.map((c, i) => (
               <tr key={i} style={{ borderBottom: "1px solid #1e1e3a" }}>
-                <td style={{ padding: "12px 16px", color: "#e0e0ff", fontWeight: 500 }}>{c.name}</td>
+                <td style={{ padding: "12px 16px", color: "#1e293b", fontWeight: 500 }}>{c.name}</td>
                 <td style={{ padding: "12px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 40, height: 8, background: "#2a2a4a", borderRadius: 4 }}><div style={{ width: `${c.score}%`, height: "100%", background: getScoreColor(c.score), borderRadius: 4 }} /></div>
+                    <div style={{ width: 40, height: 8, background: "#e2e8f0", borderRadius: 4 }}><div style={{ width: `${c.score}%`, height: "100%", background: getScoreColor(c.score), borderRadius: 4 }} /></div>
                     <span style={{ color: getScoreColor(c.score), fontWeight: 600 }}>{c.score}</span>
                   </div>
                 </td>
-                <td style={{ padding: "12px 16px", color: "#e0e0ff" }}>₪{c.spend.toLocaleString()}</td>
-                <td style={{ padding: "12px 16px", color: "#00d4aa" }}>₪{c.revenue.toLocaleString()}</td>
+                <td style={{ padding: "12px 16px", color: "#1e293b" }}>₪{c.spend.toLocaleString()}</td>
+                <td style={{ padding: "12px 16px", color: "#10b981" }}>₪{c.revenue.toLocaleString()}</td>
                 <td style={{ padding: "12px 16px", color: "#f59e0b" }}>₪{c.cogs.toLocaleString()}</td>
                 <td style={{ padding: "12px 16px", color: c.profit >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>{c.profit >= 0 ? "+" : ""}₪{c.profit.toLocaleString()}</td>
                 <td style={{ padding: "12px 16px", color: c.margin >= 0 ? "#10b981" : "#ef4444" }}>{c.margin.toFixed(1)}%</td>
-                <td style={{ padding: "12px 16px", color: "#e0e0ff" }}>{c.roas.toFixed(2)}x</td>
+                <td style={{ padding: "12px 16px", color: "#1e293b" }}>{c.roas.toFixed(2)}x</td>
                 <td style={{ padding: "12px 16px", color: c.poas >= 1 ? "#10b981" : c.poas >= 0 ? "#f59e0b" : "#ef4444", fontWeight: 600 }}>{c.poas.toFixed(2)}x</td>
                 <td style={{ padding: "12px 16px" }}><span style={{ fontSize: 11, color: c.profit >= 0 ? "#10b981" : "#ef4444" }}>{rec(c)}</span></td>
               </tr>
