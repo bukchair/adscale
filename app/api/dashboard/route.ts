@@ -17,13 +17,13 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get("from") || new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
   const to = searchParams.get("to") || new Date().toISOString().split("T")[0];
   const url = process.env.WOOCOMMERCE_URL;
-  if (!url) return NextResponse.json({ error: "Missing credentials" }, { status: 500 });
 
   const apiErrors: string[] = [];
 
   // WooCommerce
   let totalRevenue = 0, totalConversions = 0;
   try {
+    if (!url) throw new Error("WOOCOMMERCE_URL not set");
     const wcRes = await fetch(`${url}/wp-json/adscale/v1/summary?from=${from}&to=${to}`, { signal: AbortSignal.timeout(8000) });
     if (wcRes.ok) { const d = await wcRes.json(); totalRevenue = d.totalRevenue; totalConversions = d.totalConversions; }
     else apiErrors.push(`woocommerce:${wcRes.status}`);

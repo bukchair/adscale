@@ -444,7 +444,19 @@ export async function GET(req: NextRequest) {
     errors.push(`tiktok:${String(e).slice(0, 150)}`);
   }
 
-  const suggestions = generateSuggestions(campaigns);
+  let suggestions = generateSuggestions(campaigns);
+
+  // No real campaigns → return demo suggestions so the UI is never empty
+  if (campaigns.length === 0) {
+    suggestions = [
+      { id: "demo_1", platform: "google", priority: "high", category: "budget", campaignId: "demo", campaignName: "קמפיין גוגל - חיפוש", message: "קמפיין עם ROAS גבוה — העלה תקציב ב-20%", impact: "+₪3,200 הכנסה חודשית", detail: "ROAS: 4.8x | תקציב מנוצל: 98% | המרות: 95", action: "raise_budget", currentValue: 3000, suggestedValue: 3600 },
+      { id: "demo_2", platform: "meta", priority: "high", category: "bidding", campaignId: "demo2", campaignName: "Meta - רימרקטינג", message: "CPA גבוה מהממוצע — שקול מעבר ל-Target CPA", impact: "-18% עלות להמרה", detail: "CPA נוכחי: ₪85 | ממוצע: ₪52 | המרות: 34", action: "change_bid_strategy" },
+      { id: "demo_3", platform: "google", priority: "medium", category: "structure", campaignId: "demo3", campaignName: "קמפיין מותג", message: "זוהו 24 מונחי חיפוש בזבזניים — הוסף כמילים שליליות", impact: "-₪1,100 חיסכון חודשי", detail: "עלות ללא המרות: ₪1,100 | חשיפות: 8,400", action: "add_negative_keywords" },
+      { id: "demo_4", platform: "tiktok", priority: "medium", category: "creative", campaignId: "demo4", campaignName: "TikTok - וידאו", message: "CTR נמוך — רענן קריאייטיב לאחר 14 ימים", impact: "+35% CTR צפוי", detail: "CTR: 0.8% | ממוצע ענף: 1.4%", action: "refresh_creative" },
+      { id: "demo_5", platform: "meta", priority: "low", category: "audience", campaignId: "demo5", campaignName: "Meta - לוקאלייק", message: "הרחב קהל לוקאלייק מ-1% ל-3%", impact: "+50% חשיפות פוטנציאל", detail: "ROAS: 3.9x | גודל קהל: 180K | פוטנציאל: 540K", action: "expand_audience" },
+    ] as typeof suggestions;
+    errors.push("demo_mode:no_credentials_configured");
+  }
 
   return NextResponse.json({
     suggestions,

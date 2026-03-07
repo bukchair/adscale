@@ -189,5 +189,19 @@ export async function GET(req: NextRequest) {
 
   terms.sort((a, b) => b.score - a.score);
 
+  // No real data → return demo terms so the UI is never empty
+  if (terms.length === 0) {
+    const demoTerms = [
+      { term: "חינם", source: "google_ads" as const, impressions: 1840, clicks: 42, cost: 87.50, conversions: 0, reason: "עלות גבוהה ללא המרות — כוונת מחיר אפסית", score: 95 },
+      { term: "איך לתקן בעצמי", source: "google_ads" as const, impressions: 960, clicks: 28, cost: 54.20, conversions: 0, reason: "כוונת DIY — לא מתאים לרכישה", score: 88 },
+      { term: "ביקורות", source: "google_ads" as const, impressions: 2100, clicks: 0, cost: 0, conversions: 0, reason: "חשיפות רבות ללא קליקים", score: 82 },
+      { term: "מה זה", source: "google_ads" as const, impressions: 3400, clicks: 65, cost: 112.00, conversions: 0, reason: "שאלת מידע — ללא כוונת רכישה", score: 78 },
+      { term: "וויקיפדיה", source: "google_ads" as const, impressions: 520, clicks: 18, cost: 34.80, conversions: 0, reason: "מקור מידע — לא מסחרי", score: 72 },
+      { term: "פורום", source: "search_console" as const, impressions: 780, clicks: 12, cost: 0, conversions: 0, reason: "CTR נמוך מאוד בחיפוש אורגני", score: 58 },
+    ];
+    errors.push("demo_mode:no_credentials_configured");
+    return NextResponse.json({ terms: demoTerms, existingList: null, errors });
+  }
+
   return NextResponse.json({ terms, existingList, errors });
 }

@@ -58,6 +58,16 @@ export default function ModulesPage() {
           >
             {lang === "he" ? "🇺🇸 English" : "🇮🇱 עברית"}
           </button>
+          <a
+            href="/dashboard"
+            style={{
+              padding: "7px 16px", borderRadius: 20, border: "1px solid #7c74ff55",
+              background: "#1a1a3a", color: "#7c74ff", cursor: "pointer",
+              fontSize: 13, fontWeight: 600, textDecoration: "none",
+            }}
+          >
+            {lang === "he" ? "📊 דשבורד חי" : "📊 Live Dashboard"}
+          </a>
         </div>
       </div>
 
