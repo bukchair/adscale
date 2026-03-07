@@ -73,10 +73,11 @@ const BADGES: Partial<Record<TabId, { count: number; color: string }>> = {
 };
 
 /* ── Sidebar component ─────────────────────────────────────────── */
-function Sidebar({ lang, active, onSelect }: {
+function Sidebar({ lang, active, onSelect, onLangChange }: {
   lang: Lang;
   active: TabId;
   onSelect: (id: TabId) => void;
+  onLangChange: (l: Lang) => void;
 }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const groups = NAV_GROUPS[lang];
@@ -172,20 +173,18 @@ function Sidebar({ lang, active, onSelect }: {
 
       {/* Lang toggle */}
       <div style={{ padding: "12px 8px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: C.textMuted, padding: "0 10px 6px", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-          {t("שפה", "Language")}
-        </div>
         <div style={{ display: "flex", gap: 6, padding: "0 2px" }}>
           {(["he", "en"] as const).map(l => (
             <button
               key={l}
-              onClick={() => { /* lang change handled externally */ }}
-              disabled
+              onClick={() => onLangChange(l)}
               style={{
-                flex: 1, padding: "6px", borderRadius: 6, border: `1px solid ${C.border}`,
+                flex: 1, padding: "7px 6px", borderRadius: 8,
+                border: `1px solid ${lang === l ? C.accent : C.border}`,
                 background: lang === l ? C.accentLight : "transparent",
                 color: lang === l ? C.accent : C.textMuted,
-                fontSize: 12, fontWeight: lang === l ? 700 : 400, cursor: "default",
+                fontSize: 12, fontWeight: lang === l ? 700 : 400,
+                cursor: "pointer", transition: "all 0.15s",
               }}
             >{l === "he" ? "🇮🇱 עברית" : "🇺🇸 English"}</button>
           ))}
@@ -226,7 +225,7 @@ export default function ModulesPage() {
 
       {/* ── Desktop Sidebar ───────────────────────────────────────── */}
       <div className="as-sidebar-wrapper">
-        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} />
+        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} onLangChange={setLang} />
       </div>
 
       {/* ── Mobile drawer overlay ─────────────────────────────────── */}
@@ -235,7 +234,7 @@ export default function ModulesPage() {
         onClick={() => setDrawerOpen(false)}
       />
       <div className={`as-sidebar-drawer ${dir === "rtl" ? "rtl" : ""} ${drawerOpen ? "open" : ""}`}>
-        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} />
+        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} onLangChange={setLang} />
       </div>
 
       {/* ── Main content ──────────────────────────────────────────── */}
@@ -317,15 +316,6 @@ export default function ModulesPage() {
             {isLive ? t("חי", "Live") : t("דמו", "Demo")}
           </div>
 
-          {/* Lang toggle */}
-          <button
-            onClick={() => setLang(lang === "he" ? "en" : "he")}
-            style={{
-              padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`,
-              background: C.accentLight, color: C.accent, cursor: "pointer",
-              fontSize: 12, fontWeight: 700, whiteSpace: "nowrap",
-            }}
-          >{lang === "he" ? "🇺🇸 EN" : "🇮🇱 HE"}</button>
         </header>
 
         {/* Stats bar */}
