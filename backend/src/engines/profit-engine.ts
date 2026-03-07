@@ -182,6 +182,125 @@ export async function calcProductProfit(
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ORG-LEVEL PROFIT SUMMARY
+// Rolls up all campaigns for a fast dashboard overview.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface OrgProfitSummary {
+  orgId:        string;
+  dateFrom:     string;
+  dateTo:       string;
+  totalRevenue: number;
+  totalSpend:   number;
+  totalCogs:    number;
+  totalRefunds: number;
+  grossProfit:  number;
+  netProfit:    number;
+  blendedRoas:  number;
+  blendedMargin: number;
+  campaignCount: number;
+  profitableCampaigns: number;
+  unprofitableCampaigns: number;
+}
+
+export async function calcOrgProfit(
+  orgId:    string,
+  dateFrom: Date,
+  dateTo:   Date
+): Promise<OrgProfitSummary> {
+  const accounts = await prisma.adAccount.findMany({
+    where:   { orgId, isActive: true },
+    include: { campaigns: { where: { status: "ACTIVE" } } },
+  });
+
+  const allCampaignIds = accounts.flatMap((a) => a.campaigns.map((c) => c.id));
+
+  const metricAgg = await prisma.dailyMetric.aggregate({
+    where: { campaignId: { in: allCampaignIds }, date: { gte: dateFrom, lte: dateTo } },
+    _sum:  { cost: true, revenue: true },
+  });
+
+  const totalSpend   = Number(metricAgg._sum.cost    ?? 0);
+  const totalRevenue = Number(metricAgg._sum.revenue ?? 0);
+
+  // Refunds + COGS from the store orders
+  const stores = await prisma.storeIntegration.findMany({ where: { orgId, isActive: true } });
+  const storeIds = stores.map((s) => s.id);
+
+  const orderAgg = await prisma.order.aggregate({
+    where: {
+      storeId:   { in: storeIds },
+      orderedAt: { gte: dateFrom, lte: dateTo },
+      status:    { in: ["COMPLETED", "PROCESSING"] },
+    },
+    _sum: { refundTotal: true, shipping: true },
+  });
+
+  const totalRefunds  = Number(orderAgg._sum.refundTotal ?? 0);
+  const totalShipping = Number(orderAgg._sum.shipping    ?? 0);
+
+  // COGS: sum from product costs × quantities sold
+  const orderItems = await prisma.orderItem.findMany({
+    where: {
+      order: {
+        storeId:   { in: storeIds },
+        orderedAt: { gte: dateFrom, lte: dateTo },
+        status:    { in: ["COMPLETED", "PROCESSING"] },
+      },
+    },
+    include: {
+      product: { include: { costs: { orderBy: { effectiveFrom: "desc" }, take: 1 } } },
+    },
+  });
+
+  let totalCogs = 0;
+  let totalFees = 0;
+  for (const item of orderItems) {
+    const cost = item.product.costs[0];
+    if (cost) {
+      totalCogs += Number(cost.cogs) * item.quantity;
+      totalFees += Number(cost.fees) * item.quantity;
+    }
+  }
+
+  const grossProfit = totalRevenue - totalSpend;
+  const netProfit   = totalRevenue - totalSpend - totalCogs - totalShipping - totalFees - totalRefunds;
+
+  // Per-campaign breakdown for profitability counts
+  let profitable = 0;
+  let unprofitable = 0;
+  for (const account of accounts) {
+    for (const campaign of account.campaigns) {
+      const agg = await prisma.dailyMetric.aggregate({
+        where: { campaignId: campaign.id, date: { gte: dateFrom, lte: dateTo } },
+        _sum:  { cost: true, revenue: true },
+      });
+      const spend = Number(agg._sum.cost ?? 0);
+      const rev   = Number(agg._sum.revenue ?? 0);
+      if (rev > spend) profitable++;
+      else if (spend > 0) unprofitable++;
+    }
+  }
+
+  return {
+    orgId,
+    dateFrom:             dateFrom.toISOString().slice(0, 10),
+    dateTo:               dateTo.toISOString().slice(0, 10),
+    totalRevenue:         round2(totalRevenue),
+    totalSpend:           round2(totalSpend),
+    totalCogs:            round2(totalCogs),
+    totalRefunds:         round2(totalRefunds),
+    grossProfit:          round2(grossProfit),
+    netProfit:            round2(netProfit),
+    blendedRoas:          totalSpend > 0 ? round2(totalRevenue / totalSpend) : 0,
+    blendedMargin:        totalRevenue > 0 ? round4(netProfit / totalRevenue) : 0,
+    campaignCount:        allCampaignIds.length,
+    profitableCampaigns:  profitable,
+    unprofitableCampaigns: unprofitable,
+  };
+}
+
 function toProfitScore(netProfit: number, adSpend: number): number {
   if (adSpend === 0) return 50;
   const roi = netProfit / adSpend;

@@ -26,12 +26,32 @@ export interface Recommendation {
 // Main orchestrator
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Loads a deduplication set of (type, campaignId) pairs for recommendations
+ * that are still PENDING/IN_REVIEW to prevent spamming the same suggestion.
+ */
+async function loadExistingRecs(orgId: string): Promise<Set<string>> {
+  const existing = await prisma.aiRecommendation.findMany({
+    where: {
+      status:   { in: ["PENDING", "IN_REVIEW"] },
+      campaign: { adAccount: { orgId } },
+    },
+    select: { type: true, campaignId: true },
+  });
+  return new Set(existing.map((r) => `${r.type}:${r.campaignId ?? ""}`));
+}
+
 export async function generateRecommendations(
   orgId: string,
   dateFrom: Date,
   dateTo:   Date
 ): Promise<Recommendation[]> {
   const recs: Recommendation[] = [];
+
+  // Load existing pending recs to avoid duplicates
+  const existingRecs = await loadExistingRecs(orgId);
+  const hasPending = (type: string, campaignId?: string) =>
+    existingRecs.has(`${type}:${campaignId ?? ""}`);
 
   const accounts = await prisma.adAccount.findMany({
     where:   { orgId, isActive: true },
@@ -44,8 +64,9 @@ export async function generateRecommendations(
         // 1. Budget pacing
         const pacing = await analyzePacing(campaign.id);
         if (pacing.direction !== "maintain") {
-          recs.push({
-            type:           pacing.direction === "increase" ? "RAISE_BUDGET" : "LOWER_BUDGET",
+          const recType = pacing.direction === "increase" ? "RAISE_BUDGET" : "LOWER_BUDGET";
+          if (!hasPending(recType, campaign.id)) recs.push({
+            type:           recType,
             title:          `${pacing.direction === "increase" ? "Increase" : "Decrease"} budget for "${campaign.name}"`,
             reason:         pacing.reason,
             confidence:     pacing.urgency === "high" ? 0.90 : 0.70,
@@ -58,7 +79,7 @@ export async function generateRecommendations(
 
         // 2. Profitability
         const profit = await calcCampaignProfit(campaign.id, dateFrom, dateTo);
-        if (profit.netProfit < 0 && profit.adSpend > 100) {
+        if (profit.netProfit < 0 && profit.adSpend > 100 && !hasPending("PAUSE_CAMPAIGN", campaign.id)) {
           recs.push({
             type:           "PAUSE_CAMPAIGN",
             title:          `"${campaign.name}" is unprofitable`,
@@ -71,10 +92,34 @@ export async function generateRecommendations(
           });
         }
 
+        // 2b. Scale-up opportunity: high ROAS, profitable, but budget-constrained
+        if (
+          profit.roas >= 4.0 &&
+          profit.netProfit > 0 &&
+          pacing.direction === "increase" &&
+          !hasPending("RAISE_BUDGET", campaign.id)
+        ) {
+          recs.push({
+            type:           "RAISE_BUDGET",
+            title:          `Scale "${campaign.name}" — ${profit.roas.toFixed(1)}x ROAS`,
+            reason:         `Campaign is profitable (₪${profit.netProfit.toFixed(0)} net) with ${profit.roas.toFixed(1)}x ROAS and hitting budget cap daily.`,
+            confidence:     0.92,
+            severity:       "HIGH",
+            expectedImpact: `+${((pacing.recommendedBudget - pacing.currentBudget) * profit.roas).toFixed(0)}₪ est. additional revenue`,
+            payload:        {
+              campaignId:        campaign.id,
+              currentBudget:     pacing.currentBudget,
+              recommendedBudget: pacing.recommendedBudget,
+              currentRoas:       profit.roas,
+            },
+            campaignId: campaign.id,
+          });
+        }
+
         // 3. Search term negative keywords
         const terms = await prisma.searchTerm.findMany({
-          where:  { campaignId: campaign.id, dateFrom: { gte: dateFrom } },
-          take:   500,
+          where:   { campaignId: campaign.id, dateFrom: { gte: dateFrom } },
+          take:    500,
           orderBy: { cost: "desc" },
         });
 
@@ -85,11 +130,12 @@ export async function generateRecommendations(
               cost:        Number(t.cost),
               conversions: t.conversions,
               clicks:      t.clicks,
-            }))
+            })),
+            campaign.id   // pass campaignId for DB dedup
           );
 
           const highConf = negSuggestions.filter((s) => s.confidence >= 0.80);
-          if (highConf.length > 0) {
+          if (highConf.length > 0 && !hasPending("ADD_NEGATIVE_KEYWORD", campaign.id)) {
             const totalWaste = highConf.reduce((s, n) => s + n.wasteAmount, 0);
             recs.push({
               type:           "ADD_NEGATIVE_KEYWORD",
@@ -103,16 +149,16 @@ export async function generateRecommendations(
             });
           }
 
-          // Low-score queries → pause keyword
+          // Low-score queries → flag
           const avg = {
             cpa:  terms.reduce((s, t) => s + Number(t.cpa ?? 0), 0) / terms.length,
-            roas: terms.reduce((s, t) => s + (t.roas ?? 0), 0) / terms.length,
-            ctr:  terms.reduce((s, t) => s + (t.ctr ?? 0), 0) / terms.length,
+            roas: terms.reduce((s, t) => s + (t.roas ?? 0), 0)       / terms.length,
+            ctr:  terms.reduce((s, t) => s + (t.ctr ?? 0), 0)        / terms.length,
           };
-          const scored = scoreTerms(terms as any, avg.cpa, avg.roas, avg.ctr);
+          const scored   = scoreTerms(terms as any, avg.cpa, avg.roas, avg.ctr);
           const critical = scored.filter((s) => s.score < 15 && s.riskLevel === "CRITICAL");
 
-          if (critical.length > 5) {
+          if (critical.length > 5 && !hasPending("FLAG_ISSUE", campaign.id)) {
             recs.push({
               type:           "FLAG_ISSUE",
               title:          `${critical.length} critically underperforming queries in "${campaign.name}"`,

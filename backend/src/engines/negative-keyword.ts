@@ -4,6 +4,7 @@
  * Detects wasteful patterns and generates suggestions with confidence scores.
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { prisma } from "../db/client.js";
 import { logger } from "../logger/index.js";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -116,8 +117,8 @@ export async function aiAnalyzeWaste(
         messages:   [{ role: "user", content: AI_PROMPT(batch) }],
       });
 
-      const text = response.content[0].type === "text" ? response.content[0].text : "[]";
-      const parsed = JSON.parse(text) as any[];
+      const raw    = response.content[0].type === "text" ? response.content[0].text : "[]";
+      const parsed = safeParseJson<any[]>(raw) ?? [];
 
       for (const item of parsed) {
         if (!item.should_negative) continue;
@@ -151,8 +152,14 @@ export interface TermForAnalysis {
 }
 
 export async function analyzeTerms(
-  terms: TermForAnalysis[]
+  terms:      TermForAnalysis[],
+  campaignId?: string           // if provided, deduplicates against existing DB negatives
 ): Promise<NegSuggestion[]> {
+  // Load existing negative keywords for this campaign to avoid re-suggesting them
+  const existingNegs = campaignId
+    ? await loadExistingNegatives(campaignId)
+    : new Set<string>();
+
   const results: NegSuggestion[] = [];
   const uncaught: WasteQuery[]   = [];
 
@@ -161,7 +168,6 @@ export async function analyzeTerms(
     if (rule) {
       results.push(rule);
     } else if (t.cost > 5 && t.conversions === 0) {
-      // Only send to AI if has meaningful spend and no conversions
       uncaught.push({ query: t.query, cost: t.cost, conversions: t.conversions });
     }
   }
@@ -171,12 +177,53 @@ export async function analyzeTerms(
     results.push(...aiResults);
   }
 
-  // Deduplicate by suggestion
+  // Deduplicate by suggestion text + match type, and against existing negatives
   const seen = new Set<string>();
   return results.filter((r) => {
-    const key = `${r.suggestion}:${r.matchType}`;
-    if (seen.has(key)) return false;
+    const key  = `${r.suggestion.toLowerCase()}:${r.matchType}`;
+    const norm = r.suggestion.toLowerCase();
+    if (seen.has(key) || existingNegs.has(norm)) return false;
     seen.add(key);
     return true;
   });
+}
+
+/**
+ * Returns a Set of lowercase keyword texts already negative-matched in this campaign.
+ */
+async function loadExistingNegatives(campaignId: string): Promise<Set<string>> {
+  const adGroups = await prisma.adGroup.findMany({
+    where:   { campaignId },
+    include: {
+      keywords: {
+        where: { status: "REMOVED" },  // REMOVED = paused/negated
+        select: { text: true },
+      },
+    },
+  });
+  const set = new Set<string>();
+  for (const ag of adGroups) {
+    for (const kw of ag.keywords) set.add(kw.text.toLowerCase());
+  }
+  return set;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Safe JSON parse (handles markdown code fences from LLMs)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function safeParseJson<T>(text: string): T | null {
+  const stripped = text
+    .replace(/^```(?:json)?\s*/m, "")
+    .replace(/\s*```\s*$/m, "")
+    .trim();
+  try {
+    return JSON.parse(stripped) as T;
+  } catch {
+    const match = stripped.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+    if (match) {
+      try { return JSON.parse(match[1]) as T; } catch { /* fall through */ }
+    }
+    return null;
+  }
 }

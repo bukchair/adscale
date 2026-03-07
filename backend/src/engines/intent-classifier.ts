@@ -69,17 +69,16 @@ export async function classifyIntents(
   for (const chunk of chunks) {
     try {
       const response = await client.messages.create({
-        model:      "claude-opus-4-6",
+        model:      "claude-haiku-4-5-20251001",  // fast + cheap for bulk classification
         max_tokens: 4096,
         messages:   [{ role: "user", content: INTENT_PROMPT(chunk) }],
       });
 
-      const text = response.content[0].type === "text" ? response.content[0].text : "";
-      const parsed = JSON.parse(text) as IntentResult[];
-      results.push(...parsed);
+      const text   = response.content[0].type === "text" ? response.content[0].text : "";
+      const parsed = extractJson<IntentResult[]>(text);
+      if (parsed) results.push(...parsed);
     } catch (err) {
       logger.error({ err, chunk }, "Intent classification failed");
-      // Fallback: mark as unknown with monitor action
       chunk.forEach((q) =>
         results.push({
           query:      q,
@@ -92,4 +91,26 @@ export async function classifyIntents(
     }
   }
   return results;
+}
+
+/**
+ * Safely extract a JSON value from a response that may contain markdown fences.
+ * Returns null if no parseable JSON is found.
+ */
+function extractJson<T>(text: string): T | null {
+  // Strip markdown code fences if present
+  const stripped = text
+    .replace(/^```(?:json)?\s*/m, "")
+    .replace(/\s*```\s*$/m, "")
+    .trim();
+  try {
+    return JSON.parse(stripped) as T;
+  } catch {
+    // Try to find JSON array or object within the text
+    const match = stripped.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+    if (match) {
+      try { return JSON.parse(match[1]) as T; } catch { /* fall through */ }
+    }
+    return null;
+  }
 }
