@@ -22,7 +22,6 @@ body {
   background: #f1f5f9;
 }
 
-/* Sidebar hidden on mobile, shown on desktop */
 .as-sidebar-wrapper {
   display: none;
   width: 240px;
@@ -43,8 +42,8 @@ body {
 /* ─────────────────────────────────────────────
    Mobile helpers
 ───────────────────────────────────────────── */
-.as-mobile-only   { display: flex; }
-.as-desktop-only  { display: none; }
+.as-mobile-only  { display: flex; }
+.as-desktop-only { display: none; }
 
 /* Bottom mobile nav */
 .as-mobile-bottom-nav {
@@ -54,10 +53,11 @@ body {
   background: #ffffff;
   border-top: 1px solid #e2e8f0;
   z-index: 50;
+  flex-shrink: 0;
 }
 
 /* ─────────────────────────────────────────────
-   Responsive stats grid
+   Stats bar grid
 ───────────────────────────────────────────── */
 .as-stats-grid {
   display: grid;
@@ -70,64 +70,118 @@ body {
   padding: 24px;
 }
 
-/* Creative Lab / Audit diff 2-col grid → 1 col on mobile */
-.as-creative-form-grid {
+/* ─────────────────────────────────────────────
+   Tables — always scrollable on small screens
+───────────────────────────────────────────── */
+.as-table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.as-table-container table {
+  min-width: 640px;
+}
+
+/* Scrollbar thin */
+.as-table-container::-webkit-scrollbar { height: 4px; }
+.as-table-container::-webkit-scrollbar-track { background: #f1f5f9; }
+.as-table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+/* ─────────────────────────────────────────────
+   Grid helpers
+───────────────────────────────────────────── */
+.as-2col-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
-.as-creative-form-grid .as-col-span-2 {
-  grid-column: span 2;
+.as-3col-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
-
-/* Integrations summary */
-.as-integrations-summary {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+.as-4col-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
+.as-col-span-2 { grid-column: span 2; }
 
-/* Tabs scroll (when used) */
+/* Tabs scroll */
 .as-tabs-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 .as-tabs-scroll::-webkit-scrollbar { display: none; }
+
+/* Creative wizard steps */
+.as-wizard-steps {
+  display: flex;
+  gap: 0;
+  margin-bottom: 24px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Audience grid */
+.as-audience-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
 
 /* ─────────────────────────────────────────────
    Desktop (≥ 769px)
 ───────────────────────────────────────────── */
 @media (min-width: 769px) {
-  .as-sidebar-wrapper { display: block; }
-  .as-mobile-only     { display: none !important; }
-  .as-desktop-only    { display: flex !important; }
+  .as-sidebar-wrapper   { display: block; }
+  .as-mobile-only       { display: none !important; }
+  .as-desktop-only      { display: flex !important; }
   .as-mobile-bottom-nav { display: none; }
 }
 
 /* ─────────────────────────────────────────────
-   Tablet (≤ 900px)
+   Tablet (≤ 1024px)
 ───────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .as-stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .as-content    { padding: 16px 18px; }
+@media (max-width: 1024px) {
+  .as-stats-grid   { grid-template-columns: repeat(2, 1fr); }
+  .as-4col-grid    { grid-template-columns: repeat(2, 1fr); }
+  .as-3col-grid    { grid-template-columns: repeat(2, 1fr); }
+  .as-audience-grid{ grid-template-columns: repeat(2, 1fr); }
+  .as-content      { padding: 16px; }
 }
 
 /* ─────────────────────────────────────────────
    Mobile (≤ 640px)
 ───────────────────────────────────────────── */
 @media (max-width: 640px) {
-  .as-stats-grid              { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .as-content                 { padding: 12px; }
-  .as-creative-form-grid      { grid-template-columns: 1fr; }
-  .as-creative-form-grid .as-col-span-2 { grid-column: span 1; }
-  .as-integrations-summary > div { flex: 1; min-width: 80px; }
-  .as-metric-value            { font-size: 16px !important; }
-  .as-metric-label            { font-size: 10px !important; }
+  .as-stats-grid    { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .as-content       { padding: 10px; }
+  .as-2col-grid     { grid-template-columns: 1fr; }
+  .as-3col-grid     { grid-template-columns: 1fr; }
+  .as-4col-grid     { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .as-col-span-2    { grid-column: span 1; }
+  .as-audience-grid { grid-template-columns: 1fr; }
+  .as-wizard-steps  { flex-direction: column; border-radius: 10px; }
+  .as-metric-value  { font-size: 15px !important; }
+  .as-metric-label  { font-size: 10px !important; }
+
+  /* Hide non-essential table columns via class */
+  .as-col-hide-mobile { display: none !important; }
+
+  /* Touch-friendly buttons */
+  button { min-height: 36px; }
+
+  /* Header controls compact */
+  .as-header-controls { gap: 6px !important; }
 }
 
 /* ─────────────────────────────────────────────
-   Sidebar mobile overlay
+   Sidebar mobile overlay + drawer
 ───────────────────────────────────────────── */
 .as-sidebar-overlay {
   display: none;
@@ -147,25 +201,17 @@ body {
   transition: transform 0.25s ease;
   box-shadow: 4px 0 20px rgba(0,0,0,0.12);
 }
-.as-sidebar-drawer.rtl {
-  left: auto;
-  right: 0;
-  transform: translateX(100%);
-}
-.as-sidebar-drawer.open {
-  transform: translateX(0);
-}
-.as-sidebar-overlay.open {
-  display: block;
-}
+.as-sidebar-drawer.rtl  { left: auto; right: 0; transform: translateX(100%); }
+.as-sidebar-drawer.open { transform: translateX(0); }
+.as-sidebar-overlay.open { display: block; }
 
 @media (min-width: 769px) {
-  .as-sidebar-drawer { display: none; }
+  .as-sidebar-drawer  { display: none; }
   .as-sidebar-overlay { display: none !important; }
 }
 
 /* ─────────────────────────────────────────────
-   Utility: card
+   Cards
 ───────────────────────────────────────────── */
 .as-card {
   background: #ffffff;
@@ -174,12 +220,60 @@ body {
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-/* SEO score ring animation */
+/* ─────────────────────────────────────────────
+   Animations
+───────────────────────────────────────────── */
 @keyframes ring-fill {
   from { stroke-dashoffset: 251; }
 }
 
-/* Spinner */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+  70%  { box-shadow: 0 0 0 8px rgba(99,102,241,0); }
+  100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+}
+
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position: 400px 0; }
+}
+
+.as-skeleton {
+  background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 6px;
+}
+
+/* Ad preview frame */
+.as-ad-preview {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* Platform chip */
+.as-platform-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  flex: 1;
+  min-width: 80px;
+}
+.as-platform-btn:hover  { border-color: #6366f1; background: #eef2ff; }
+.as-platform-btn.active { border-color: #6366f1; background: #eef2ff; color: #4338ca; }
