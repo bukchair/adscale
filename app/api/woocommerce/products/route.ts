@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     woo = allConns.woocommerce || {};
   } catch {}
 
-  const storeUrl = woo.url || process.env.WOOCOMMERCE_URL;
+  const storeUrl = woo.store_url || woo.url || process.env.WOOCOMMERCE_URL;
   const consumerKey = woo.consumer_key || process.env.WOOCOMMERCE_KEY;
   const consumerSecret = woo.consumer_secret || process.env.WOOCOMMERCE_SECRET;
 
