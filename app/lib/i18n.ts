@@ -1,9 +1,9 @@
 // ============================================================
 // i18n.ts — Multi-language support
-// Languages: Hebrew, English, Spanish, German, French, Portuguese
+// Languages: Hebrew, English, Spanish, German, French, Portuguese, Russian
 // ============================================================
 
-export type Lang = "he" | "en" | "es" | "de" | "fr" | "pt";
+export type Lang = "he" | "en" | "es" | "de" | "fr" | "pt" | "ru";
 
 export const LANG_META: Record<Lang, { flag: string; label: string; dir: "rtl" | "ltr"; locale: string }> = {
   he: { flag: "🇮🇱", label: "עברית",    dir: "rtl", locale: "he-IL" },
@@ -12,9 +12,11 @@ export const LANG_META: Record<Lang, { flag: string; label: string; dir: "rtl" |
   de: { flag: "🇩🇪", label: "Deutsch",  dir: "ltr", locale: "de-DE" },
   fr: { flag: "🇫🇷", label: "Français", dir: "ltr", locale: "fr-FR" },
   pt: { flag: "🇧🇷", label: "Português",dir: "ltr", locale: "pt-BR" },
+  ru: { flag: "🇷🇺", label: "Русский",  dir: "ltr", locale: "ru-RU" },
 };
 
-export type T6 = Record<Lang, string>;
+/** T6 now requires `he` and `en`; all other languages fall back to English if omitted. */
+export type T6 = { he: string; en: string } & Partial<Record<Lang, string>>;
 
 /** Translate a key to the given language, falling back to English */
 export function tl(lang: Lang, texts: T6): string {
@@ -35,30 +37,30 @@ export function makeT(lang: Lang) {
 
 // ── Nav group labels ─────────────────────────────────────────
 export const NAV_GROUP_LABELS: Record<string, T6> = {
-  performance: { he: "ביצועים",    en: "Performance", es: "Rendimiento",   de: "Leistung",      fr: "Performance",  pt: "Desempenho"    },
-  campaigns:   { he: "קמפיינים",   en: "Campaigns",   es: "Campañas",      de: "Kampagnen",     fr: "Campagnes",    pt: "Campanhas"     },
-  growth:      { he: "צמיחה",      en: "Growth",      es: "Crecimiento",   de: "Wachstum",      fr: "Croissance",   pt: "Crescimento"   },
-  manage:      { he: "ניהול",      en: "Manage",      es: "Gestión",       de: "Verwaltung",    fr: "Gestion",      pt: "Gestão"        },
+  performance: { he: "ביצועים",    en: "Performance", es: "Rendimiento",   de: "Leistung",      fr: "Performance",  pt: "Desempenho",    ru: "Эффективность" },
+  campaigns:   { he: "קמפיינים",   en: "Campaigns",   es: "Campañas",      de: "Kampagnen",     fr: "Campagnes",    pt: "Campanhas",     ru: "Кампании"      },
+  growth:      { he: "צמיחה",      en: "Growth",      es: "Crecimiento",   de: "Wachstum",      fr: "Croissance",   pt: "Crescimento",   ru: "Рост"          },
+  manage:      { he: "ניהול",      en: "Manage",      es: "Gestión",       de: "Verwaltung",    fr: "Gestion",      pt: "Gestão",        ru: "Управление"    },
 };
 
 // ── Module names ──────────────────────────────────────────────
 export const MODULE_NAMES: Record<string, T6> = {
-  overview:           { he: "סקירה כללית",    en: "Overview",           es: "Resumen",          de: "Übersicht",         fr: "Aperçu",              pt: "Visão Geral"          },
-  profitability:      { he: "רווחיות",        en: "Profitability",      es: "Rentabilidad",     de: "Rentabilität",      fr: "Rentabilité",         pt: "Rentabilidade"        },
-  budget:             { he: "ניהול תקציב",    en: "Budget Control",     es: "Control Presupuesto", de: "Budgetkontrolle", fr: "Contrôle Budget",     pt: "Controle Orçamento"   },
-  recommendations:    { he: "המלצות AI",      en: "AI Recommendations", es: "Recomendaciones IA", de: "KI-Empfehlungen", fr: "Recommandations IA",  pt: "Recomendações IA"     },
-  "search-terms":     { he: "ניתוח חיפושים",  en: "Search Intelligence",es: "Inteligencia Búsqueda", de: "Suchanalyse",  fr: "Intelligence Recherche", pt: "Inteligência Busca" },
-  "negative-keywords":{ he: "מילות שליליות",  en: "Negative Keywords",  es: "Palabras Negativas", de: "Negative Keywords", fr: "Mots-clés Négatifs",  pt: "Palavras Negativas"   },
-  seo:                { he: "מרכז SEO / GEO", en: "SEO / GEO Center",   es: "Centro SEO/GEO",   de: "SEO/GEO Zentrum",   fr: "Centre SEO/GEO",      pt: "Centro SEO/GEO"       },
-  products:           { he: "מוצרים",         en: "Products",           es: "Productos",        de: "Produkte",          fr: "Produits",            pt: "Produtos"             },
-  audiences:          { he: "קהלים",          en: "Audiences",          es: "Audiencias",       de: "Zielgruppen",       fr: "Audiences",           pt: "Públicos"             },
-  "creative-lab":     { he: "מעבדת יצירה",    en: "Creative Lab",       es: "Lab. Creativo",    de: "Kreativlabor",      fr: "Atelier Créatif",     pt: "Lab. Criativo"        },
-  "financial-reports":{ he: "דוחות כספיים",   en: "Financial Reports",  es: "Informes Financieros", de: "Finanzberichte", fr: "Rapports Financiers", pt: "Relatórios Financeiros" },
-  approvals:          { he: "אישורים",        en: "Approvals",          es: "Aprobaciones",     de: "Genehmigungen",     fr: "Approbations",        pt: "Aprovações"           },
-  automation:         { he: "אוטומציה",       en: "Automation",         es: "Automatización",   de: "Automatisierung",   fr: "Automatisation",      pt: "Automação"            },
-  "audit-log":        { he: "יומן פעולות",    en: "Audit Log",          es: "Registro Auditoría", de: "Audit-Log",       fr: "Journal d'Audit",     pt: "Log de Auditoria"     },
-  integrations:       { he: "חיבורים",        en: "Integrations",       es: "Integraciones",    de: "Integrationen",     fr: "Intégrations",        pt: "Integrações"          },
-  users:              { he: "משתמשים",        en: "Users & Roles",      es: "Usuarios y Roles", de: "Benutzer & Rollen", fr: "Utilisateurs & Rôles",pt: "Usuários e Funções"   },
+  overview:           { he: "סקירה כללית",    en: "Overview",           es: "Resumen",          de: "Übersicht",         fr: "Aperçu",              pt: "Visão Geral",           ru: "Обзор"                },
+  profitability:      { he: "רווחיות",        en: "Profitability",      es: "Rentabilidad",     de: "Rentabilität",      fr: "Rentabilité",         pt: "Rentabilidade",         ru: "Рентабельность"       },
+  budget:             { he: "ניהול תקציב",    en: "Budget Control",     es: "Control Presupuesto", de: "Budgetkontrolle", fr: "Contrôle Budget",     pt: "Controle Orçamento",    ru: "Управление бюджетом"  },
+  recommendations:    { he: "המלצות AI",      en: "AI Recommendations", es: "Recomendaciones IA", de: "KI-Empfehlungen", fr: "Recommandations IA",  pt: "Recomendações IA",      ru: "Рекомендации ИИ"      },
+  "search-terms":     { he: "ניתוח חיפושים",  en: "Search Intelligence",es: "Inteligencia Búsqueda", de: "Suchanalyse",  fr: "Intelligence Recherche", pt: "Inteligência Busca", ru: "Анализ поиска"        },
+  "negative-keywords":{ he: "מילות שליליות",  en: "Negative Keywords",  es: "Palabras Negativas", de: "Negative Keywords", fr: "Mots-clés Négatifs",  pt: "Palavras Negativas",    ru: "Минус-слова"          },
+  seo:                { he: "מרכז SEO / GEO", en: "SEO / GEO Center",   es: "Centro SEO/GEO",   de: "SEO/GEO Zentrum",   fr: "Centre SEO/GEO",      pt: "Centro SEO/GEO",        ru: "Центр SEO / GEO"      },
+  products:           { he: "מוצרים",         en: "Products",           es: "Productos",        de: "Produkte",          fr: "Produits",            pt: "Produtos",              ru: "Товары"               },
+  audiences:          { he: "קהלים",          en: "Audiences",          es: "Audiencias",       de: "Zielgruppen",       fr: "Audiences",           pt: "Públicos",              ru: "Аудитории"            },
+  "creative-lab":     { he: "מעבדת יצירה",    en: "Creative Lab",       es: "Lab. Creativo",    de: "Kreativlabor",      fr: "Atelier Créatif",     pt: "Lab. Criativo",         ru: "Творческая лаборатория"},
+  "financial-reports":{ he: "דוחות כספיים",   en: "Financial Reports",  es: "Informes Financieros", de: "Finanzberichte", fr: "Rapports Financiers", pt: "Relatórios Financeiros",ru: "Финансовые отчёты"    },
+  approvals:          { he: "אישורים",        en: "Approvals",          es: "Aprobaciones",     de: "Genehmigungen",     fr: "Approbations",        pt: "Aprovações",            ru: "Согласования"         },
+  automation:         { he: "אוטומציה",       en: "Automation",         es: "Automatización",   de: "Automatisierung",   fr: "Automatisation",      pt: "Automação",             ru: "Автоматизация"        },
+  "audit-log":        { he: "יומן פעולות",    en: "Audit Log",          es: "Registro Auditoría", de: "Audit-Log",       fr: "Journal d'Audit",     pt: "Log de Auditoria",      ru: "Журнал действий"      },
+  integrations:       { he: "חיבורים",        en: "Integrations",       es: "Integraciones",    de: "Integrationen",     fr: "Intégrations",        pt: "Integrações",           ru: "Интеграции"           },
+  users:              { he: "משתמשים",        en: "Users & Roles",      es: "Usuarios y Roles", de: "Benutzer & Rollen", fr: "Utilisateurs & Rôles",pt: "Usuários e Funções",    ru: "Пользователи и роли"  },
 };
 
 // ── Module info descriptions ──────────────────────────────────
@@ -83,45 +85,45 @@ export const MODULE_INFO: Record<string, T6> = {
 
 // ── Common UI strings ─────────────────────────────────────────
 export const UI: Record<string, T6> = {
-  loading:         { he: "טוען...",          en: "Loading...",       es: "Cargando...",     de: "Lädt...",          fr: "Chargement...",   pt: "Carregando..."   },
-  save:            { he: "שמור",             en: "Save",             es: "Guardar",         de: "Speichern",        fr: "Enregistrer",     pt: "Salvar"          },
-  cancel:          { he: "ביטול",            en: "Cancel",           es: "Cancelar",        de: "Abbrechen",        fr: "Annuler",         pt: "Cancelar"        },
-  connect:         { he: "חבר",              en: "Connect",          es: "Conectar",        de: "Verbinden",        fr: "Connecter",       pt: "Conectar"        },
-  reconnect:       { he: "חבר מחדש",         en: "Reconnect",        es: "Reconectar",      de: "Neu verbinden",    fr: "Reconnecter",     pt: "Reconectar"      },
-  disconnect:      { he: "נתק",              en: "Disconnect",       es: "Desconectar",     de: "Trennen",          fr: "Déconnecter",     pt: "Desconectar"     },
-  connected:       { he: "מחובר ✓",          en: "Connected ✓",      es: "Conectado ✓",     de: "Verbunden ✓",      fr: "Connecté ✓",      pt: "Conectado ✓"     },
-  notConnected:    { he: "לא מחובר",         en: "Not Connected",    es: "No conectado",    de: "Nicht verbunden",  fr: "Non connecté",    pt: "Não conectado"   },
-  logout:          { he: "התנתקות",          en: "Logout",           es: "Cerrar sesión",   de: "Abmelden",         fr: "Déconnexion",     pt: "Sair"            },
-  refresh:         { he: "רענן",             en: "Refresh",          es: "Actualizar",      de: "Aktualisieren",    fr: "Actualiser",      pt: "Atualizar"       },
-  demo:            { he: "דמו",              en: "Demo",             es: "Demo",            de: "Demo",             fr: "Démo",            pt: "Demo"            },
-  live:            { he: "חי",               en: "Live",             es: "En vivo",         de: "Live",             fr: "En direct",       pt: "Ao vivo"         },
-  manageConns:     { he: "נהל חיבורים",      en: "Manage",           es: "Gestionar",       de: "Verwalten",        fr: "Gérer",           pt: "Gerenciar"       },
-  connQuality:     { he: "איכות חיבורים",    en: "Connection Quality",es: "Calidad de conexión", de: "Verbindungsqualität", fr: "Qualité de connexion", pt: "Qualidade de conexão" },
-  ownerPanel:      { he: "פאנל בעלים",       en: "Owner Panel",      es: "Panel de dueño",  de: "Besitzer-Panel",   fr: "Panneau propriétaire", pt: "Painel do proprietário" },
-  ownerPanelSub:   { he: "ניהול לקוחות ומנויים", en: "Manage customers & subscriptions", es: "Gestionar clientes y suscripciones", de: "Kunden & Abonnements verwalten", fr: "Gérer clients & abonnements", pt: "Gerenciar clientes e assinaturas" },
-  aiGrowthOS:      { he: "מערכת הצמיחה",    en: "AI Growth OS",     es: "OS de Crecimiento IA", de: "KI-Wachstums-OS",fr: "OS de Croissance IA", pt: "OS de Crescimento IA" },
-  connectNow:      { he: "חבר עכשיו",        en: "Connect Now",      es: "Conectar ahora",  de: "Jetzt verbinden",  fr: "Connecter maintenant", pt: "Conectar agora" },
-  editConn:        { he: "ערוך חיבור",       en: "Edit Connection",  es: "Editar conexión", de: "Verbindung bearbeiten", fr: "Modifier la connexion", pt: "Editar conexão" },
-  whatProvides:    { he: "מה חיבור זה מספק", en: "What this connection provides", es: "Qué proporciona esta conexión", de: "Was diese Verbindung bietet", fr: "Ce que cette connexion fournit", pt: "O que esta conexão fornece" },
-  affects:         { he: "משפיע על",         en: "Affects modules",  es: "Afecta módulos",  de: "Betrifft Module",  fr: "Affecte modules",  pt: "Afeta módulos"   },
-  requiredFields:  { he: "שדות נדרשים",      en: "Required fields",  es: "Campos requeridos", de: "Pflichtfelder", fr: "Champs requis",    pt: "Campos obrigatórios" },
-  issues:          { he: "בעיות",            en: "Issues",           es: "Problemas",       de: "Probleme",         fr: "Problèmes",       pt: "Problemas"       },
-  noIssues:        { he: "אין בעיות — הכל מחובר!", en: "No issues — all connected!", es: "Sin problemas — ¡todo conectado!", de: "Keine Probleme — alles verbunden!", fr: "Aucun problème — tout est connecté!", pt: "Sem problemas — tudo conectado!" },
-  connectStore:    { he: "חבר את החנות שלך", en: "Connect your store",es: "Conecta tu tienda", de: "Verbinde deinen Shop", fr: "Connecte ta boutique", pt: "Conecte sua loja" },
-  spend:           { he: "הוצאה",            en: "Spend",            es: "Gasto",           de: "Ausgaben",         fr: "Dépenses",        pt: "Gastos"          },
-  revenue:         { he: "הכנסה",            en: "Revenue",          es: "Ingresos",        de: "Einnahmen",        fr: "Revenus",         pt: "Receita"         },
-  roas:            { he: "ROAS",             en: "ROAS",             es: "ROAS",            de: "ROAS",             fr: "ROAS",            pt: "ROAS"            },
-  conversions:     { he: "המרות",            en: "Conversions",      es: "Conversiones",    de: "Konversionen",     fr: "Conversions",     pt: "Conversões"      },
-  more:            { he: "עוד",              en: "More",             es: "Más",             de: "Mehr",             fr: "Plus",            pt: "Mais"            },
-  aboutModule:     { he: "מידע על המודול",   en: "About this module",es: "Acerca del módulo", de: "Über dieses Modul", fr: "À propos du module", pt: "Sobre este módulo" },
-  close:           { he: "סגור",             en: "Close",            es: "Cerrar",          de: "Schließen",        fr: "Fermer",          pt: "Fechar"          },
-  myPermissions:   { he: "ההרשאות שלי",      en: "My Permissions",   es: "Mis permisos",    de: "Meine Berechtigungen", fr: "Mes permissions", pt: "Minhas permissões" },
-  role:            { he: "תפקיד",            en: "Role",             es: "Rol",             de: "Rolle",            fr: "Rôle",            pt: "Função"          },
-  welcomeTitle:    { he: "ברוך הבא למערכת!",  en: "Welcome to the system!", es: "¡Bienvenido al sistema!", de: "Willkommen im System!", fr: "Bienvenue dans le système!", pt: "Bem-vindo ao sistema!" },
-  permissionsInfo: { he: "אלו ההרשאות שלך במערכת", en: "These are your system permissions", es: "Estos son tus permisos del sistema", de: "Dies sind Ihre Systemberechtigungen", fr: "Voici vos autorisations système", pt: "Estas são suas permissões no sistema" },
-  canAccess:       { he: "יש לך גישה ל:",    en: "You have access to:", es: "Tienes acceso a:", de: "Sie haben Zugang zu:", fr: "Vous avez accès à:", pt: "Você tem acesso a:" },
-  noAccess:        { he: "אין לך גישה ל:",   en: "No access to:",    es: "Sin acceso a:",   de: "Kein Zugang zu:",  fr: "Pas d'accès à:",  pt: "Sem acesso a:"   },
-  understood:      { he: "הבנתי, נתחיל!",    en: "Got it, let's start!", es: "¡Entendido, empecemos!", de: "Verstanden, los geht's!", fr: "Compris, allons-y!", pt: "Entendi, vamos começar!" },
-  emailPanelTitle: { he: "הגדרות מייל ארגוני", en: "Organizational Email Settings", es: "Configuración de correo electrónico organizacional", de: "Organisationelle E-Mail-Einstellungen", fr: "Paramètres e-mail organisationnel", pt: "Configurações de e-mail organizacional" },
-  geminiShared:    { he: "Gemini מחובר (שיתוף מהמנהל)", en: "Gemini connected (shared from admin)", es: "Gemini conectado (compartido del administrador)", de: "Gemini verbunden (vom Admin geteilt)", fr: "Gemini connecté (partagé par l'administrateur)", pt: "Gemini conectado (compartilhado pelo administrador)" },
+  loading:         { he: "טוען...",          en: "Loading...",       es: "Cargando...",     de: "Lädt...",          fr: "Chargement...",   pt: "Carregando...",   ru: "Загрузка..."         },
+  save:            { he: "שמור",             en: "Save",             es: "Guardar",         de: "Speichern",        fr: "Enregistrer",     pt: "Salvar",          ru: "Сохранить"           },
+  cancel:          { he: "ביטול",            en: "Cancel",           es: "Cancelar",        de: "Abbrechen",        fr: "Annuler",         pt: "Cancelar",        ru: "Отмена"              },
+  connect:         { he: "חבר",              en: "Connect",          es: "Conectar",        de: "Verbinden",        fr: "Connecter",       pt: "Conectar",        ru: "Подключить"          },
+  reconnect:       { he: "חבר מחדש",         en: "Reconnect",        es: "Reconectar",      de: "Neu verbinden",    fr: "Reconnecter",     pt: "Reconectar",      ru: "Переподключить"      },
+  disconnect:      { he: "נתק",              en: "Disconnect",       es: "Desconectar",     de: "Trennen",          fr: "Déconnecter",     pt: "Desconectar",     ru: "Отключить"           },
+  connected:       { he: "מחובר ✓",          en: "Connected ✓",      es: "Conectado ✓",     de: "Verbunden ✓",      fr: "Connecté ✓",      pt: "Conectado ✓",     ru: "Подключено ✓"        },
+  notConnected:    { he: "לא מחובר",         en: "Not Connected",    es: "No conectado",    de: "Nicht verbunden",  fr: "Non connecté",    pt: "Não conectado",   ru: "Не подключено"       },
+  logout:          { he: "התנתקות",          en: "Logout",           es: "Cerrar sesión",   de: "Abmelden",         fr: "Déconnexion",     pt: "Sair",            ru: "Выйти"               },
+  refresh:         { he: "רענן",             en: "Refresh",          es: "Actualizar",      de: "Aktualisieren",    fr: "Actualiser",      pt: "Atualizar",       ru: "Обновить"            },
+  demo:            { he: "דמו",              en: "Demo",             es: "Demo",            de: "Demo",             fr: "Démo",            pt: "Demo",            ru: "Демо"                },
+  live:            { he: "חי",               en: "Live",             es: "En vivo",         de: "Live",             fr: "En direct",       pt: "Ao vivo",         ru: "Прямой эфир"         },
+  manageConns:     { he: "נהל חיבורים",      en: "Manage",           es: "Gestionar",       de: "Verwalten",        fr: "Gérer",           pt: "Gerenciar",       ru: "Управлять"           },
+  connQuality:     { he: "איכות חיבורים",    en: "Connection Quality",es: "Calidad de conexión", de: "Verbindungsqualität", fr: "Qualité de connexion", pt: "Qualidade de conexão", ru: "Качество соединений" },
+  ownerPanel:      { he: "פאנל בעלים",       en: "Owner Panel",      es: "Panel de dueño",  de: "Besitzer-Panel",   fr: "Panneau propriétaire", pt: "Painel do proprietário", ru: "Панель владельца"  },
+  ownerPanelSub:   { he: "ניהול לקוחות ומנויים", en: "Manage customers & subscriptions", es: "Gestionar clientes y suscripciones", de: "Kunden & Abonnements verwalten", fr: "Gérer clients & abonnements", pt: "Gerenciar clientes e assinaturas", ru: "Управление клиентами и подписками" },
+  aiGrowthOS:      { he: "מערכת הצמיחה",    en: "AI Growth OS",     es: "OS de Crecimiento IA", de: "KI-Wachstums-OS",fr: "OS de Croissance IA", pt: "OS de Crescimento IA", ru: "ИИ-система роста"  },
+  connectNow:      { he: "חבר עכשיו",        en: "Connect Now",      es: "Conectar ahora",  de: "Jetzt verbinden",  fr: "Connecter maintenant", pt: "Conectar agora", ru: "Подключить сейчас" },
+  editConn:        { he: "ערוך חיבור",       en: "Edit Connection",  es: "Editar conexión", de: "Verbindung bearbeiten", fr: "Modifier la connexion", pt: "Editar conexão", ru: "Редактировать"     },
+  whatProvides:    { he: "מה חיבור זה מספק", en: "What this connection provides", es: "Qué proporciona esta conexión", de: "Was diese Verbindung bietet", fr: "Ce que cette connexion fournit", pt: "O que esta conexão fornece", ru: "Что даёт это подключение" },
+  affects:         { he: "משפיע על",         en: "Affects modules",  es: "Afecta módulos",  de: "Betrifft Module",  fr: "Affecte modules",  pt: "Afeta módulos",   ru: "Влияет на модули"   },
+  requiredFields:  { he: "שדות נדרשים",      en: "Required fields",  es: "Campos requeridos", de: "Pflichtfelder", fr: "Champs requis",    pt: "Campos obrigatórios", ru: "Обязательные поля" },
+  issues:          { he: "בעיות",            en: "Issues",           es: "Problemas",       de: "Probleme",         fr: "Problèmes",       pt: "Problemas",       ru: "Проблемы"            },
+  noIssues:        { he: "אין בעיות — הכל מחובר!", en: "No issues — all connected!", es: "Sin problemas — ¡todo conectado!", de: "Keine Probleme — alles verbunden!", fr: "Aucun problème — tout est connecté!", pt: "Sem problemas — tudo conectado!", ru: "Нет проблем — всё подключено!" },
+  connectStore:    { he: "חבר את החנות שלך", en: "Connect your store",es: "Conecta tu tienda", de: "Verbinde deinen Shop", fr: "Connecte ta boutique", pt: "Conecte sua loja", ru: "Подключить магазин" },
+  spend:           { he: "הוצאה",            en: "Spend",            es: "Gasto",           de: "Ausgaben",         fr: "Dépenses",        pt: "Gastos",          ru: "Расходы"             },
+  revenue:         { he: "הכנסה",            en: "Revenue",          es: "Ingresos",        de: "Einnahmen",        fr: "Revenus",         pt: "Receita",         ru: "Доход"               },
+  roas:            { he: "ROAS",             en: "ROAS",             es: "ROAS",            de: "ROAS",             fr: "ROAS",            pt: "ROAS",            ru: "ROAS"                },
+  conversions:     { he: "המרות",            en: "Conversions",      es: "Conversiones",    de: "Konversionen",     fr: "Conversions",     pt: "Conversões",      ru: "Конверсии"           },
+  more:            { he: "עוד",              en: "More",             es: "Más",             de: "Mehr",             fr: "Plus",            pt: "Mais",            ru: "Ещё"                 },
+  aboutModule:     { he: "מידע על המודול",   en: "About this module",es: "Acerca del módulo", de: "Über dieses Modul", fr: "À propos du module", pt: "Sobre este módulo", ru: "О модуле"        },
+  close:           { he: "סגור",             en: "Close",            es: "Cerrar",          de: "Schließen",        fr: "Fermer",          pt: "Fechar",          ru: "Закрыть"             },
+  myPermissions:   { he: "ההרשאות שלי",      en: "My Permissions",   es: "Mis permisos",    de: "Meine Berechtigungen", fr: "Mes permissions", pt: "Minhas permissões", ru: "Мои разрешения"  },
+  role:            { he: "תפקיד",            en: "Role",             es: "Rol",             de: "Rolle",            fr: "Rôle",            pt: "Função",          ru: "Роль"                },
+  welcomeTitle:    { he: "ברוך הבא למערכת!",  en: "Welcome to the system!", es: "¡Bienvenido al sistema!", de: "Willkommen im System!", fr: "Bienvenue dans le système!", pt: "Bem-vindo ao sistema!", ru: "Добро пожаловать!" },
+  permissionsInfo: { he: "אלו ההרשאות שלך במערכת", en: "These are your system permissions", es: "Estos son tus permisos del sistema", de: "Dies sind Ihre Systemberechtigungen", fr: "Voici vos autorisations système", pt: "Estas são suas permissões no sistema", ru: "Ваши права в системе" },
+  canAccess:       { he: "יש לך גישה ל:",    en: "You have access to:", es: "Tienes acceso a:", de: "Sie haben Zugang zu:", fr: "Vous avez accès à:", pt: "Você tem acesso a:", ru: "У вас есть доступ к:" },
+  noAccess:        { he: "אין לך גישה ל:",   en: "No access to:",    es: "Sin acceso a:",   de: "Kein Zugang zu:",  fr: "Pas d'accès à:",  pt: "Sem acesso a:",   ru: "Нет доступа к:"      },
+  understood:      { he: "הבנתי, נתחיל!",    en: "Got it, let's start!", es: "¡Entendido, empecemos!", de: "Verstanden, los geht's!", fr: "Compris, allons-y!", pt: "Entendi, vamos começar!", ru: "Понятно, начнём!" },
+  emailPanelTitle: { he: "הגדרות מייל ארגוני", en: "Organizational Email Settings", es: "Configuración de correo electrónico organizacional", de: "Organisationelle E-Mail-Einstellungen", fr: "Paramètres e-mail organisationnel", pt: "Configurações de e-mail organizacional", ru: "Настройки корпоративной почты" },
+  geminiShared:    { he: "Gemini מחובר (שיתוף מהמנהל)", en: "Gemini connected (shared from admin)", es: "Gemini conectado (compartido del administrador)", de: "Gemini verbunden (vom Admin geteilt)", fr: "Gemini connecté (partagé par l'administrateur)", pt: "Gemini conectado (compartilhado pelo administrador)", ru: "Gemini подключён (от администратора)" },
 };
