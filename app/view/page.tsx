@@ -34,7 +34,7 @@ function BarChart({ data }: { data: { day: string; spent: number; revenue: numbe
             <div style={{ flex: 1, height: `${(d.revenue / maxR) * 100}%`, background: "linear-gradient(to top,#00d4aa,#00d4aa55)", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
             <div style={{ flex: 1, height: `${(d.spent / maxS) * 100}%`, background: "linear-gradient(to top,#7c74ff,#7c74ff55)", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
           </div>
-          <span style={{ fontSize: 10, color: "#64748b" }}>{d.day}</span>
+          <span style={{ fontSize: 10, color: "var(--vw-text-muted)" }}>{d.day}</span>
         </div>
       ))}
     </div>
@@ -45,7 +45,7 @@ function Skeleton({ w = "100%", h = 20, r = 6 }: { w?: string | number; h?: numb
   return (
     <div style={{
       width: w, height: h, borderRadius: r,
-      background: "linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)",
+      background: "linear-gradient(90deg, var(--vw-shimmer-a) 25%, var(--vw-shimmer-b) 50%, var(--vw-shimmer-a) 75%)",
       backgroundSize: "200% 100%",
       animation: "shimmer 1.4s infinite",
     }} />
@@ -102,11 +102,11 @@ export default function GuestViewPage() {
   const campaigns = data?.campaigns ?? [];
 
   const s: Record<string, any> = {
-    card: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: isMobile ? 12 : 16, padding: isMobile ? 14 : 22, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" },
+    card: { background: "var(--vw-card)", border: "1px solid var(--vw-border)", borderRadius: isMobile ? 12 : 16, padding: isMobile ? 14 : 22, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" },
     statsGrid: { display: "grid", gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: isMobile ? 10 : 14, marginBottom: 20 },
     grid2: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: isMobile ? 10 : 14, marginBottom: 20 },
-    th: { fontSize: 11, color: "#64748b", fontWeight: 500, textAlign: "right" as const, padding: "5px 12px 12px", borderBottom: "1px solid #e2e8f0" },
-    td: { padding: "12px", borderBottom: "1px solid #f1f5f9", fontSize: 13, verticalAlign: "middle" as const },
+    th: { fontSize: 11, color: "var(--vw-text-muted)", fontWeight: 500, textAlign: "right" as const, padding: "5px 12px 12px", borderBottom: "1px solid var(--vw-border)" },
+    td: { padding: "12px", borderBottom: "1px solid var(--vw-border-mid)", fontSize: 13, verticalAlign: "middle" as const },
     badge: (st: string) => ({
       display: "inline-flex", alignItems: "center", gap: 5, padding: "3px 10px",
       borderRadius: 20, fontSize: 11, fontWeight: 600,
@@ -115,33 +115,33 @@ export default function GuestViewPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f0f4f8", color: "#1e293b", fontFamily: "'Rubik','Heebo',sans-serif", direction: dir }}>
+    <div style={{ minHeight: "100vh", background: "var(--vw-bg)", color: "var(--vw-text)", fontFamily: "'Rubik','Heebo',sans-serif", direction: dir }}>
 
       {/* ── Top bar ── */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: isMobile ? "12px 16px" : "0 36px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: isMobile ? "auto" : 60, boxShadow: "0 1px 6px rgba(0,0,0,0.06)", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ background: "var(--vw-topbar)", borderBottom: "1px solid var(--vw-border)", padding: isMobile ? "12px 16px" : "0 36px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: isMobile ? "auto" : 60, boxShadow: "0 1px 6px rgba(0,0,0,0.06)", flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             BScale AI
           </div>
           {/* View-only badge */}
-          <div style={{ display: "flex", alignItems: "center", gap: 5, background: "#f0f4f8", border: "1px solid #e2e8f0", borderRadius: 20, padding: "3px 10px 3px 8px", fontSize: 11, fontWeight: 600, color: "#64748b" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, background: "var(--vw-btn-bg)", border: "1px solid var(--vw-border)", borderRadius: 20, padding: "3px 10px 3px 8px", fontSize: 11, fontWeight: 600, color: "var(--vw-text-muted)" }}>
             <span>👁</span> {t("צפייה בלבד", "View Only")}
           </div>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {/* Live/demo indicator */}
-          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: isLive ? "#00d4aa" : "#94a3b8" }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: isLive ? "#00d4aa" : "#94a3b8", animation: isLive ? "pulse 2s infinite" : "none" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: isLive ? "#00d4aa" : "var(--vw-text-tiny)" }}>
+            <div style={{ width: 7, height: 7, borderRadius: "50%", background: isLive ? "#00d4aa" : "var(--vw-text-tiny)", animation: isLive ? "pulse 2s infinite" : "none" }} />
             {isLive
               ? (lastUpdated ? `${t("עודכן", "Updated")} ${new Date(lastUpdated).toLocaleTimeString(lang === "he" ? "he-IL" : "en-US")}` : t("נתונים חיים", "Live"))
               : t("מצב דמו", "Demo")}
           </div>
 
           {/* Language */}
-          <div style={{ display: "flex", background: "#f0f4f8", borderRadius: 8, padding: 2, gap: 2 }}>
+          <div style={{ display: "flex", background: "var(--vw-btn-bg)", borderRadius: 8, padding: 2, gap: 2 }}>
             {(["he", "en"] as const).map(l => (
-              <button key={l} onClick={() => setLang(l)} style={{ padding: "3px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: lang === l ? "#fff" : "transparent", color: lang === l ? "#7c74ff" : "#94a3b8", boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>
+              <button key={l} onClick={() => setLang(l)} style={{ padding: "3px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: lang === l ? "var(--vw-card)" : "transparent", color: lang === l ? "#7c74ff" : "var(--vw-text-tiny)", boxShadow: lang === l ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}>
                 {l === "he" ? "עברית" : "EN"}
               </button>
             ))}
@@ -150,7 +150,7 @@ export default function GuestViewPage() {
       </div>
 
       {/* ── Tab bar ── */}
-      <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "0 36px", display: "flex", gap: 0 }}>
+      <div style={{ background: "var(--vw-tab-bg)", borderBottom: "1px solid var(--vw-border)", padding: "0 36px", display: "flex", gap: 0 }}>
         {([
           { key: "dashboard", label: t("דשבורד", "Dashboard"), icon: "📊" },
           { key: "campaigns", label: t("קמפיינים", "Campaigns"), icon: "🚀" },
@@ -158,7 +158,7 @@ export default function GuestViewPage() {
           <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             padding: "14px 20px", border: "none", background: "transparent", cursor: "pointer",
             fontSize: 13, fontWeight: activeTab === tab.key ? 600 : 400,
-            color: activeTab === tab.key ? "#1e293b" : "#94a3b8",
+            color: activeTab === tab.key ? "var(--vw-text)" : "var(--vw-text-tiny)",
             borderBottom: activeTab === tab.key ? "2px solid #7c74ff" : "2px solid transparent",
             display: "flex", alignItems: "center", gap: 7, transition: "all 0.2s",
           }}>
@@ -177,22 +177,22 @@ export default function GuestViewPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: isMobile ? 16 : 28, flexWrap: "wrap", gap: 10 }}>
               <div>
                 <div style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700 }}>{t("סיכום ביצועים", "Performance Overview")}</div>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>
+                <div style={{ fontSize: 12, color: "var(--vw-text-muted)", marginTop: 3 }}>
                   {loading ? t("טוען...", "Loading...") : isLive ? t("נתונים חיים", "Live data") : t("מצב דמו", "Demo mode")}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <div style={{ display: "flex", background: "#f0f4f8", borderRadius: 10, padding: 3, gap: 2 }}>
+                <div style={{ display: "flex", background: "var(--vw-btn-bg)", borderRadius: 10, padding: 3, gap: 2 }}>
                   {DATE_PRESETS.map((p, i) => (
                     <button key={i} onClick={() => setPreset(i)} style={{
                       padding: isMobile ? "5px 10px" : "6px 14px", borderRadius: 8, border: "none", cursor: "pointer",
                       fontSize: isMobile ? 11 : 12, fontWeight: 600,
                       background: preset === i ? "#7c74ff" : "transparent",
-                      color: preset === i ? "#fff" : "#64748b",
+                      color: preset === i ? "#fff" : "var(--vw-text-muted)",
                     }}>{p.label}</button>
                   ))}
                 </div>
-                <button onClick={refetch} style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "#f0f4f8", color: "#475569" }}>↻</button>
+                <button onClick={refetch} style={{ padding: "8px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, background: "var(--vw-btn-bg)", color: "var(--vw-btn-color)" }}>↻</button>
               </div>
             </div>
 
@@ -205,9 +205,9 @@ export default function GuestViewPage() {
                 { label: t("המרות", "Conversions"), val: summary.totalConversions, color: "#4285F4", data: timeSeries.map(d => d.conversions) },
               ].map((m, i) => (
                 <div key={i} style={{ ...s.card, opacity: animIn ? 1 : 0, transform: animIn ? "translateY(0)" : "translateY(18px)", transition: `all 0.45s ease ${i * 0.08}s` }}>
-                  <div style={{ fontSize: 11, color: "#64748b", marginBottom: 6 }}>{m.label}</div>
+                  <div style={{ fontSize: 11, color: "var(--vw-text-muted)", marginBottom: 6 }}>{m.label}</div>
                   {loading ? <Skeleton h={28} r={6} /> :
-                    <div style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, letterSpacing: "-1px", color: "#1e293b" }}>
+                    <div style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700, letterSpacing: "-1px", color: "var(--vw-text)" }}>
                       {m.prefix}{typeof m.val === "number" ? (m.label.includes("ROAS") || m.label.includes("Avg") ? m.val.toFixed(2) : Math.round(m.val).toLocaleString()) : m.val}{m.suffix}
                     </div>
                   }
@@ -224,8 +224,8 @@ export default function GuestViewPage() {
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>{t("הוצאה לפי יום", "Daily Spend")}</div>
                 {loading ? <Skeleton h={110} /> : <BarChart data={timeSeries} />}
                 <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}><div style={{ width: 10, height: 10, borderRadius: 2, background: "#00d4aa" }} />{t("הכנסה", "Revenue")}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#64748b" }}><div style={{ width: 10, height: 10, borderRadius: 2, background: "#7c74ff" }} />{t("הוצאה", "Spend")}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--vw-text-muted)" }}><div style={{ width: 10, height: 10, borderRadius: 2, background: "#00d4aa" }} />{t("הכנסה", "Revenue")}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "var(--vw-text-muted)" }}><div style={{ width: 10, height: 10, borderRadius: 2, background: "#7c74ff" }} />{t("הוצאה", "Spend")}</div>
                 </div>
               </div>
 
@@ -234,19 +234,19 @@ export default function GuestViewPage() {
                 {loading ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{[0,1,2].map(i => <Skeleton key={i} h={44} r={8} />)}</div>
                 ) : byPlatform.filter(p => p.spent > 0).map((p, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < byPlatform.filter(x => x.spent > 0).length - 1 ? "1px solid #f1f5f9" : "none" }}>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < byPlatform.filter(x => x.spent > 0).length - 1 ? "1px solid var(--vw-border-mid)" : "none" }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: platformColors[p.platform] + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
                       {p.platform === "google" ? "G" : p.platform === "meta" ? "M" : "T"}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, textTransform: "capitalize" }}>{p.platform === "google" ? "Google Ads" : p.platform === "meta" ? "Meta Ads" : "TikTok Ads"}</div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: "var(--vw-text-muted)", marginTop: 2 }}>
                         ₪{Math.round(p.spent).toLocaleString()} {t("הוצאה", "spend")} · {p.clicks.toLocaleString()} {t("קליקים", "clicks")}
                       </div>
                     </div>
                     <div style={{ textAlign: "left" as const }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1e293b" }}>{p.roas > 0 ? p.roas.toFixed(2) + "x" : "—"}</div>
-                      <div style={{ fontSize: 10, color: "#64748b" }}>ROAS</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--vw-text)" }}>{p.roas > 0 ? p.roas.toFixed(2) + "x" : "—"}</div>
+                      <div style={{ fontSize: 10, color: "var(--vw-text-muted)" }}>ROAS</div>
                     </div>
                   </div>
                 ))}
@@ -266,10 +266,10 @@ export default function GuestViewPage() {
                     { label: t("CTR ממוצע", "Avg CTR"), val: (() => { const imp = byPlatform.reduce((s, p) => s + p.impressions, 0); const cl = byPlatform.reduce((s, p) => s + p.clicks, 0); return imp > 0 ? (cl / imp * 100).toFixed(2) + "%" : "—"; })(), icon: "📈" },
                     { label: t("עלות להמרה", "Cost/Conv."), val: summary.totalConversions > 0 ? "₪" + (summary.totalSpent / summary.totalConversions).toFixed(0) : "—", icon: "🎯" },
                   ].map((m, i) => (
-                    <div key={i} style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px" }}>
+                    <div key={i} style={{ background: "var(--vw-card-alt)", borderRadius: 10, padding: "12px 14px" }}>
                       <div style={{ fontSize: 16, marginBottom: 4 }}>{m.icon}</div>
-                      <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, color: "#1e293b" }}>{m.val}</div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{m.label}</div>
+                      <div style={{ fontSize: isMobile ? 16 : 20, fontWeight: 700, color: "var(--vw-text)" }}>{m.val}</div>
+                      <div style={{ fontSize: 11, color: "var(--vw-text-muted)", marginTop: 2 }}>{m.label}</div>
                     </div>
                   ))}
                 </div>
@@ -284,7 +284,7 @@ export default function GuestViewPage() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isMobile ? 16 : 28, flexWrap: "wrap", gap: 10 }}>
               <div>
                 <div style={{ fontSize: isMobile ? 20 : 26, fontWeight: 700 }}>{t("קמפיינים", "Campaigns")}</div>
-                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>{campaigns.length} {t("קמפיינים", "campaigns")}</div>
+                <div style={{ fontSize: 12, color: "var(--vw-text-muted)", marginTop: 3 }}>{campaigns.length} {t("קמפיינים", "campaigns")}</div>
               </div>
             </div>
 
@@ -294,7 +294,7 @@ export default function GuestViewPage() {
                   {[...Array(5)].map((_, i) => <Skeleton key={i} h={44} r={8} />)}
                 </div>
               ) : campaigns.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px 0", color: "#94a3b8", fontSize: 14 }}>
+                <div style={{ textAlign: "center", padding: "40px 0", color: "var(--vw-text-tiny)", fontSize: 14 }}>
                   {t("אין קמפיינים להצגה", "No campaigns to display")}
                 </div>
               ) : (
@@ -316,7 +316,7 @@ export default function GuestViewPage() {
                           <td style={s.td}>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <div style={{ width: 8, height: 8, borderRadius: "50%", background: platformColors[c.platform] }} />
-                              <span style={{ fontSize: 12, color: "#475569", textTransform: "capitalize" }}>{c.platform}</span>
+                              <span style={{ fontSize: 12, color: "var(--vw-text-sub)", textTransform: "capitalize" }}>{c.platform}</span>
                             </div>
                           </td>
                           <td style={s.td}>
@@ -345,7 +345,7 @@ export default function GuestViewPage() {
       </div>
 
       {/* ── Footer ── */}
-      <div style={{ textAlign: "center", padding: "20px 0 32px", fontSize: 11, color: "#94a3b8" }}>
+      <div style={{ textAlign: "center", padding: "20px 0 32px", fontSize: 11, color: "var(--vw-text-tiny)" }}>
         {t("דף צפייה בלבד — לעריכה פנה למנהל החשבון", "Read-only view — contact account manager to make changes")}
       </div>
 
@@ -353,7 +353,7 @@ export default function GuestViewPage() {
         @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap');
         * { box-sizing: border-box; }
         button:hover { opacity: 0.82; }
-        tr:hover td { background: #f8fafc; }
+        tr:hover td { background: var(--vw-card-alt); }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
         @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }

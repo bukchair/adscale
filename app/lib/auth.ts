@@ -197,6 +197,17 @@ export function completeOnboarding(tenantId?: string): void {
   localStorage.setItem(KEY_ONBOARDING, "1");
 }
 
+/* ── Plan selection ─────────────────────────────────────────────── */
+const KEY_PLAN = "bscale_selected_plan";
+export function saveSelectedPlan(planId: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(KEY_PLAN, planId);
+}
+export function getSelectedPlan(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(KEY_PLAN);
+}
+
 /* ── Connections — TENANT SCOPED ───────────────────────────────── */
 function _connKey(user?: AuthUser | null): string {
   const u = user ?? getUser();

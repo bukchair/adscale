@@ -74,7 +74,7 @@ function LoginForm() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#0a0a14",
+        background: "var(--lp-bg)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -141,8 +141,8 @@ function LoginForm() {
         {/* Card */}
         <div
           style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: "var(--lp-card-bg)",
+            border: "1px solid var(--lp-card-border)",
             borderRadius: 20,
             padding: "36px 32px",
             backdropFilter: "blur(10px)",
@@ -152,7 +152,7 @@ function LoginForm() {
           <div
             style={{
               display: "flex",
-              background: "rgba(255,255,255,0.05)",
+              background: "var(--lp-input-bg)",
               borderRadius: 12,
               padding: 4,
               marginBottom: 28,
@@ -175,7 +175,7 @@ function LoginForm() {
                   fontWeight: 600,
                   transition: "all 0.2s",
                   background: mode === m ? "rgba(99,102,241,0.8)" : "transparent",
-                  color: mode === m ? "#fff" : "rgba(255,255,255,0.5)",
+                  color: mode === m ? "#fff" : "var(--lp-text-muted)",
                 }}
               >
                 {m === "login" ? t("כניסה", "Login") : t("הרשמה", "Sign Up")}
@@ -185,7 +185,7 @@ function LoginForm() {
 
           <h1
             style={{
-              color: "#fff",
+              color: "var(--lp-text)",
               fontSize: 22,
               fontWeight: 800,
               marginBottom: 6,
@@ -198,7 +198,7 @@ function LoginForm() {
           </h1>
           <p
             style={{
-              color: "rgba(255,255,255,0.45)",
+              color: "var(--lp-text-faint)",
               fontSize: 14,
               textAlign: "center",
               marginBottom: 28,
@@ -265,7 +265,7 @@ function LoginForm() {
               padding: "10px 14px",
               marginBottom: 20,
               fontSize: 12,
-              color: "rgba(255,255,255,0.5)",
+              color: "var(--lp-text-muted)",
               lineHeight: 1.5,
             }}
           >
@@ -284,11 +284,11 @@ function LoginForm() {
               marginBottom: 20,
             }}
           >
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
-            <span style={{ color: "rgba(255,255,255,0.35)", fontSize: 13 }}>
+            <div style={{ flex: 1, height: 1, background: "var(--lp-divider)" }} />
+            <span style={{ color: "var(--lp-text-faint)", fontSize: 13 }}>
               {t("או", "or")}
             </span>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+            <div style={{ flex: 1, height: 1, background: "var(--lp-divider)" }} />
           </div>
 
           {/* Email form (demo/dev login) */}
@@ -298,7 +298,7 @@ function LoginForm() {
                 <label
                   style={{
                     display: "block",
-                    color: "rgba(255,255,255,0.6)",
+                    color: "var(--lp-text-muted)",
                     fontSize: 13,
                     marginBottom: 6,
                   }}
@@ -312,11 +312,11 @@ function LoginForm() {
                   placeholder={t("ישראל ישראלי", "John Smith")}
                   style={{
                     width: "100%",
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "var(--lp-input-bg)",
+                    border: "1px solid var(--lp-input-border)",
                     borderRadius: 10,
                     padding: "11px 14px",
-                    color: "#fff",
+                    color: "var(--lp-text)",
                     fontSize: 15,
                     outline: "none",
                     boxSizing: "border-box",
@@ -328,7 +328,7 @@ function LoginForm() {
               <label
                 style={{
                   display: "block",
-                  color: "rgba(255,255,255,0.6)",
+                  color: "var(--lp-text-muted)",
                   fontSize: 13,
                   marginBottom: 6,
                 }}
@@ -343,11 +343,11 @@ function LoginForm() {
                 placeholder="you@example.com"
                 style={{
                   width: "100%",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "var(--lp-input-bg)",
+                  border: "1px solid var(--lp-input-border)",
                   borderRadius: 10,
                   padding: "11px 14px",
-                  color: "#fff",
+                  color: "var(--lp-text)",
                   fontSize: 15,
                   outline: "none",
                   boxSizing: "border-box",
@@ -358,7 +358,7 @@ function LoginForm() {
               <label
                 style={{
                   display: "block",
-                  color: "rgba(255,255,255,0.6)",
+                  color: "var(--lp-text-muted)",
                   fontSize: 13,
                   marginBottom: 6,
                 }}
@@ -374,11 +374,11 @@ function LoginForm() {
                 placeholder="••••••••"
                 style={{
                   width: "100%",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "var(--lp-input-bg)",
+                  border: "1px solid var(--lp-input-border)",
                   borderRadius: 10,
                   padding: "11px 14px",
-                  color: "#fff",
+                  color: "var(--lp-text)",
                   fontSize: 15,
                   outline: "none",
                   boxSizing: "border-box",
@@ -444,11 +444,11 @@ function LoginForm() {
           <button
             onClick={() => setLang((l) => (l === "he" ? "en" : "he"))}
             style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--lp-input-bg)",
+              border: "1px solid var(--lp-divider)",
               borderRadius: 8,
               padding: "6px 14px",
-              color: "rgba(255,255,255,0.5)",
+              color: "var(--lp-text-muted)",
               cursor: "pointer",
               fontSize: 13,
             }}
@@ -464,7 +464,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", background: "#0a0a14" }} />}>
+    <Suspense fallback={<div style={{ minHeight: "100vh", background: "var(--lp-bg)" }} />}>
       <LoginForm />
     </Suspense>
   );

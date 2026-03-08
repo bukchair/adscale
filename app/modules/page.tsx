@@ -43,7 +43,7 @@ const NAV_ITEMS = [
   { id: "seo",               icon: "🎯", he: "מרכז SEO / GEO",  en: "SEO / GEO Center",   group: "growth" },
   { id: "products",          icon: "🛍️", he: "מוצרים",          en: "Products",            group: "growth" },
   { id: "audiences",         icon: "👥", he: "קהלים",            en: "Audiences",           group: "growth" },
-  { id: "creative-lab",      icon: "✍️", he: "Creative Lab",    en: "Creative Lab",        group: "growth" },
+  { id: "creative-lab",      icon: "✍️", he: "מעבדת יצירה",     en: "Creative Lab",        group: "growth" },
   { id: "financial-reports",  icon: "💹", he: "דוחות כספיים",   en: "Financial Reports",   group: "performance" },
   { id: "approvals",         icon: "✅", he: "אישורים",         en: "Approvals",           group: "manage" },
   { id: "automation",        icon: "⚙️", he: "אוטומציה",       en: "Automation",          group: "manage" },
@@ -434,7 +434,7 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
         <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⚡</div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>BScale AI</div>
-          <div style={{ fontSize: 11, color: C.textMuted }}>AI Growth OS</div>
+          <div style={{ fontSize: 11, color: C.textMuted }}>{t("מערכת הצמיחה", "AI Growth OS")}</div>
         </div>
         {/* Dark mode toggle */}
         <button onClick={onToggleDark} title={t(isDark ? "מצב בהיר" : "מצב כהה", isDark ? "Light mode" : "Dark mode")}
@@ -467,7 +467,7 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
             </div>
           </div>
           <button onClick={onLogout} style={{ width: "100%", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 12, color: C.textSub, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            🚪 {t("יציאה", "Logout")}
+            🚪 {t("התנתקות", "Logout")}
           </button>
         </div>
       )}
@@ -493,8 +493,8 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
           <a href="/admin" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))", border: `1px solid ${C.accent}44`, borderRadius: 10, textDecoration: "none" }}>
             <span style={{ fontSize: 16 }}>👑</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{lang === "he" ? "פאנל בעלים" : "Owner Panel"}</div>
-              <div style={{ fontSize: 10, color: C.textMuted }}>{lang === "he" ? "ניהול לקוחות ומנויים" : "Manage customers & subscriptions"}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{t("פאנל בעלים", "Owner Panel")}</div>
+              <div style={{ fontSize: 10, color: C.textMuted }}>{t("ניהול לקוחות ומנויים", "Manage customers & subscriptions")}</div>
             </div>
             <span style={{ fontSize: 12, color: C.textMuted }}>›</span>
           </a>

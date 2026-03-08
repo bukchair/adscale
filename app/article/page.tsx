@@ -82,21 +82,21 @@ export default function ArticlePage() {
     <div style={{
       fontFamily: "'Segoe UI', Arial, sans-serif",
       direction: isHe ? "rtl" : "ltr",
-      background: "#0a0a14",
-      color: "#fff",
+      background: "var(--lp-bg)",
+      color: "var(--lp-text)",
       minHeight: "100vh",
     }}>
       {/* Top bar */}
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
-        background: "rgba(10,10,20,0.92)", backdropFilter: "blur(14px)",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background: "var(--lp-nav-bg)", backdropFilter: "blur(14px)",
+        borderBottom: "1px solid var(--lp-card-border)",
         padding: "0 20px", height: 60,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <button
           onClick={() => router.push("/")}
-          style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", gap: 6, padding: 0 }}
+          style={{ background: "transparent", border: "none", color: "var(--lp-text-muted)", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", gap: 6, padding: 0 }}
         >
           {isHe ? "→" : "←"} {t("חזרה לדף הבית", "Back to Home")}
         </button>
@@ -106,7 +106,7 @@ export default function ArticlePage() {
         </div>
         <button
           onClick={() => setLang(l => l === "he" ? "en" : "he")}
-          style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, padding: "5px 11px", color: "#fff", cursor: "pointer", fontSize: 12 }}
+          style={{ background: "var(--lp-card-bg)", border: "1px solid var(--lp-input-border)", borderRadius: 8, padding: "5px 11px", color: "var(--lp-text)", cursor: "pointer", fontSize: 12 }}
         >{isHe ? "EN" : "עב"}</button>
       </nav>
 
@@ -123,7 +123,7 @@ export default function ArticlePage() {
               "How BScale AI Analyzes Millions of Data Points in Real Time"
             )}
           </h1>
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "clamp(14px, 2vw, 17px)", lineHeight: 1.75, maxWidth: 580, margin: "0 auto" }}>
+          <p style={{ color: "var(--lp-text-muted)", fontSize: "clamp(14px, 2vw, 17px)", lineHeight: 1.75, maxWidth: 580, margin: "0 auto" }}>
             {t(
               "מאחורי ממשק המשתמש החלק מסתתרת ארכיטקטורה מורכבת. במאמר זה נפרט את הטכנולוגיה שמאפשרת לנו לספק תוצאות בזמן אמת.",
               "Behind the smooth UI lies a complex architecture. In this article we detail the technology that enables us to deliver real-time results."
@@ -147,17 +147,17 @@ export default function ArticlePage() {
               {/* Body — render newlines as paragraphs */}
               <div style={{ borderInlineStart: "2px solid rgba(99,102,241,0.3)", paddingInlineStart: 20 }}>
                 {t(sec.bodyHe, sec.bodyEn).split("\n\n").map((para, j) => (
-                  <p key={j} style={{ color: "rgba(255,255,255,0.68)", fontSize: "clamp(14px, 1.8vw, 16px)", lineHeight: 1.85, margin: "0 0 16px" }}>
+                  <p key={j} style={{ color: "var(--lp-text-muted)", fontSize: "clamp(14px, 1.8vw, 16px)", lineHeight: 1.85, margin: "0 0 16px" }}>
                     {para.split(/(\*\*[^*]+\*\*)/).map((chunk, k) =>
                       chunk.startsWith("**") && chunk.endsWith("**")
-                        ? <strong key={k} style={{ color: "#e2e8f0" }}>{chunk.slice(2, -2)}</strong>
+                        ? <strong key={k} style={{ color: "var(--lp-text)" }}>{chunk.slice(2, -2)}</strong>
                         : chunk
                     )}
                   </p>
                 ))}
               </div>
               {i < SECTIONS.length - 1 && (
-                <div style={{ height: 1, background: "rgba(255,255,255,0.06)", marginTop: 8 }} />
+                <div style={{ height: 1, background: "var(--lp-divider)", marginTop: 8 }} />
               )}
             </section>
           ))}
@@ -168,7 +168,7 @@ export default function ArticlePage() {
           <h3 style={{ fontSize: "clamp(18px, 3vw, 28px)", fontWeight: 800, margin: "0 0 14px" }}>
             {t("מוכן לראות את זה בפעולה?", "Ready to see it in action?")}
           </h3>
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 15, margin: "0 0 24px" }}>
+          <p style={{ color: "var(--lp-text-muted)", fontSize: 15, margin: "0 0 24px" }}>
             {t("הצטרף לניסיון חינמי של 14 יום — ללא כרטיס אשראי.", "Join a 14-day free trial — no credit card required.")}
           </p>
           <button
