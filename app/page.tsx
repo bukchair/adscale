@@ -567,10 +567,16 @@ export default function LandingPage() {
             <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, margin: "0 0 22px" }}>
               {t("BScale AI מגייסת Seed Round. נשמח לשתף נתונים, פייפליין ואסטרטגיה מלאה.", "BScale AI is raising a Seed Round. Happy to share data, pipeline, and full strategy.")}
             </p>
-            <a href="mailto:asher@bscale.ai"
-              style={{ display: "inline-block", background: "linear-gradient(135deg,#10b981,#059669)", border: "none", borderRadius: 10, padding: "12px 30px", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 20px rgba(16,185,129,0.35)" }}>
-              {t("שלח מייל ← asher@bscale.ai", "Contact → asher@bscale.ai")}
-            </a>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <a href="mailto:asher205@gmail.com"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#10b981,#059669)", borderRadius: 10, padding: "12px 24px", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 20px rgba(16,185,129,0.35)" }}>
+                ✉️ asher205@gmail.com
+              </a>
+              <a href="tel:0525640054"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "12px 24px", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
+                📞 052-5640054
+              </a>
+            </div>
           </div>
 
         </div>
@@ -616,7 +622,7 @@ export default function LandingPage() {
             ))}
           </div>
           <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, textAlign: "center", margin: 0 }}>
-            © 2025 BScale AI · {t("פותח ע״י", "Developed by")} <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{t("אשר בוקשפן", "Asher Bukchapan")}</span> · 052-5640054
+            © 2025 BScale AI · {t("פותח ע״י", "Developed by")} <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{t("אשר בוקשפן", "Asher Bukchapan")}</span> · <a href="tel:0525640054" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>052-5640054</a> · <a href="mailto:asher205@gmail.com" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>asher205@gmail.com</a>
           </p>
         </div>
       </footer>
