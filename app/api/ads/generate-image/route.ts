@@ -68,7 +68,7 @@ Rules:
       config: {
         numberOfImages: 1,
         aspectRatio: platformConfig.ratio as any,
-        safetyFilterLevel: "BLOCK_ONLY_HIGH",
+        safetyFilterLevel: "BLOCK_ONLY_HIGH" as any,
       },
     });
 
