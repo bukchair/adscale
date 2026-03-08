@@ -1,55 +1,70 @@
-export type Role = "admin" | "manager" | "editor" | "viewer";
+import {
+  isPlatformOwnerRegistered, setPlatformOwnerId,
+  createTenant, getTenantByOwnerId,
+  tenantConnectionsKey, tenantUsersKey,
+  getActiveTenantId,
+} from "./tenant";
+
+/* ═══════════════════════════════════════════════════════════════════
+   auth.ts — Authentication & Authorization
+   platformRole: "super_admin" (first user) | "tenant_owner" | "tenant_member"
+   role:         within-tenant RBAC role
+═══════════════════════════════════════════════════════════════════ */
+
+export type Role         = "admin" | "manager" | "editor" | "viewer";
+export type PlatformRole = "super_admin" | "tenant_owner" | "tenant_member";
 
 export interface AuthUser {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  role: Role;
-  company?: string;
-  createdAt: string;
-  googleId?: string;
+  id:            string;
+  name:          string;
+  email:         string;
+  avatar?:       string;
+  role:          Role;           // within-tenant role
+  platformRole:  PlatformRole;   // platform-level role
+  tenantId?:     string;         // undefined for super_admin
+  company?:      string;
+  createdAt:     string;
+  googleId?:     string;
 }
 
 export interface BusinessProfile {
-  storeName: string;
-  websiteUrl: string;
-  ownerName: string;
-  phone: string;
+  storeName:    string;
+  websiteUrl:   string;
+  ownerName:    string;
+  phone:        string;
   businessType: string;
-  industry: string;
-  country: string;
-  currency: string;
+  industry:     string;
+  country:      string;
+  currency:     string;
 }
 
 export interface Connection {
-  connected: boolean;
+  connected:    boolean;
   connectedAt?: string;
-  fields: Record<string, string>;
+  fields:       Record<string, string>;
 }
 
-const KEY_USER         = "bscale_user";
-const KEY_ONBOARDING   = "bscale_onboarding_done";
-const KEY_CONNECTIONS  = "bscale_connections";
-const KEY_BUSINESS     = "bscale_business";
-const KEY_FIRST_DONE   = "bscale_first_user_done";
-const KEY_ALL_USERS    = "bscale_all_users";
+const KEY_USER       = "bscale_user";
+const KEY_ONBOARDING = "bscale_onboarding_done";  // legacy — prefer tenant-scoped
+const KEY_BUSINESS   = "bscale_business";          // legacy — prefer tenant-scoped
+const KEY_FIRST_DONE = "bscale_first_user_done";   // kept for backwards-compat check
+const KEY_ALL_USERS  = "bscale_all_users";          // legacy global list
 
 export const ROLES: Record<Role, { he: string; en: string; color: string; bg: string; desc: string; descEn: string }> = {
-  admin:   { he: "מנהל מערכת", en: "Admin",   color: "#6366f1", bg: "#eef2ff", desc: "גישה מלאה לכל המודולים, ניהול משתמשים והגדרות", descEn: "Full access to all modules, user management and settings" },
-  manager: { he: "מנהל",       en: "Manager", color: "#10b981", bg: "#d1fae5", desc: "גישה לכל המודולים מלבד ניהול משתמשים",              descEn: "Access to all modules except user management" },
-  editor:  { he: "עורך",       en: "Editor",  color: "#f59e0b", bg: "#fef3c7", desc: "יצירה ועריכה של קמפיינים, creative ו-SEO",          descEn: "Create and edit campaigns, creative and SEO" },
-  viewer:  { he: "צופה",       en: "Viewer",  color: "#94a3b8", bg: "#f1f5f9", desc: "קריאה בלבד — ללא יכולת שינוי",                     descEn: "Read-only — no editing capabilities" },
+  admin:   { he: "מנהל",        en: "Admin",   color: "#6366f1", bg: "#eef2ff", desc: "גישה מלאה לכל המודולים, ניהול משתמשים והגדרות", descEn: "Full access to all modules, user management and settings" },
+  manager: { he: "מנהל ביניים", en: "Manager", color: "#10b981", bg: "#d1fae5", desc: "גישה לכל המודולים מלבד ניהול משתמשים",              descEn: "Access to all modules except user management" },
+  editor:  { he: "עורך",        en: "Editor",  color: "#f59e0b", bg: "#fef3c7", desc: "יצירה ועריכה של קמפיינים, creative ו-SEO",          descEn: "Create and edit campaigns, creative and SEO" },
+  viewer:  { he: "צופה",        en: "Viewer",  color: "#94a3b8", bg: "#f1f5f9", desc: "קריאה בלבד — ללא יכולת שינוי",                     descEn: "Read-only — no editing capabilities" },
 };
 
 export const MODULE_PERMISSIONS: Record<Role, string[]> = {
   admin:   ["*"],
-  manager: ["overview","profitability","budget","recommendations","search-terms","negative-keywords","seo","products","audiences","creative-lab","approvals","automation","audit-log","integrations"],
-  editor:  ["overview","recommendations","search-terms","negative-keywords","seo","products","audiences","creative-lab","approvals"],
-  viewer:  ["overview","profitability","budget","search-terms","seo","products","audiences","audit-log"],
+  manager: ["overview","profitability","budget","recommendations","search-terms","negative-keywords","seo","products","audiences","creative-lab","approvals","automation","audit-log","integrations","financial-reports"],
+  editor:  ["overview","recommendations","search-terms","negative-keywords","seo","products","audiences","creative-lab","approvals","financial-reports"],
+  viewer:  ["overview","profitability","budget","search-terms","seo","products","audiences","audit-log","financial-reports"],
 };
 
-/* ── User ───────────────────────────────────────────────────────── */
+/* ── Current user ───────────────────────────────────────────────── */
 export function getUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
   try { return JSON.parse(localStorage.getItem(KEY_USER) ?? "null"); } catch { return null; }
@@ -57,208 +72,268 @@ export function getUser(): AuthUser | null {
 export function setUser(user: AuthUser): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY_USER, JSON.stringify(user));
-  // Also update in all-users list
-  const all = getAllUsers();
-  const idx = all.findIndex(u => u.id === user.id);
-  if (idx >= 0) all[idx] = user; else all.push(user);
-  localStorage.setItem(KEY_ALL_USERS, JSON.stringify(all));
+  // Update in tenant-scoped users list
+  if (user.tenantId) {
+    const all = getAllUsers(user.tenantId);
+    const idx = all.findIndex(u => u.id === user.id);
+    if (idx >= 0) all[idx] = user; else all.push(user);
+    localStorage.setItem(tenantUsersKey(user.tenantId), JSON.stringify(all));
+  }
+  // Also update legacy global list
+  const legacy = _getLegacyAllUsers();
+  const li = legacy.findIndex(u => u.id === user.id);
+  if (li >= 0) legacy[li] = user; else legacy.push(user);
+  localStorage.setItem(KEY_ALL_USERS, JSON.stringify(legacy));
 }
 export function clearUser(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(KEY_USER);
   localStorage.removeItem(KEY_ONBOARDING);
-  localStorage.removeItem(KEY_CONNECTIONS);
 }
 
-/* ── First-user-admin logic ─────────────────────────────────────── */
+/* ── Platform-role helpers ──────────────────────────────────────── */
+export function isSuperAdmin(user: AuthUser | null): boolean {
+  return user?.platformRole === "super_admin";
+}
+export function isTenantOwner(user: AuthUser | null): boolean {
+  return user?.platformRole === "tenant_owner";
+}
+
+/* ── Backwards-compat first-user flag ──────────────────────────── */
 export function isFirstUser(): boolean {
   if (typeof window === "undefined") return false;
-  return !localStorage.getItem(KEY_FIRST_DONE);
+  return !isPlatformOwnerRegistered() && !localStorage.getItem(KEY_FIRST_DONE);
 }
 export function markFirstUserDone(): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY_FIRST_DONE, "1");
 }
 
-/* ── All users (for admin management) ──────────────────────────── */
-export function getAllUsers(): AuthUser[] {
+/* ── Per-tenant all-users list ─────────────────────────────────── */
+export function getAllUsers(tenantId?: string): AuthUser[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const key = tenantId ? tenantUsersKey(tenantId) : KEY_ALL_USERS;
+    return JSON.parse(localStorage.getItem(key) ?? "[]");
+  } catch { return []; }
+}
+function _getLegacyAllUsers(): AuthUser[] {
   if (typeof window === "undefined") return [];
   try { return JSON.parse(localStorage.getItem(KEY_ALL_USERS) ?? "[]"); } catch { return []; }
 }
-export function updateUserRole(userId: string, role: Role): void {
+export function updateUserRole(userId: string, role: Role, tenantId?: string): void {
   if (typeof window === "undefined") return;
-  const all = getAllUsers();
+  const key = tenantId ? tenantUsersKey(tenantId) : KEY_ALL_USERS;
+  const all = getAllUsers(tenantId);
   const idx = all.findIndex(u => u.id === userId);
-  if (idx >= 0) { all[idx].role = role; localStorage.setItem(KEY_ALL_USERS, JSON.stringify(all)); }
+  if (idx >= 0) { all[idx].role = role; localStorage.setItem(key, JSON.stringify(all)); }
 }
-export function removeUserById(userId: string): void {
+export function removeUserById(userId: string, tenantId?: string): void {
   if (typeof window === "undefined") return;
-  const all = getAllUsers().filter(u => u.id !== userId);
-  localStorage.setItem(KEY_ALL_USERS, JSON.stringify(all));
+  const key = tenantId ? tenantUsersKey(tenantId) : KEY_ALL_USERS;
+  localStorage.setItem(key, JSON.stringify(getAllUsers(tenantId).filter(u => u.id !== userId)));
 }
 
 /* ── Business profile ───────────────────────────────────────────── */
-export function getBusinessProfile(): BusinessProfile | null {
+export function getBusinessProfile(tenantId?: string): BusinessProfile | null {
   if (typeof window === "undefined") return null;
-  try { return JSON.parse(localStorage.getItem(KEY_BUSINESS) ?? "null"); } catch { return null; }
+  const key = tenantId ? `bscale_business_${tenantId}` : KEY_BUSINESS;
+  try { return JSON.parse(localStorage.getItem(key) ?? "null"); } catch { return null; }
 }
-export function setBusinessProfile(profile: BusinessProfile): void {
+export function setBusinessProfile(profile: BusinessProfile, tenantId?: string): void {
   if (typeof window === "undefined") return;
-  localStorage.setItem(KEY_BUSINESS, JSON.stringify(profile));
+  const key = tenantId ? `bscale_business_${tenantId}` : KEY_BUSINESS;
+  localStorage.setItem(key, JSON.stringify(profile));
 }
 
 /* ── Onboarding ─────────────────────────────────────────────────── */
-export function isOnboardingComplete(): boolean {
+export function isOnboardingComplete(tenantId?: string): boolean {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(KEY_ONBOARDING) === "1";
+  const key = tenantId ? `bscale_onboarding_${tenantId}` : KEY_ONBOARDING;
+  return localStorage.getItem(key) === "1";
 }
-export function completeOnboarding(): void {
+export function completeOnboarding(tenantId?: string): void {
   if (typeof window === "undefined") return;
+  const key = tenantId ? `bscale_onboarding_${tenantId}` : KEY_ONBOARDING;
+  localStorage.setItem(key, "1");
+  // Also set legacy key
   localStorage.setItem(KEY_ONBOARDING, "1");
 }
 
-/* ── Connections ────────────────────────────────────────────────── */
-export function getConnections(): Record<string, Connection> {
-  if (typeof window === "undefined") return {};
-  try { return JSON.parse(localStorage.getItem(KEY_CONNECTIONS) ?? "{}"); } catch { return {}; }
-}
-function notifyConnectionsChanged() {
-  window.dispatchEvent(new CustomEvent("bscale:connections-changed"));
+/* ── Connections — TENANT SCOPED ───────────────────────────────── */
+function _connKey(user?: AuthUser | null): string {
+  const u = user ?? getUser();
+  const activeTid = getActiveTenantId(u?.tenantId);
+  return activeTid ? tenantConnectionsKey(activeTid) : "bscale_connections";
 }
 
-/** Persist current localStorage connections to the server (keyed by user email). */
-async function syncToServer(all: Record<string, Connection>) {
+export function getConnections(user?: AuthUser | null): Record<string, Connection> {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(_connKey(user)) ?? "{}"); } catch { return {}; }
+}
+
+function notifyConnectionsChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("bscale:connections-changed"));
+  }
+}
+
+async function syncToServer(all: Record<string, Connection>, user?: AuthUser | null) {
   try {
-    const user = getUser();
-    if (!user?.email) return;
+    const u = user ?? getUser();
+    if (!u?.email) return;
     await fetch("/api/user/connections", {
       method: "PUT",
-      headers: { "Content-Type": "application/json", "x-user-email": user.email },
+      headers: { "Content-Type": "application/json", "x-user-email": u.email },
       body: JSON.stringify(all),
     });
-  } catch { /* silent — local still works */ }
+  } catch { /* silent */ }
 }
 
-/** Load connections from server and merge into localStorage (server wins on conflict).
- *  If local has connections that server doesn't know about, push them up too. */
 export async function loadConnectionsFromServer(): Promise<void> {
   if (typeof window === "undefined") return;
   try {
     const user = getUser();
     if (!user?.email) return;
-
-    const res = await fetch("/api/user/connections", {
-      headers: { "x-user-email": user.email },
-    });
+    const res = await fetch("/api/user/connections", { headers: { "x-user-email": user.email } });
     if (!res.ok) return;
-
     const serverConns: Record<string, Connection> = await res.json();
-    const local = getConnections();
-    const serverHasData = serverConns && Object.keys(serverConns).length > 0;
+    const local = getConnections(user);
+    const serverHasData = Object.keys(serverConns).length > 0;
     const localHasData  = Object.keys(local).length > 0;
-
     if (!serverHasData && !localHasData) return;
-
-    if (!serverHasData && localHasData) {
-      // Server file doesn't exist yet — push local connections up so mobile can see them
-      await syncToServer(local);
-      return; // localStorage already has the data; no need to write again
-    }
-
-    // Merge: server wins on conflicts (it's the cross-device source of truth)
+    if (!serverHasData && localHasData) { await syncToServer(local, user); return; }
     const merged = { ...local, ...serverConns };
-    localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(merged));
-
-    // If local had keys the server didn't, push the merged set back up
+    localStorage.setItem(_connKey(user), JSON.stringify(merged));
     const mergedKeys = Object.keys(merged);
     const serverKeys = Object.keys(serverConns);
-    if (mergedKeys.some(k => !serverKeys.includes(k))) {
-      await syncToServer(merged);
-    }
-
+    if (mergedKeys.some(k => !serverKeys.includes(k))) await syncToServer(merged, user);
     notifyConnectionsChanged();
   } catch { /* silent */ }
 }
 
 export function saveConnection(id: string, fields: Record<string, string>): void {
   if (typeof window === "undefined") return;
-  const all = getConnections();
+  const user = getUser();
+  const all = getConnections(user);
   all[id] = { connected: true, connectedAt: new Date().toISOString(), fields };
-  localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(all));
+  localStorage.setItem(_connKey(user), JSON.stringify(all));
   notifyConnectionsChanged();
-  void syncToServer(all);
+  void syncToServer(all, user);
 }
 export function removeConnection(id: string): void {
   if (typeof window === "undefined") return;
-  const all = getConnections();
+  const user = getUser();
+  const all = getConnections(user);
   delete all[id];
-  localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(all));
+  localStorage.setItem(_connKey(user), JSON.stringify(all));
   notifyConnectionsChanged();
-  void syncToServer(all);
+  void syncToServer(all, user);
 }
 export function clearConnections(): void {
   if (typeof window === "undefined") return;
-  localStorage.removeItem(KEY_CONNECTIONS);
+  const user = getUser();
+  localStorage.removeItem(_connKey(user));
   notifyConnectionsChanged();
-  void syncToServer({});
+  void syncToServer({}, user);
 }
 
 export function canAccess(user: AuthUser | null, moduleId: string): boolean {
   if (!user) return false;
+  if (user.platformRole === "super_admin") return true;
   const perms = MODULE_PERMISSIONS[user.role];
   return perms.includes("*") || perms.includes(moduleId);
 }
 
-/* ── Create user from Google OAuth data ─────────────────────────── */
-export function createOrLoginGoogleUser(googleId: string, name: string, email: string, avatar?: string): AuthUser {
-  const all = getAllUsers();
-  // Check if user already exists
-  const existing = all.find(u => u.googleId === googleId || u.email === email);
-  if (existing) {
-    setUser(existing);
-    return existing;
-  }
-  // Determine role: first user = admin
-  const role: Role = isFirstUser() ? "admin" : "viewer";
-  if (isFirstUser()) markFirstUserDone();
+/* ── Core registration logic ────────────────────────────────────── */
+function registerUser(id: string, name: string, email: string, avatar?: string, googleId?: string): AuthUser {
+  const allLegacy = _getLegacyAllUsers();
+  const existing = allLegacy.find(u => (googleId && u.googleId === googleId) || u.email === email);
+  if (existing) { setUser(existing); return existing; }
 
-  const newUser: AuthUser = {
-    id: "g_" + googleId,
-    name,
-    email,
-    avatar: avatar ?? "👤",
-    role,
-    googleId,
-    createdAt: new Date().toISOString(),
-  };
-  setUser(newUser);
-  return newUser;
+  let user: AuthUser;
+
+  if (!isPlatformOwnerRegistered()) {
+    // ── First user: becomes super_admin ──────────────────────────
+    user = {
+      id, name, email,
+      avatar: avatar ?? "👑",
+      role:         "admin",
+      platformRole: "super_admin",
+      tenantId:     undefined,  // super_admin has no tenant
+      createdAt:    new Date().toISOString(),
+      ...(googleId ? { googleId } : {}),
+    };
+    setPlatformOwnerId(id);
+    markFirstUserDone();
+    // Seed demo tenants so the admin panel looks populated
+    import("./tenant").then(m => m.seedDemoTenants());
+  } else {
+    // ── Subsequent user: becomes tenant_owner ────────────────────
+    const tenant = createTenant(id, name, email);
+    user = {
+      id, name, email,
+      avatar:       avatar ?? "👤",
+      role:         "admin",      // full access within their own tenant
+      platformRole: "tenant_owner",
+      tenantId:     tenant.id,
+      createdAt:    new Date().toISOString(),
+      ...(googleId ? { googleId } : {}),
+    };
+  }
+
+  setUser(user);
+  return user;
 }
 
-/* ── Mock Auth (fallback when Google not configured) ────────────── */
+/* ── Auth methods ───────────────────────────────────────────────── */
+export function createOrLoginGoogleUser(googleId: string, name: string, email: string, avatar?: string): AuthUser {
+  return registerUser("g_" + googleId, name, email, avatar, googleId);
+}
+
 export async function signInWithGoogle(): Promise<AuthUser> {
   await new Promise(r => setTimeout(r, 1200));
   const googleId = "mock_" + Math.random().toString(36).slice(2);
   return createOrLoginGoogleUser(googleId, "ישראל ישראלי", "israel@mystore.co.il", "🧑‍💼");
 }
+
 export async function signInWithEmail(email: string, _password: string): Promise<AuthUser> {
   await new Promise(r => setTimeout(r, 900));
   if (!email.includes("@")) throw new Error("invalid_email");
-  const all = getAllUsers();
+  const all = _getLegacyAllUsers();
   const existing = all.find(u => u.email === email);
   if (existing) { setUser(existing); return existing; }
-  const role: Role = isFirstUser() ? "admin" : "viewer";
-  if (isFirstUser()) markFirstUserDone();
-  const user: AuthUser = { id: "email_" + Date.now(), name: email.split("@")[0], email, avatar: "👤", role, createdAt: new Date().toISOString() };
-  setUser(user);
-  return user;
+  // New sign-in with unknown email = register them
+  return registerUser("email_" + Date.now(), email.split("@")[0], email);
 }
+
 export async function signUpWithEmail(name: string, email: string, _password: string): Promise<AuthUser> {
   await new Promise(r => setTimeout(r, 1000));
   if (!email.includes("@")) throw new Error("invalid_email");
-  const role: Role = isFirstUser() ? "admin" : "viewer";
-  if (isFirstUser()) markFirstUserDone();
-  const user: AuthUser = { id: "new_" + Date.now(), name, email, avatar: "👤", role, createdAt: new Date().toISOString() };
-  setUser(user);
+  return registerUser("new_" + Date.now(), name, email);
+}
+
+/** Invite a team member into an existing tenant (called from UsersModule) */
+export function inviteTenantMember(
+  tenantId: string,
+  name: string,
+  email: string,
+  role: Role
+): AuthUser {
+  const existing = getAllUsers(tenantId).find(u => u.email === email);
+  if (existing) return existing;
+  const user: AuthUser = {
+    id:           "member_" + Date.now(),
+    name, email,
+    avatar:       "👤",
+    role,
+    platformRole: "tenant_member",
+    tenantId,
+    createdAt:    new Date().toISOString(),
+  };
+  // Add to tenant's user list (don't set as current user)
+  const all = getAllUsers(tenantId);
+  all.push(user);
+  localStorage.setItem(tenantUsersKey(tenantId), JSON.stringify(all));
   return user;
 }
