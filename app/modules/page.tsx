@@ -411,7 +411,7 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
       <div style={{ padding: "18px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⚡</div>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>AdScale AI</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>BScale AI</div>
           <div style={{ fontSize: 11, color: C.textMuted }}>AI Growth OS</div>
         </div>
         {/* Dark mode toggle */}
@@ -485,14 +485,14 @@ export default function ModulesPage() {
   const [currentUser] = useState(() => getUser());
   const [connections, setConnections] = useState<Record<string, Connection>>({});
   const [isDark, setIsDark] = useState<boolean>(() =>
-    typeof window !== "undefined" && localStorage.getItem("adscale_theme") === "dark"
+    typeof window !== "undefined" && localStorage.getItem("bscale_theme") === "dark"
   );
   const router = useRouter();
 
   // Apply dark/light theme to document
   useEffect(() => {
     document.documentElement.dataset.theme = isDark ? "dark" : "";
-    localStorage.setItem("adscale_theme", isDark ? "dark" : "light");
+    localStorage.setItem("bscale_theme", isDark ? "dark" : "light");
   }, [isDark]);
 
   // Load connections on mount + refresh when switching to integrations tab
@@ -569,11 +569,11 @@ export default function ModulesPage() {
           <button className="as-mobile-only" onClick={() => setDrawerOpen(true)} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", cursor: "pointer", fontSize: 18, color: C.textSub }}>☰</button>
 
           {/* Mobile logo */}
-          <div className="as-mobile-only" style={{ flex: 1, fontSize: 16, fontWeight: 700, color: C.text }}>⚡ AdScale</div>
+          <div className="as-mobile-only" style={{ flex: 1, fontSize: 16, fontWeight: 700, color: C.text }}>⚡ BScale</div>
 
           {/* Desktop: breadcrumb */}
           <div className="as-desktop-only" style={{ flex: 1, alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 13, color: C.textMuted }}>AdScale</span>
+            <span style={{ fontSize: 13, color: C.textMuted }}>BScale</span>
             <span style={{ fontSize: 13, color: C.textMuted, margin: "0 4px" }}>/</span>
             <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{activeItem.icon} {lang === "he" ? activeItem.he : activeItem.en}</span>
           </div>

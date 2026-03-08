@@ -502,7 +502,7 @@ export default function OnboardingPage() {
         <div style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,10,20,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚡</div>
-            <span style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>AdScale AI</span>
+            <span style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>BScale AI</span>
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             {[0, 1, 2, 3, 4].map(i => (
@@ -543,7 +543,7 @@ export default function OnboardingPage() {
       <div style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(10,10,20,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: 9, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚡</div>
-          <span style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>AdScale AI</span>
+          <span style={{ fontWeight: 800, fontSize: 16, color: "#fff" }}>BScale AI</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {[0, 1, 2, 3, 4].map(i => (

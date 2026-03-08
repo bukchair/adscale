@@ -1,5 +1,5 @@
 // ============================================================
-// AdScale Backend API Client
+// BScale Backend API Client
 // ============================================================
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
@@ -12,15 +12,15 @@ class ApiClient {
     this.token = token;
     this.orgId = orgId;
     if (typeof window !== "undefined") {
-      localStorage.setItem("adscale_token", token);
-      localStorage.setItem("adscale_org", orgId);
+      localStorage.setItem("bscale_token", token);
+      localStorage.setItem("bscale_org", orgId);
     }
   }
 
   loadAuth() {
     if (typeof window !== "undefined") {
-      this.token = localStorage.getItem("adscale_token");
-      this.orgId = localStorage.getItem("adscale_org");
+      this.token = localStorage.getItem("bscale_token");
+      this.orgId = localStorage.getItem("bscale_org");
     }
   }
 

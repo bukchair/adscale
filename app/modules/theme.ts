@@ -1,4 +1,4 @@
-// AdScale – dynamic theme using CSS custom properties
+// BScale – dynamic theme using CSS custom properties
 // Works with both light and dark themes defined in globals.css
 export const C = {
   // Page structure

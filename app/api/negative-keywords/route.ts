@@ -122,7 +122,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Find existing AdScale negative keyword list
+    // Find existing BScale negative keyword list
     const listQuery = `
       SELECT shared_set.id, shared_set.name
       FROM shared_set
@@ -136,7 +136,7 @@ export async function GET(req: NextRequest) {
 
     if (listRes.ok) {
       const listData = await listRes.json();
-      const found = (listData.results || []).find((r: any) => r.sharedSet?.name?.includes("AdScale"));
+      const found = (listData.results || []).find((r: any) => r.sharedSet?.name?.includes("BScale"));
       if (found) existingList = { id: found.sharedSet.id, name: found.sharedSet.name };
     }
   } catch (e) {

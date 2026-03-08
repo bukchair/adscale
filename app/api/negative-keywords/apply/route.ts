@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No keywords provided" }, { status: 400 });
   }
 
-  const LIST_NAME = "AdScale - מילות שליליות";
+  const LIST_NAME = "BScale - מילות שליליות";
 
   let accessToken: string;
   try {

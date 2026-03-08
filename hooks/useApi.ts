@@ -1,5 +1,5 @@
 /**
- * Generic API hook for the AdScale backend.
+ * Generic API hook for the BScale backend.
  * Usage: const { data, loading, error, refetch } = useApi<T>("/recommendations", params)
  */
 "use client";
@@ -9,7 +9,7 @@ const BACKEND = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:4000";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("adscale_token");
+  return localStorage.getItem("bscale_token");
 }
 
 export function useApi<T>(

@@ -16,7 +16,7 @@ async function checkWooCommerce(): Promise<IntegrationStatus> {
     return { name: "WooCommerce", key: "WOOCOMMERCE_URL", status: "disconnected", message: "WOOCOMMERCE_URL לא מוגדר" };
   }
   try {
-    const res = await fetch(`${url}/wp-json/adscale/v1/summary`, { signal: AbortSignal.timeout(6000) });
+    const res = await fetch(`${url}/wp-json/bscale/v1/summary`, { signal: AbortSignal.timeout(6000) });
     if (res.ok) {
       return { name: "WooCommerce", key: "WOOCOMMERCE_URL", status: "connected", message: "מחובר", detail: url.replace(/https?:\/\//, "") };
     }

@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
 // /tmp is writable on Vercel serverless; .data is fallback for local dev
-const TMP_PATH = join("/tmp", "adscale_connections.json");
+const TMP_PATH = join("/tmp", "bscale_connections.json");
 const LOCAL_PATH = join(process.cwd(), ".data", "connections.json");
 
 // Global in-memory store — survives across requests on the same warm instance

@@ -10,9 +10,9 @@ function getKey(): Buffer {
   const raw = process.env.ENCRYPTION_KEY;
   if (!raw) {
     // Safe dev fallback — never acceptable in production
-    return Buffer.alloc(32, "adscale-dev-key-000000000000000");
+    return Buffer.alloc(32, "bscale-dev-key-000000000000000");
   }
-  return scryptSync(raw, "adscale-v1-salt", 32);
+  return scryptSync(raw, "bscale-v1-salt", 32);
 }
 
 export function encrypt(plaintext: string): string {
