@@ -134,6 +134,13 @@ export function useDashboard(from: string, to?: string) {
     fetchData();
   }, [from, to, tick]);
 
+  // Re-fetch whenever connections change (e.g. after cross-device sync loads from server)
+  useEffect(() => {
+    const handler = () => setTick(t => t + 1);
+    window.addEventListener("bscale:connections-changed", handler);
+    return () => window.removeEventListener("bscale:connections-changed", handler);
+  }, []);
+
   const refetch = () => {
     setTick(t => t + 1);
   };

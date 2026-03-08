@@ -483,7 +483,9 @@ export default function ModulesPage() {
   const [preset, setPreset] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentUser] = useState(() => getUser());
-  const [connections, setConnections] = useState<Record<string, Connection>>({});
+  const [connections, setConnections] = useState<Record<string, Connection>>(() => getConnections());
+  // true while fetching connections from server (prevents modules from loading with empty connections)
+  const [connReady, setConnReady] = useState(false);
   const [isDark, setIsDark] = useState<boolean>(() =>
     typeof window !== "undefined" && localStorage.getItem("bscale_theme") === "dark"
   );
@@ -495,13 +497,15 @@ export default function ModulesPage() {
     localStorage.setItem("bscale_theme", isDark ? "dark" : "light");
   }, [isDark]);
 
-  // On mount: pull connections from server (cross-device sync), then refresh on tab switch
+  // On mount: pull connections from server first, THEN mark as ready so modules load with real data
   useEffect(() => {
-    loadConnectionsFromServer().then(() => setConnections(getConnections()));
+    loadConnectionsFromServer()
+      .then(() => setConnections(getConnections()))
+      .finally(() => setConnReady(true));
   }, []);
   useEffect(() => {
-    setConnections(getConnections());
-  }, [activeTab]);
+    if (connReady) setConnections(getConnections());
+  }, [activeTab, connReady]);
 
   // Real-time sync: listen for any connection change from anywhere in the app
   useEffect(() => {
@@ -642,21 +646,31 @@ export default function ModulesPage() {
 
         {/* ── Module content ────────────────────────────────────── */}
         <div className="as-content" style={{ flex: 1, background: C.pageBg }}>
-          {activeTab === "overview"          && <OverviewModule lang={lang} />}
-          {activeTab === "recommendations"   && <RecommendationsModule lang={lang} />}
-          {activeTab === "search-terms"      && <SearchTermsModule lang={lang} />}
-          {activeTab === "negative-keywords" && <NegativeKeywordsModule lang={lang} />}
-          {activeTab === "profitability"     && <ProfitabilityModule lang={lang} />}
-          {activeTab === "budget"            && <BudgetModule lang={lang} />}
-          {activeTab === "creative-lab"      && <CreativeLabModule lang={lang} />}
-          {activeTab === "seo"               && <SEOModule lang={lang} />}
-          {activeTab === "products"          && <ProductsModule lang={lang} />}
-          {activeTab === "audiences"         && <AudiencesModule lang={lang} />}
-          {activeTab === "approvals"         && <ApprovalsModule lang={lang} />}
-          {activeTab === "audit-log"         && <AuditLogModule lang={lang} />}
-          {activeTab === "automation"        && <AutomationModule lang={lang} />}
-          {activeTab === "integrations"      && <IntegrationsModule lang={lang} onConnectionsChanged={() => setConnections(getConnections())} />}
-          {activeTab === "users"             && <UsersModule lang={lang} />}
+          {!connReady ? (
+            /* Wait for cross-device connection sync before mounting modules */
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", gap: 12, color: C.textMuted, fontSize: 14 }}>
+              <div style={{ width: 20, height: 20, border: `2px solid ${C.accent}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              {lang === "he" ? "טוען חיבורים..." : "Loading connections..."}
+            </div>
+          ) : (
+            <>
+              {activeTab === "overview"          && <OverviewModule lang={lang} />}
+              {activeTab === "recommendations"   && <RecommendationsModule lang={lang} />}
+              {activeTab === "search-terms"      && <SearchTermsModule lang={lang} />}
+              {activeTab === "negative-keywords" && <NegativeKeywordsModule lang={lang} />}
+              {activeTab === "profitability"     && <ProfitabilityModule lang={lang} />}
+              {activeTab === "budget"            && <BudgetModule lang={lang} />}
+              {activeTab === "creative-lab"      && <CreativeLabModule lang={lang} />}
+              {activeTab === "seo"               && <SEOModule lang={lang} />}
+              {activeTab === "products"          && <ProductsModule lang={lang} />}
+              {activeTab === "audiences"         && <AudiencesModule lang={lang} />}
+              {activeTab === "approvals"         && <ApprovalsModule lang={lang} />}
+              {activeTab === "audit-log"         && <AuditLogModule lang={lang} />}
+              {activeTab === "automation"        && <AutomationModule lang={lang} />}
+              {activeTab === "integrations"      && <IntegrationsModule lang={lang} onConnectionsChanged={() => setConnections(getConnections())} />}
+              {activeTab === "users"             && <UsersModule lang={lang} />}
+            </>
+          )}
         </div>
 
         {/* ── Mobile bottom nav ────────────────────────────────── */}
