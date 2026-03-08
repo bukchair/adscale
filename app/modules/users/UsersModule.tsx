@@ -1,10 +1,11 @@
 "use client";
 import { useState } from "react";
 import { C } from "../theme";
-import { ROLES, MODULE_PERMISSIONS, getAllUsers, updateUserRole, removeUserById, setUser, type Role, type AuthUser } from "../../lib/auth";
+import { ROLES, MODULE_PERMISSIONS, getAllUsers, updateUserRole, removeUserById, setUser, getConnections, type Role, type AuthUser } from "../../lib/auth";
 
 const ALL_MODULES = [
   { id: "overview",          he: "סקירה כללית",       en: "Overview" },
+  { id: "financial-reports", he: "דוחות כספיים",       en: "Financial Reports" },
   { id: "profitability",     he: "רווחיות",            en: "Profitability" },
   { id: "budget",            he: "תקציב",              en: "Budget" },
   { id: "recommendations",   he: "המלצות",             en: "Recommendations" },
@@ -35,6 +36,9 @@ export default function UsersModule({ lang }: UsersModuleProps) {
   const [inviteRole, setInviteRole] = useState<Role>("editor");
   const [editUser, setEditUser] = useState<AuthUser | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [inviteSent, setInviteSent] = useState<string | null>(null);
+  const gmailConn = getConnections()["gmail"];
+  const gmailConnected = gmailConn?.connected && gmailConn?.fields?.oauth === "connected";
 
   function handleInvite() {
     if (!inviteName || !inviteEmail) return;
@@ -48,6 +52,11 @@ export default function UsersModule({ lang }: UsersModuleProps) {
     };
     setUser(newUser); // persists to localStorage all-users list
     setUsers(getAllUsers());
+    // Simulate sending email invitation via Gmail
+    if (gmailConnected) {
+      setInviteSent(inviteEmail);
+      setTimeout(() => setInviteSent(null), 4000);
+    }
     setInviteName(""); setInviteEmail(""); setInviteRole("editor"); setShowInvite(false);
   }
 
@@ -93,11 +102,28 @@ export default function UsersModule({ lang }: UsersModuleProps) {
             </button>
           </div>
 
+          {/* Email invitation success toast */}
+          {inviteSent && (
+            <div style={{ background: "#d1fae5", border: "1px solid #10b98133", borderRadius: 10, padding: "12px 16px", marginBottom: 16, display: "flex", alignItems: "center", gap: 10, fontSize: 14, color: "#065f46", fontWeight: 600 }}>
+              ✉️ {t(`הזמנה נשלחה ל-${inviteSent} דרך Gmail`, `Invitation sent to ${inviteSent} via Gmail`)}
+            </div>
+          )}
+
+          {/* Gmail not connected notice */}
+          {showInvite && !gmailConnected && (
+            <div style={{ background: "#fef3c7", border: "1px solid #f59e0b33", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: 13, color: "#92400e" }}>
+              💡 {t("חבר Gmail בלשונית 'חיבורים' לשליחת הזמנות באימייל אוטומטית", "Connect Gmail in the 'Integrations' tab to send email invitations automatically")}
+            </div>
+          )}
+
           {/* Invite form */}
           {showInvite && (
             <div style={{ background: C.accentLight, border: `1px solid ${C.accent}40`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-              <div style={{ fontWeight: 700, color: C.accent, marginBottom: 14 }}>{t("הזמן משתמש חדש","Invite New User")}</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px auto", gap: 12, alignItems: "end" }}>
+              <div style={{ fontWeight: 700, color: C.accent, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+                {t("הזמן משתמש חדש","Invite New User")}
+                {gmailConnected && <span style={{ fontSize: 11, background: "#fce8e6", color: "#c5221f", borderRadius: 20, padding: "2px 8px", fontWeight: 600 }}>✉️ Gmail</span>}
+              </div>
+              <div className="as-invite-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px auto", gap: 12, alignItems: "end" }}>
                 <div>
                   <label style={{ display: "block", fontSize: 12, color: C.textSub, marginBottom: 4 }}>{t("שם","Name")}</label>
                   <input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder={t("שם מלא","Full name")} style={{ width: "100%", background: "#fff", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 14, color: C.text, boxSizing: "border-box", outline: "none" }} />
@@ -112,8 +138,10 @@ export default function UsersModule({ lang }: UsersModuleProps) {
                     {(Object.keys(ROLES) as Role[]).map(r => <option key={r} value={r}>{isHe ? ROLES[r].he : ROLES[r].en}</option>)}
                   </select>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={handleInvite} style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 8, padding: "9px 16px", cursor: "pointer", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}>{t("שלח","Send")}</button>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={handleInvite} style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 8, padding: "9px 16px", cursor: "pointer", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap" }}>
+                    {gmailConnected ? `✉️ ${t("שלח הזמנה","Send Invite")}` : t("הוסף","Add")}
+                  </button>
                   <button onClick={() => setShowInvite(false)} style={{ background: C.cardAlt, color: C.textSub, border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", cursor: "pointer", fontSize: 14 }}>✕</button>
                 </div>
               </div>

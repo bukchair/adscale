@@ -18,6 +18,7 @@ import SEOModule from "./seo/SEOModule";
 import ProductsModule from "./products/ProductsModule";
 import AudiencesModule from "./audiences/AudiencesModule";
 import UsersModule from "./users/UsersModule";
+import FinancialReportsModule from "./financial-reports/FinancialReportsModule";
 import { getUser, clearUser, getConnections, loadConnectionsFromServer, type Connection } from "../lib/auth";
 
 export type Lang = "he" | "en";
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { id: "products",          icon: "🛍️", he: "מוצרים",          en: "Products",            group: "growth" },
   { id: "audiences",         icon: "👥", he: "קהלים",            en: "Audiences",           group: "growth" },
   { id: "creative-lab",      icon: "✍️", he: "Creative Lab",    en: "Creative Lab",        group: "growth" },
+  { id: "financial-reports",  icon: "💹", he: "דוחות כספיים",   en: "Financial Reports",   group: "performance" },
   { id: "approvals",         icon: "✅", he: "אישורים",         en: "Approvals",           group: "manage" },
   { id: "automation",        icon: "⚙️", he: "אוטומציה",       en: "Automation",          group: "manage" },
   { id: "audit-log",         icon: "📋", he: "יומן פעולות",     en: "Audit Log",           group: "manage" },
@@ -69,6 +71,7 @@ const BADGES: Partial<Record<TabId, { count: number; color: string }>> = {
   seo:                 { count: 12, color: "#ef4444"  },
   "negative-keywords": { count: 8,  color: "#f97316" },
   audiences:           { count: 1,  color: "#3b82f6"  },
+  "financial-reports": { count: 3,  color: "#10b981"  },
 };
 
 /* ── Connection platform definitions ───────────────────────────── */
@@ -178,6 +181,16 @@ const CONN_PLATFORMS: ConnPlatform[] = [
     missingImpactHe: "ניתוח AI מעמיק ואסטרטגיה לא זמינים.",
     missingImpactEn: "Deep AI analysis and strategy unavailable.",
   },
+  {
+    id: "gmail", name: "Gmail", shortName: "Gmail", icon: "✉️", color: "#ea4335",
+    fields: ["client_id", "client_secret", "sender_email"],
+    affectsHe: ["דוחות כספיים", "משתמשים", "אוטומציה"],
+    affectsEn: ["Financial Reports", "Users", "Automation"],
+    impactHe: "שליחת דוחות אוטומטיים, עדכונים והזמנות משתמשים באימייל",
+    impactEn: "Send automated reports, updates and user invitations by email",
+    missingImpactHe: "שליחת דוחות ועדכונים באימייל לא זמינה.",
+    missingImpactEn: "Email reports and updates unavailable.",
+  },
 ];
 
 function getConnectionQuality(platform: ConnPlatform, conn: Connection | undefined): number {
@@ -208,9 +221,9 @@ function ConnectionDetailPopup({
   const dash = circ * (quality / 100);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 130 }}
+    <div style={{ position: "fixed", inset: 0, zIndex: 999, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "clamp(60px, 10vh, 130px)", paddingLeft: 12, paddingRight: 12 }}
       onClick={onClose}>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 340, boxShadow: C.shadowLg, position: "relative" }}
+      <div className="as-popup-mobile" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 340, maxWidth: "calc(100vw - 24px)", boxShadow: C.shadowLg, position: "relative" }}
         onClick={e => e.stopPropagation()}>
         <button onClick={onClose} style={{ position: "absolute", top: 12, insetInlineEnd: 12, background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textMuted }}>✕</button>
 
@@ -541,7 +554,7 @@ export default function ModulesPage() {
     setDrawerOpen(false);
   }
 
-  const BOTTOM_TABS: TabId[] = ["overview", "recommendations", "seo", "products", "integrations"];
+  const BOTTOM_TABS: TabId[] = ["overview", "financial-reports", "seo", "products", "integrations"];
 
   const sidebarProps = {
     lang, active: activeTab, onSelect: handleSelect, onLangChange: setLang,
@@ -628,7 +641,7 @@ export default function ModulesPage() {
         <ConnectionStatusBar lang={lang} connections={connections} onGoToConnections={goToConnections} />
 
         {/* ── Stats bar ─────────────────────────────────────────── */}
-        <div style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "12px 20px", flexShrink: 0 }}>
+        <div className="as-stats-bar" style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "12px 20px", flexShrink: 0 }}>
           <div className="as-stats-grid">
             {metrics.map((m, i) => (
               <div key={i} style={{ background: m.bg, border: `1px solid ${m.borderColor}`, borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
@@ -655,6 +668,7 @@ export default function ModulesPage() {
           ) : (
             <>
               {activeTab === "overview"          && <OverviewModule lang={lang} />}
+              {activeTab === "financial-reports" && <FinancialReportsModule lang={lang} />}
               {activeTab === "recommendations"   && <RecommendationsModule lang={lang} />}
               {activeTab === "search-terms"      && <SearchTermsModule lang={lang} />}
               {activeTab === "negative-keywords" && <NegativeKeywordsModule lang={lang} />}
