@@ -15,7 +15,7 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: "01", title: "התחבר את הפלטפורמות", titleEn: "Connect Your Platforms", desc: "חבר את חשבונות הפרסום, החנות ו-Analytics שלך בכמה קליקים", descEn: "Connect your ad accounts, store, and analytics in a few clicks" },
+  { num: "01", title: "מחברים את הפלטפורמות", titleEn: "Connect Your Platforms", desc: "חבר את חשבונות הפרסום, החנות ו-Analytics שלך בכמה קליקים", descEn: "Connect your ad accounts, store, and analytics in a few clicks" },
   { num: "02", title: "ה-AI מנתח ולומד", titleEn: "AI Analyzes & Learns", desc: "המערכת סורקת את הנתונים ההיסטוריים שלך ומזהה הזדמנויות שיפור", descEn: "The system scans your historical data and identifies improvement opportunities" },
   { num: "03", title: "צמח עם המלצות חכמות", titleEn: "Grow with Smart Recommendations", desc: "קבל המלצות בזמן אמת, יישם בלחיצה אחת וצפה בתוצאות מיידיות", descEn: "Get real-time recommendations, apply with one click, and watch results improve immediately" },
 ];
