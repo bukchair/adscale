@@ -21,9 +21,18 @@ const STEPS = [
 ];
 
 const PLANS = [
-  { name: "Starter", nameHe: "סטארטר", price: "$49", period: "/ חודש", color: "#6366f1", features: ["עד 3 ערוצי פרסום", "AI Creative Lab", "דוחות כספיים + SEO", "חיבור Gmail", "תמיכה באימייל"], featuresEn: ["Up to 3 ad channels", "AI Creative Lab", "Financial + SEO reports", "Gmail connect", "Email support"] },
-  { name: "Growth", nameHe: "גדילה", price: "$149", period: "/ חודש", color: "#10b981", popular: true, features: ["ערוצים ללא הגבלה", "SEO & GEO מתקדם", "אוטומציה", "ניהול קהלים", "דוחות אוטומטיים", "תמיכה עדיפות"], featuresEn: ["Unlimited channels", "Advanced SEO & GEO", "Automation", "Audience management", "Auto reports via Gmail", "Priority support"] },
-  { name: "Scale", nameHe: "סקייל", price: "$349", period: "/ חודש", color: "#8b5cf6", features: ["הכל ב-Growth", "Multi-account", "API גישה", "CSM ייעודי", "SLA מובטח"], featuresEn: ["Everything in Growth", "Multi-account", "API access", "Dedicated CSM", "Guaranteed SLA"] },
+  {
+    name: "Professional", nameHe: "פרופשיונל", price: "$200", period: "/ חודש", color: "#6366f1",
+    tagHe: "למותגים וחנויות", tagEn: "For brands & stores",
+    features: ["כל ערוצי הפרסום (Google, Meta, TikTok)", "AI Creative Lab", "SEO & GEO מתקדם", "ניהול קהלים + Lookalike", "דוחות כספיים + SEO", "אוטומציה מבוססת כללים", "חיבור WooCommerce / Shopify", "Gmail — דוחות אוטומטיים", "תמיכה עדיפות"],
+    featuresEn: ["All ad channels (Google, Meta, TikTok)", "AI Creative Lab", "Advanced SEO & GEO", "Audience management + Lookalike", "Financial + SEO reports", "Rule-based automation", "WooCommerce / Shopify integration", "Gmail — automated reports", "Priority support"],
+  },
+  {
+    name: "Enterprise", nameHe: "אנטרפרייז", price: "$500", period: "/ חודש", color: "#10b981", popular: true,
+    tagHe: "לסוכנויות דיגיטל", tagEn: "For digital agencies",
+    features: ["הכל ב-Professional", "ניהול ריבוי חנויות", "לוח בקרה לסוכנות", "API גישה מלאה", "דוחות White-label", "CSM ייעודי", "SLA מובטח", "הדרכה ואונבורדינג VIP"],
+    featuresEn: ["Everything in Professional", "Multi-store management", "Agency dashboard", "Full API access", "White-label reports", "Dedicated CSM", "Guaranteed SLA", "VIP onboarding & training"],
+  },
 ];
 
 const STATS = [
@@ -53,9 +62,10 @@ export default function LandingPage() {
   }, [router]);
 
   const navLinks: [string, string][] = [
-    ["features", t("יכולות", "Features")],
-    ["how",      t("איך זה עובד", "How it works")],
-    ["pricing",  t("תמחור", "Pricing")],
+    ["features",  t("יכולות", "Features")],
+    ["how",       t("איך זה עובד", "How it works")],
+    ["pricing",   t("תמחור", "Pricing")],
+    ["investors", t("משקיעים", "Investors")],
   ];
 
   return (
@@ -328,7 +338,8 @@ export default function LandingPage() {
                   {t("הכי פופולרי", "Most Popular")}
                 </div>
               )}
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>{t(p.nameHe, p.name)}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 4 }}>{t(p.nameHe, p.name)}</div>
+              <div style={{ fontSize: 12, color: p.color, fontWeight: 600, marginBottom: 14 }}>{t((p as any).tagHe, (p as any).tagEn)}</div>
               <div style={{ fontSize: "clamp(32px, 5vw, 42px)", fontWeight: 900, color: p.color, marginBottom: 2 }}>{p.price}</div>
               <div style={{ fontSize: 13, color: "rgba(255,255,255,0.38)", marginBottom: 24 }}>{p.period}</div>
               <ul style={{ listStyle: "none", padding: 0, margin: "0 0 24px", display: "flex", flexDirection: "column", gap: 9 }}>
@@ -399,6 +410,179 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════
+          INVESTOR SECTION
+      ══════════════════════════════════════════ */}
+      <section id="investors" style={{ padding: "80px 20px", background: "rgba(16,185,129,0.03)", borderTop: "1px solid rgba(16,185,129,0.1)" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+
+          {/* Header */}
+          <div style={{ textAlign: "center", marginBottom: 56 }}>
+            <div style={{ display: "inline-block", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 20, padding: "6px 18px", fontSize: 12, color: "#34d399", letterSpacing: 1, textTransform: "uppercase" as const, fontWeight: 700, marginBottom: 18 }}>
+              {t("פולדר צמיחה למשקיע", "Investor Growth Folder")}
+            </div>
+            <h2 style={{ fontSize: "clamp(24px, 4vw, 44px)", fontWeight: 800, margin: "0 0 14px" }}>
+              {t("BScale AI — הזדמנות השקעה", "BScale AI — Investment Opportunity")}
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "clamp(14px, 2vw, 17px)", maxWidth: 600, margin: "0 auto" }}>
+              {t(
+                "מערכת הפעלה לצמיחה (Growth OS) מבוססת AI לחנויות WooCommerce — שוק של מיליארדי דולרים עם מודל SaaS רווחי",
+                "AI-powered Growth Operating System for WooCommerce stores — a multi-billion dollar market with a profitable SaaS model"
+              )}
+            </p>
+          </div>
+
+          {/* TAM / SAM / SOM */}
+          <div style={{ marginBottom: 52 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 22, textAlign: "center" }}>
+              {t("ניתוח שוק", "Market Analysis")}
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 18 }}>
+              {[
+                {
+                  label: "TAM", sublabel: t("כלל השוק האפשרי", "Total Addressable Market"),
+                  value: "$10.9B", note: t("4.53M חנויות WooCommerce × $200/חודש × 12", "4.53M WooCommerce stores × $200/mo × 12"),
+                  color: "#6366f1",
+                },
+                {
+                  label: "SAM", sublabel: t("שוק ניתן לשירות", "Serviceable Addressable Market"),
+                  value: "$1.6B", note: t("~15% מהחנויות עם תקציב שיווק פעיל ($1K–$50K/חודש)", "~15% of stores with active $1K–$50K/mo marketing budget"),
+                  color: "#8b5cf6",
+                },
+                {
+                  label: "SOM", sublabel: t("יעד חדירה ריאלי — 1%", "Realistic Penetration — 1%"),
+                  value: "$16M ARR", note: t("~6,800 לקוחות × $200/חודש — יעד שנה 3", "~6,800 customers × $200/mo — Year 3 target"),
+                  color: "#10b981",
+                },
+              ].map((item, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${item.color}30`, borderRadius: 16, padding: "26px 22px" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontSize: 22, fontWeight: 900, color: item.color }}>{item.label}</span>
+                    <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{item.sublabel}</span>
+                  </div>
+                  <div style={{ fontSize: "clamp(26px, 4vw, 34px)", fontWeight: 900, color: "#fff", marginBottom: 10 }}>{item.value}</div>
+                  <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, margin: 0 }}>{item.note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Financial projections */}
+          <div style={{ marginBottom: 52 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 22, textAlign: "center" }}>
+              {t("תחזית פיננסית 3 שנים", "3-Year Financial Projections")}
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+              {[
+                {
+                  year: t("שנה 1", "Year 1"), customers: "500", arr: "$1.5M",
+                  metrics: [
+                    { k: t("רווח גולמי", "Gross Margin"), v: "~75%" },
+                    { k: t("Churn חודשי", "Monthly Churn"), v: "<3%" },
+                    { k: t("COGS ללקוח", "COGS per customer"), v: "$60" },
+                  ],
+                  color: "#6366f1", glow: false,
+                },
+                {
+                  year: t("שנה 2", "Year 2"), customers: "2,000", arr: "$5.5M",
+                  metrics: [
+                    { k: "MoM Growth", v: "~15%" },
+                    { k: "LTV", v: "~$7,200" },
+                    { k: "CAC Payback", v: "<6 mo" },
+                  ],
+                  color: "#8b5cf6", glow: false,
+                },
+                {
+                  year: t("שנה 3", "Year 3"), customers: "5,000", arr: "$15M",
+                  metrics: [
+                    { k: t("ARR יעד", "ARR Target"), v: "$15M" },
+                    { k: t("רווח נקי", "Net Margin"), v: ">40%" },
+                    { k: "NRR", v: ">120%" },
+                  ],
+                  color: "#10b981", glow: true,
+                },
+              ].map((yr, i) => (
+                <div key={i} style={{
+                  background: yr.glow ? "rgba(16,185,129,0.07)" : "rgba(255,255,255,0.03)",
+                  border: `1px solid ${yr.color}40`,
+                  borderRadius: 16, padding: "26px 22px",
+                  boxShadow: yr.glow ? `0 0 30px ${yr.color}18` : "none",
+                }}>
+                  <div style={{ fontSize: 12, color: yr.color, fontWeight: 700, letterSpacing: 0.5, marginBottom: 8 }}>{yr.year}</div>
+                  <div style={{ fontSize: "clamp(26px, 4vw, 34px)", fontWeight: 900, color: yr.color, marginBottom: 2 }}>{yr.arr}</div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 18 }}>{yr.customers} {t("לקוחות", "customers")}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {yr.metrics.map((m, j) => (
+                      <div key={j} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5 }}>
+                        <span style={{ color: "rgba(255,255,255,0.45)" }}>{m.k}</span>
+                        <span style={{ color: "#fff", fontWeight: 700 }}>{m.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* GTM strategy */}
+          <div style={{ marginBottom: 44 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#34d399", letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 22, textAlign: "center" }}>
+              {t("אסטרטגיית חדירה לשוק (GTM)", "Go-To-Market Strategy")}
+            </h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+              {[
+                {
+                  icon: "🤝", title: t("שותפויות עם סוכנויות", "Agency Partnerships"),
+                  desc: t("500 הלקוחות הראשונים דרך שותפויות עם סוכנויות דיגיטל המנהלות חנויות WooCommerce — Channel effect מיידי", "First 500 customers via partnerships with digital agencies managing WooCommerce stores — immediate channel effect"),
+                },
+                {
+                  icon: "📧", title: t("דיוור ישיר למותגי איקומרס", "Direct Outreach to E-Commerce Brands"),
+                  desc: t("קמפיין cold-email ממוקד למנהלי חנויות עם תקציב שיווק פעיל — המרה ניסיון → תשלום: יעד 15%", "Targeted cold-email campaign to store managers with active marketing budgets — trial to paid conversion target: 15%"),
+                },
+                {
+                  icon: "✍️", title: t("שיווק תוכן + SEO", "Content Marketing + SEO"),
+                  desc: t("מאמרים, מדריכים ו-case studies לבעלי חנויות שמחפשים שיפור ROAS — ערוץ Inbound אורגני לטווח בינוני", "Articles, guides & case studies for store owners seeking ROAS improvement — organic inbound channel for mid-term"),
+                },
+                {
+                  icon: "📈", title: t("Upsell סוכנויות → Enterprise", "Agency Upsell → Enterprise"),
+                  desc: t("כל סוכנות שמנהלת 10+ חנויות = לקוח Enterprise $500/חודש. Network effect: סוכנות אחת מביאה עשרות חנויות", "Each agency managing 10+ stores = $500/mo Enterprise client. Network effect: one agency brings dozens of stores"),
+                },
+              ].map((item, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "22px 20px" }}>
+                  <div style={{ fontSize: 28, marginBottom: 12 }}>{item.icon}</div>
+                  <h4 style={{ fontSize: 14, fontWeight: 700, color: "#e2e8f0", margin: "0 0 10px" }}>{item.title}</h4>
+                  <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.46)", lineHeight: 1.7, margin: 0 }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Investor CTA */}
+          <div style={{ textAlign: "center", padding: "36px 28px", background: "linear-gradient(135deg, rgba(16,185,129,0.08), rgba(99,102,241,0.06))", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 18 }}>
+            <div style={{ fontSize: 13, color: "#34d399", fontWeight: 600, marginBottom: 10 }}>
+              {t("מעוניין להשקיע?", "Interested in investing?")}
+            </div>
+            <h3 style={{ fontSize: "clamp(18px, 3vw, 26px)", fontWeight: 800, margin: "0 0 12px" }}>
+              {t("צור קשר לקבלת Deck מלא + Due Diligence", "Contact us for full Deck + Due Diligence")}
+            </h3>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, margin: "0 0 22px" }}>
+              {t("BScale AI מגייסת Seed Round. נשמח לשתף נתונים, פייפליין ואסטרטגיה מלאה.", "BScale AI is raising a Seed Round. Happy to share data, pipeline, and full strategy.")}
+            </p>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+              <a href="mailto:asher205@gmail.com"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#10b981,#059669)", borderRadius: 10, padding: "12px 24px", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 20px rgba(16,185,129,0.35)" }}>
+                ✉️ asher205@gmail.com
+              </a>
+              <a href="tel:0525640054"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "12px 24px", color: "#fff", textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
+                📞 052-5640054
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
           CTA BANNER
       ══════════════════════════════════════════ */}
       <section style={{ padding: "60px 16px", textAlign: "center" }}>
@@ -438,7 +622,7 @@ export default function LandingPage() {
             ))}
           </div>
           <p style={{ color: "rgba(255,255,255,0.25)", fontSize: 12, textAlign: "center", margin: 0 }}>
-            © 2025 BScale AI · {t("פותח ע״י", "Developed by")} <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{t("אשר בוקשפן", "Asher Bukchapan")}</span> · 052-5640054
+            © 2025 BScale AI · {t("פותח ע״י", "Developed by")} <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{t("אשר בוקשפן", "Asher Bukchapan")}</span> · <a href="tel:0525640054" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>052-5640054</a> · <a href="mailto:asher205@gmail.com" style={{ color: "rgba(255,255,255,0.4)", textDecoration: "none" }}>asher205@gmail.com</a>
           </p>
         </div>
       </footer>
