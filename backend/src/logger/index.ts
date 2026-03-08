@@ -7,7 +7,7 @@ export const logger = pino({
     config.NODE_ENV !== "production"
       ? { target: "pino-pretty", options: { colorize: true, translateTime: "SYS:HH:MM:ss" } }
       : undefined,
-  base: { service: "adscale-backend" },
+  base: { service: "bscale-backend" },
   redact: ["*.accessToken", "*.refreshToken", "*.apiKey", "*.apiSecret", "*.passwordHash"],
 });
 

@@ -133,7 +133,7 @@ function LoginForm() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              AdScale AI
+              BScale AI
             </span>
           </button>
         </div>
@@ -206,7 +206,7 @@ function LoginForm() {
           >
             {mode === "login"
               ? t("התחבר כדי לנהל את הקמפיינים שלך", "Sign in to manage your campaigns")
-              : t("הצטרף ל-AdScale AI היום", "Join AdScale AI today")}
+              : t("הצטרף ל-BScale AI היום", "Join BScale AI today")}
           </p>
 
           {/* Google button — REAL OAuth */}

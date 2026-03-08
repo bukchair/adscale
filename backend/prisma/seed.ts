@@ -8,14 +8,14 @@ import crypto from "crypto";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding AdScale database...");
+  console.log("🌱 Seeding BScale database...");
 
   // ── User + Org ─────────────────────────────────────────────────────────────
   const user = await prisma.user.upsert({
-    where:  { email: "demo@adscale.io" },
+    where:  { email: "demo@bscale.io" },
     update: {},
     create: {
-      email:        "demo@adscale.io",
+      email:        "demo@bscale.io",
       name:         "Demo User",
       passwordHash: crypto.createHash("sha256").update("demo1234").digest("hex"),
     },
@@ -243,7 +243,7 @@ async function main() {
   });
 
   console.log("✅ Seed complete!");
-  console.log("   User:  demo@adscale.io / demo1234");
+  console.log("   User:  demo@bscale.io / demo1234");
   console.log(`   Org:   ${org.name} (${org.slug})`);
   console.log(`   Tables: 28 | Campaigns: ${campaigns.length} | Search Terms: ${demoTerms.length}`);
 }

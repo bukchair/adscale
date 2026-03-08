@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "AdScale AI",
+  title: "BScale AI",
   description: "AI-powered advertising optimization platform",
 };
 

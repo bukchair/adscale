@@ -52,7 +52,7 @@ export default function LandingPage() {
       <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, background: "rgba(10,10,20,0.85)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>⚡</div>
-          <span style={{ fontWeight: 800, fontSize: 20, background: "linear-gradient(90deg,#6366f1,#8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>AdScale AI</span>
+          <span style={{ fontWeight: 800, fontSize: 20, background: "linear-gradient(90deg,#6366f1,#8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>BScale AI</span>
         </div>
         {/* Desktop nav */}
         <div className="as-desktop-only" style={{ display: "flex", alignItems: "center", gap: 32 }}>
@@ -103,8 +103,8 @@ export default function LandingPage() {
           </h1>
           <p style={{ fontSize: "clamp(16px, 2.5vw, 20px)", color: "rgba(255,255,255,0.6)", maxWidth: 600, margin: "0 auto 40px", lineHeight: 1.7 }}>
             {t(
-              "חסוך שעות של עבודה ידנית. AdScale AI מנתחת את הנתונים שלך, מייעלת תקציבים, יוצרת קריאייטיב ומגדילה את ה-ROAS שלך באופן אוטומטי.",
-              "Save hours of manual work. AdScale AI analyzes your data, optimizes budgets, creates creatives, and automatically grows your ROAS."
+              "חסוך שעות של עבודה ידנית. BScale AI מנתחת את הנתונים שלך, מייעלת תקציבים, יוצרת קריאייטיב ומגדילה את ה-ROAS שלך באופן אוטומטי.",
+              "Save hours of manual work. BScale AI analyzes your data, optimizes budgets, creates creatives, and automatically grows your ROAS."
             )}
           </p>
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
@@ -234,7 +234,7 @@ export default function LandingPage() {
       <section style={{ padding: "80px 24px", textAlign: "center" }}>
         <div style={{ maxWidth: 640, margin: "0 auto", background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))", border: "1px solid rgba(99,102,241,0.25)", borderRadius: 24, padding: "60px 40px" }}>
           <h2 style={{ fontSize: "clamp(26px, 3.5vw, 40px)", fontWeight: 800, marginBottom: 16 }}>{t("מוכן להתחיל?", "Ready to Start?")}</h2>
-          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 17, marginBottom: 32 }}>{t("הצטרף לאלפי מפרסמים שכבר מגדילים את התשואה שלהם עם AdScale AI", "Join thousands of advertisers already growing their returns with AdScale AI")}</p>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 17, marginBottom: 32 }}>{t("הצטרף לאלפי מפרסמים שכבר מגדילים את התשואה שלהם עם BScale AI", "Join thousands of advertisers already growing their returns with BScale AI")}</p>
           <button onClick={() => router.push("/login?mode=signup")} style={{ background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none", borderRadius: 12, padding: "16px 40px", color: "#fff", cursor: "pointer", fontSize: 17, fontWeight: 700, boxShadow: "0 4px 30px rgba(99,102,241,0.5)" }}>
             {t("התחל ניסיון חינם של 14 יום", "Start Your 14-Day Free Trial")}
           </button>
@@ -246,9 +246,9 @@ export default function LandingPage() {
       <footer style={{ borderTop: "1px solid rgba(255,255,255,0.07)", padding: "40px 24px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>⚡</div>
-          <span style={{ fontWeight: 700, fontSize: 16, color: "rgba(255,255,255,0.7)" }}>AdScale AI</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: "rgba(255,255,255,0.7)" }}>BScale AI</span>
         </div>
-        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>© 2025 AdScale AI. {t("כל הזכויות שמורות לאשר בוקשפן", "All rights reserved to Asher Bukchapan")} | 052-5640054</p>
+        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>© 2025 BScale AI. {t("כל הזכויות שמורות לאשר בוקשפן", "All rights reserved to Asher Bukchapan")} | 052-5640054</p>
       </footer>
     </div>
   );

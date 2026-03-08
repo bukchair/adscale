@@ -37,6 +37,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return `${baseUrl}/auth-callback`;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET ?? "adscale-dev-secret-change-in-production",
+  secret: process.env.NEXTAUTH_SECRET ?? "bscale-dev-secret-change-in-production",
   session: { strategy: "jwt" },
 });

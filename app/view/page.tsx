@@ -121,7 +121,7 @@ export default function GuestViewPage() {
       <div style={{ background: "#fff", borderBottom: "1px solid #e2e8f0", padding: isMobile ? "12px 16px" : "0 36px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: isMobile ? "auto" : 60, boxShadow: "0 1px 6px rgba(0,0,0,0.06)", flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            AdScale AI
+            BScale AI
           </div>
           {/* View-only badge */}
           <div style={{ display: "flex", alignItems: "center", gap: 5, background: "#f0f4f8", border: "1px solid #e2e8f0", borderRadius: 20, padding: "3px 10px 3px 8px", fontSize: 11, fontWeight: 600, color: "#64748b" }}>

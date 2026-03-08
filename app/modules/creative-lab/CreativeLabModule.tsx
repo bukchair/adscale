@@ -72,7 +72,7 @@ function MetaPreview({ p, v, lang }: { p: WCProduct; v: AdVariant; lang: Lang })
     <div style={{ background:"#fff", borderRadius:12, border:`1px solid ${C.border}`, overflow:"hidden", maxWidth:360, margin:"0 auto" }}>
       <div style={{ padding:"10px 14px", display:"flex", alignItems:"center", gap:8 }}>
         <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#6366f1,#8b5cf6)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>🛍️</div>
-        <div><div style={{ fontSize:13, fontWeight:700, color:C.text }}>AdScale Store</div><div style={{ fontSize:10, color:C.textMuted }}>{lang==="he"?"ממומן":"Sponsored"}</div></div>
+        <div><div style={{ fontSize:13, fontWeight:700, color:C.text }}>BScale Store</div><div style={{ fontSize:10, color:C.textMuted }}>{lang==="he"?"ממומן":"Sponsored"}</div></div>
       </div>
       <div style={{ padding:"0 14px 10px", fontSize:13, color:C.text, lineHeight:1.5 }}>{v.body}</div>
       <div style={{ height:220, background:`linear-gradient(135deg,${C.accentLight},${C.purpleLight})`, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8 }}>

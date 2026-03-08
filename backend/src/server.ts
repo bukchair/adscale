@@ -1,5 +1,5 @@
 // ============================================================
-// AdScale Backend — Fastify Server
+// BScale Backend — Fastify Server
 // ============================================================
 
 import Fastify from "fastify";
@@ -80,7 +80,7 @@ app.setErrorHandler((err, req, reply) => {
 async function start() {
   try {
     await app.listen({ port: config.PORT, host: "0.0.0.0" });
-    logger.info(`🚀 AdScale Backend running on port ${config.PORT}`);
+    logger.info(`🚀 BScale Backend running on port ${config.PORT}`);
   } catch (err) {
     logger.error({ err }, "Server failed to start");
     process.exit(1);

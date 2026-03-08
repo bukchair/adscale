@@ -28,12 +28,12 @@ export interface Connection {
   fields: Record<string, string>;
 }
 
-const KEY_USER         = "adscale_user";
-const KEY_ONBOARDING   = "adscale_onboarding_done";
-const KEY_CONNECTIONS  = "adscale_connections";
-const KEY_BUSINESS     = "adscale_business";
-const KEY_FIRST_DONE   = "adscale_first_user_done";
-const KEY_ALL_USERS    = "adscale_all_users";
+const KEY_USER         = "bscale_user";
+const KEY_ONBOARDING   = "bscale_onboarding_done";
+const KEY_CONNECTIONS  = "bscale_connections";
+const KEY_BUSINESS     = "bscale_business";
+const KEY_FIRST_DONE   = "bscale_first_user_done";
+const KEY_ALL_USERS    = "bscale_all_users";
 
 export const ROLES: Record<Role, { he: string; en: string; color: string; bg: string; desc: string; descEn: string }> = {
   admin:   { he: "מנהל מערכת", en: "Admin",   color: "#6366f1", bg: "#eef2ff", desc: "גישה מלאה לכל המודולים, ניהול משתמשים והגדרות", descEn: "Full access to all modules, user management and settings" },

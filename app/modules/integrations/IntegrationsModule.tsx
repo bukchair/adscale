@@ -35,8 +35,8 @@ const INTEGRATIONS: IntegrationDef[] = [
   /* ── AI ─────────────────────────────────────────────────────── */
   {
     id: "openai", name: "OpenAI", icon: "🧠", color: "#10a37f", category: "ai",
-    description: "מחבר את AdScale ל-ChatGPT / GPT-4 לניתוח SEO, יצירת מודעות ותוכן",
-    descriptionEn: "Connects AdScale to ChatGPT / GPT-4 for SEO analysis, ad generation and content",
+    description: "מחבר את BScale ל-ChatGPT / GPT-4 לניתוח SEO, יצירת מודעות ותוכן",
+    descriptionEn: "Connects BScale to ChatGPT / GPT-4 for SEO analysis, ad generation and content",
     fields: [
       { key:"api_key",   label:"מפתח API",        labelEn:"API Key",         placeholder:"sk-...",              placeholderEn:"sk-...",              type:"password", hint:"נמצא ב-OpenAI Platform → API Keys", hintEn:"Found at OpenAI Platform → API Keys" },
       { key:"model",     label:"מודל מועדף",       labelEn:"Preferred Model", placeholder:"gpt-4o",              placeholderEn:"gpt-4o",              type:"text",     hint:"ברירת מחדל: gpt-4o", hintEn:"Default: gpt-4o" },

@@ -299,7 +299,7 @@ const INTEGRATION_HELP: Record<string, {
     steps: [
       "היכנס לממשק ניהול WordPress שלך (yourdomain.com/wp-admin)",
       "נווט ל-WooCommerce → Settings → Advanced → REST API",
-      "לחץ \"Add key\" — Description: AdScale, User: Admin, Permissions: Read/Write",
+      "לחץ \"Add key\" — Description: BScale, User: Admin, Permissions: Read/Write",
       "לחץ \"Generate API key\" — העתק את Consumer Key ו-Consumer Secret",
       "ה-Consumer Secret מוצג פעם אחת בלבד! שמור אותו מיד",
     ],
@@ -366,7 +366,7 @@ const INTEGRATION_HELP: Record<string, {
     steps: [
       "היכנס ל-Anthropic Console",
       "נווט ל-Settings → API Keys",
-      "לחץ \"Create Key\" — תן שם כמו \"AdScale\"",
+      "לחץ \"Create Key\" — תן שם כמו \"BScale\"",
       "העתק את המפתח — הוא מוצג פעם אחת בלבד!",
       "הדבק את המפתח בשדה API Key למטה",
     ],
@@ -379,7 +379,7 @@ const INTEGRATION_HELP: Record<string, {
     steps: [
       "היכנס ל-OpenAI Platform",
       "נווט ל-API Keys מהתפריט הצדדי",
-      "לחץ \"Create new secret key\" — תן שם כמו \"AdScale\"",
+      "לחץ \"Create new secret key\" — תן שם כמו \"BScale\"",
       "העתק את המפתח — הוא מוצג פעם אחת בלבד!",
       "הדבק את המפתח בשדה API Key למטה",
     ],
@@ -418,7 +418,7 @@ function ConnectModal({ integration, savedValues, onClose, onSave }: {
     }
     if (integration.oauthProvider === "tiktok") {
       const appId = values.app_id || "";
-      return `https://ads.tiktok.com/marketing_api/auth?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=adscale`;
+      return `https://ads.tiktok.com/marketing_api/auth?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}&state=bscale`;
     }
     return "";
   }
@@ -650,7 +650,7 @@ function AdCreatorTab({ s, t, lang, connections, isMobile }: {
           cta: v.cta,
           imageUrl: generatedImage || undefined,
           targetUrl: publishTargetUrl,
-          campaignName: publishCampaignName || `AdScale – ${selectedProduct?.name || "קמפיין"}`,
+          campaignName: publishCampaignName || `BScale – ${selectedProduct?.name || "קמפיין"}`,
           dailyBudget: Number(publishBudget) || 50,
           connections,
         }),
@@ -1049,7 +1049,7 @@ function AdCreatorTab({ s, t, lang, connections, isMobile }: {
                 <input
                   value={publishCampaignName}
                   onChange={e => setPublishCampaignName(e.target.value)}
-                  placeholder={`AdScale – ${selectedProduct?.name || "קמפיין חדש"}`}
+                  placeholder={`BScale – ${selectedProduct?.name || "קמפיין חדש"}`}
                   style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #e2e8f0", fontSize: 13, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
@@ -1223,12 +1223,12 @@ export default function DashboardPage() {
   const [openModal, setOpenModal] = useState<string | null>(null);
   const [connections, setConnections] = useState<Record<string, Record<string, string>>>(() => {
     if (typeof window === "undefined") return {};
-    try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
+    try { return JSON.parse(localStorage.getItem("bscale_connections") || "{}"); } catch { return {}; }
   });
 
   useEffect(() => {
     const localConns = (() => {
-      try { return JSON.parse(localStorage.getItem("adscale_connections") || "{}"); } catch { return {}; }
+      try { return JSON.parse(localStorage.getItem("bscale_connections") || "{}"); } catch { return {}; }
     })();
     const hasLocal = Object.keys(localConns).length > 0;
 
@@ -1238,7 +1238,7 @@ export default function DashboardPage() {
         const hasServer = serverConns && Object.keys(serverConns).length > 0;
         if (hasServer) {
           setConnections(serverConns);
-          localStorage.setItem("adscale_connections", JSON.stringify(serverConns));
+          localStorage.setItem("bscale_connections", JSON.stringify(serverConns));
         } else if (hasLocal) {
           fetch("/api/connections", {
             method: "POST",
@@ -1253,7 +1253,7 @@ export default function DashboardPage() {
   function saveConnection(id: string, values: Record<string, string>) {
     const next = { ...connections, [id]: values };
     setConnections(next);
-    if (typeof window !== "undefined") localStorage.setItem("adscale_connections", JSON.stringify(next));
+    if (typeof window !== "undefined") localStorage.setItem("bscale_connections", JSON.stringify(next));
     fetch("/api/connections", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1486,7 +1486,7 @@ export default function DashboardPage() {
       {isMobile && (
         <div style={{ position: "sticky", top: 0, zIndex: 200, background: "#fff", borderBottom: "1px solid #e2e8f0", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
           <div style={{ fontSize: 20, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            AdScale AI
+            BScale AI
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ display: "flex", background: "#f0f4f8", borderRadius: 8, padding: 2, gap: 2 }}>
@@ -1504,7 +1504,7 @@ export default function DashboardPage() {
       <div style={s.sidebar}>
         <div style={{ padding: "0 20px 20px", borderBottom: "1px solid #e2e8f0", marginBottom: 12 }}>
           <div style={{ fontSize: 22, fontWeight: 800, background: "linear-gradient(135deg,#7c74ff,#00d4aa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            AdScale AI
+            BScale AI
           </div>
           <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>
             {t("פרסום חכם לאיקומרס", "Smart e-commerce ads")}

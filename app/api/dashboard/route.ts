@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   let totalRevenue = 0, totalConversions = 0;
   try {
     if (!url) throw new Error("WOOCOMMERCE_URL not set");
-    const wcRes = await fetch(`${url}/wp-json/adscale/v1/summary?from=${from}&to=${to}`, { signal: AbortSignal.timeout(8000) });
+    const wcRes = await fetch(`${url}/wp-json/bscale/v1/summary?from=${from}&to=${to}`, { signal: AbortSignal.timeout(8000) });
     if (wcRes.ok) { const d = await wcRes.json(); totalRevenue = d.totalRevenue; totalConversions = d.totalConversions; }
     else apiErrors.push(`woocommerce:${wcRes.status}`);
   } catch (e) { apiErrors.push("woocommerce:" + String(e).slice(0, 100)); }
