@@ -547,3 +547,86 @@ body {
 }
 .as-export-btn.excel { border-color: #21a366; color: #21a366; background: #f0faf5; }
 .as-export-btn.excel:hover { background: #d1fae5; }
+
+/* ═══════════════════════════════════════════════
+   LANDING PAGE — Mobile-responsive styles
+═══════════════════════════════════════════════ */
+
+/* Navbar */
+.lp-nav-actions { display: flex; align-items: center; gap: 10px; }
+.lp-nav-hide-mobile { display: flex; }
+
+/* Hero CTA buttons */
+.lp-hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+/* Dashboard preview grids */
+.lp-mockup-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.lp-mockup-charts { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+
+/* Stats band */
+.lp-stats-band-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; text-align: center; max-width: 900px; margin: 0 auto; }
+
+/* Pricing grid */
+.lp-pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+
+/* CTA box */
+.lp-cta-box { padding: 60px 40px; }
+
+/* Footer inner */
+.lp-footer-inner { max-width: 900px; margin: 0 auto; }
+
+/* ── Mobile overrides (≤ 640px) ── */
+@media (max-width: 640px) {
+  /* Navbar: hide Login + Start Free buttons, show only in mobile menu */
+  .lp-nav-hide-mobile { display: none !important; }
+
+  /* Hero: full-width CTA buttons */
+  .lp-hero-cta { flex-direction: column; align-items: stretch; gap: 10px; }
+  .lp-hero-cta button { width: 100% !important; padding: 14px 20px !important; font-size: 15px !important; }
+
+  /* Dashboard mockup: hide on very small screens → replaced by simpler view */
+  .lp-mockup-full { display: none; }
+  .lp-mockup-simple { display: grid !important; }
+
+  /* Dashboard stats: 2-col */
+  .lp-mockup-stats { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .lp-mockup-charts { grid-template-columns: 1fr; }
+
+  /* Stats band: 2x2 */
+  .lp-stats-band-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+  /* Features: 1 col */
+  .lp-features-grid { grid-template-columns: 1fr !important; }
+
+  /* Pricing: single col */
+  .lp-pricing-grid { grid-template-columns: 1fr; }
+
+  /* CTA box: tighter padding */
+  .lp-cta-box { padding: 36px 20px !important; border-radius: 16px !important; }
+
+  /* Section padding reduction */
+  .lp-section-pad { padding: 56px 16px !important; }
+  .lp-section-pad-sm { padding: 40px 16px !important; }
+
+  /* Hero section */
+  .lp-hero { padding-top: 100px !important; padding-bottom: 48px !important; padding-left: 16px !important; padding-right: 16px !important; }
+
+  /* Steps: vertical on mobile */
+  .lp-steps-grid { grid-template-columns: 1fr !important; gap: 28px !important; }
+  .lp-steps-grid > div { padding: 0 !important; }
+}
+
+/* ── Tablet overrides (641px – 768px) ── */
+@media (min-width: 641px) and (max-width: 768px) {
+  .lp-mockup-stats { grid-template-columns: repeat(2, 1fr); }
+  .lp-stats-band-grid { grid-template-columns: repeat(2, 1fr); }
+  .lp-pricing-grid { grid-template-columns: 1fr; }
+  .lp-cta-box { padding: 48px 28px !important; }
+}
+
+/* ── Show/hide helpers for landing ── */
+.lp-mobile-only { display: none; }
+@media (max-width: 640px) {
+  .lp-mobile-only { display: block; }
+  .lp-desktop-only { display: none !important; }
+}
