@@ -248,7 +248,7 @@ export default function LandingPage() {
           <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>⚡</div>
           <span style={{ fontWeight: 700, fontSize: 16, color: "rgba(255,255,255,0.7)" }}>AdScale AI</span>
         </div>
-        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>© 2024 AdScale AI. {t("כל הזכויות שמורות.", "All rights reserved.")}</p>
+        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 13 }}>© 2025 AdScale AI. {t("כל הזכויות שמורות לאשר בוקשפן", "All rights reserved to Asher Bukchapan")} | 052-5640054</p>
       </footer>
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { C } from "../theme";
-import { ROLES, MODULE_PERMISSIONS, type Role, type AuthUser } from "../../lib/auth";
+import { ROLES, MODULE_PERMISSIONS, getAllUsers, updateUserRole, removeUserById, setUser, type Role, type AuthUser } from "../../lib/auth";
 
 const ALL_MODULES = [
   { id: "overview",          he: "סקירה כללית",       en: "Overview" },
@@ -21,19 +21,13 @@ const ALL_MODULES = [
   { id: "users",             he: "משתמשים",             en: "Users" },
 ];
 
-const MOCK_USERS: AuthUser[] = [
-  { id: "1", name: "ישראל ישראלי", email: "israel@mystore.co.il", avatar: "🧑‍💼", role: "admin",   company: "MyStore", createdAt: "2024-01-15T10:00:00Z" },
-  { id: "2", name: "רחל כהן",      email: "rachel@mystore.co.il", avatar: "👩‍💼", role: "manager", company: "MyStore", createdAt: "2024-02-20T10:00:00Z" },
-  { id: "3", name: "דוד לוי",       email: "david@agency.co.il",   avatar: "👨‍💻", role: "editor",  company: "MyStore", createdAt: "2024-03-01T10:00:00Z" },
-  { id: "4", name: "מיכל שפירא",   email: "michal@mystore.co.il", avatar: "👩‍🎨", role: "viewer",  company: "MyStore", createdAt: "2024-03-10T10:00:00Z" },
-];
 
 interface UsersModuleProps { lang: "he" | "en"; }
 
 export default function UsersModule({ lang }: UsersModuleProps) {
   const isHe = lang === "he";
   const t = (he: string, en: string) => isHe ? he : en;
-  const [users, setUsers] = useState<AuthUser[]>(MOCK_USERS);
+  const [users, setUsers] = useState<AuthUser[]>(() => getAllUsers());
   const [activeTab, setActiveTab] = useState<"users" | "roles">("users");
   const [showInvite, setShowInvite] = useState(false);
   const [inviteName, setInviteName] = useState("");
@@ -50,20 +44,22 @@ export default function UsersModule({ lang }: UsersModuleProps) {
       email: inviteEmail,
       avatar: "👤",
       role: inviteRole,
-      company: "MyStore",
       createdAt: new Date().toISOString(),
     };
-    setUsers(u => [...u, newUser]);
+    setUser(newUser); // persists to localStorage all-users list
+    setUsers(getAllUsers());
     setInviteName(""); setInviteEmail(""); setInviteRole("editor"); setShowInvite(false);
   }
 
   function handleRoleChange(userId: string, role: Role) {
-    setUsers(u => u.map(x => x.id === userId ? { ...x, role } : x));
+    updateUserRole(userId, role);
+    setUsers(getAllUsers());
     setEditUser(null);
   }
 
   function handleDelete(userId: string) {
-    setUsers(u => u.filter(x => x.id !== userId));
+    removeUserById(userId);
+    setUsers(getAllUsers());
     setConfirmDelete(null);
   }
 
