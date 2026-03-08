@@ -229,7 +229,7 @@ export default function AdminPage() {
             style={{ background: D.accentL, border: `1px solid ${D.accent}44`, borderRadius: 8, padding: "6px 14px", color: D.accent, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
             ← {t("חזור לממשק", "Back to App")}
           </button>
-          <button onClick={() => { clearUser(); router.replace("/login"); }}
+          <button onClick={() => { clearUser(); router.replace("/"); }}
             style={{ background: "transparent", border: `1px solid ${D.border}`, borderRadius: 8, padding: "6px 14px", color: D.muted, cursor: "pointer", fontSize: 13 }}>
             {t("יציאה", "Logout")}
           </button>

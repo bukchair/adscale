@@ -548,7 +548,7 @@ export default function ModulesPage() {
 
   function handleLogout() {
     clearUser();
-    router.replace("/login");
+    router.replace("/");
   }
 
   const dir = lang === "he" ? "rtl" : "ltr";
