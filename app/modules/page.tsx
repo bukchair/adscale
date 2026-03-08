@@ -19,7 +19,8 @@ import ProductsModule from "./products/ProductsModule";
 import AudiencesModule from "./audiences/AudiencesModule";
 import UsersModule from "./users/UsersModule";
 import FinancialReportsModule from "./financial-reports/FinancialReportsModule";
-import { getUser, clearUser, getConnections, loadConnectionsFromServer, type Connection } from "../lib/auth";
+import { getUser, clearUser, getConnections, loadConnectionsFromServer, isSuperAdmin, type Connection } from "../lib/auth";
+import { getViewingAsTenantId, getTenantById, clearViewingAs } from "../lib/tenant";
 
 export type Lang = "he" | "en";
 
@@ -387,7 +388,7 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
   onLogout: () => void;
   onToggleDark: () => void;
   isDark: boolean;
-  user: { name: string; email: string; avatar?: string; role: string } | null;
+  user: { name: string; email: string; avatar?: string; role: string; platformRole?: string } | null;
 }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const groups = NAV_GROUPS[lang];
@@ -478,6 +479,20 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
         </div>
       </div>
 
+      {/* Super Admin: link to Owner Panel */}
+      {user?.platformRole === "super_admin" && (
+        <div style={{ padding: "10px 8px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+          <a href="/admin" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))", border: `1px solid ${C.accent}44`, borderRadius: 10, textDecoration: "none" }}>
+            <span style={{ fontSize: 16 }}>👑</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{lang === "he" ? "פאנל בעלים" : "Owner Panel"}</div>
+              <div style={{ fontSize: 10, color: C.textMuted }}>{lang === "he" ? "ניהול לקוחות ומנויים" : "Manage customers & subscriptions"}</div>
+            </div>
+            <span style={{ fontSize: 12, color: C.textMuted }}>›</span>
+          </a>
+        </div>
+      )}
+
       {/* Creator credits */}
       <div style={{ padding: "8px 12px", borderTop: `1px solid ${C.border}`, flexShrink: 0, textAlign: "center" }}>
         <div style={{ fontSize: 10, color: C.textMuted, lineHeight: 1.5 }}>
@@ -499,6 +514,10 @@ export default function ModulesPage() {
   const [connections, setConnections] = useState<Record<string, Connection>>(() => getConnections());
   // true while fetching connections from server (prevents modules from loading with empty connections)
   const [connReady, setConnReady] = useState(false);
+  // Impersonation: super_admin viewing a tenant's workspace
+  const [viewingAsTenantId] = useState(() => getViewingAsTenantId());
+  const viewingAsTenant = viewingAsTenantId ? getTenantById(viewingAsTenantId) : null;
+  const isAdmin = isSuperAdmin(currentUser);
   const [isDark, setIsDark] = useState<boolean>(() =>
     typeof window !== "undefined" && localStorage.getItem("bscale_theme") === "dark"
   );
@@ -636,6 +655,19 @@ export default function ModulesPage() {
             {isLive ? t("חי", "Live") : t("דמו", "Demo")}
           </div>
         </header>
+
+        {/* ── Impersonation banner (super_admin viewing a tenant) ── */}
+        {viewingAsTenant && (
+          <div style={{ background: "#f59e0b", color: "#000", padding: "8px 20px", display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+            <span>👁️ {lang === "he" ? `צופה כ: ${viewingAsTenant.name}` : `Viewing as: ${viewingAsTenant.name}`}</span>
+            <button
+              onClick={() => { clearViewingAs(); router.push("/admin"); }}
+              style={{ marginInlineStart: "auto", background: "rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.25)", borderRadius: 8, padding: "4px 14px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#000" }}
+            >
+              {lang === "he" ? "← חזור לפאנל" : "← Back to Panel"}
+            </button>
+          </div>
+        )}
 
         {/* ── Connection Status Bar ─────────────────────────────── */}
         <ConnectionStatusBar lang={lang} connections={connections} onGoToConnections={goToConnections} />
