@@ -27,7 +27,7 @@ import { LANG_META, tl, NAV_GROUP_LABELS, MODULE_NAMES, MODULE_INFO, UI } from "
 export type { Lang };
 
 function sanitizeDisplayName(name: string | undefined, email: string): string {
-  if (!name || name.startsWith("http://") || name.startsWith("https://")) {
+  if (!name || name.startsWith("http://") || name.startsWith("https://") || name.startsWith("//") || /^[\w.-]+\.[a-z]{2,}\//.test(name)) {
     const base = email.split("@")[0].replace(/[._]/g, " ");
     return base.charAt(0).toUpperCase() + base.slice(1);
   }
