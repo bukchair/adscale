@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUser } from "./lib/auth";
+import { getUser, isOnboardingComplete } from "./lib/auth";
 
 const FEATURES = [
   { icon: "🎯", title: "ניהול קמפיינים חכם", titleEn: "Smart Campaign Management", desc: "מנוע AI שמנתח את הנתונים שלך ומייעל תקציבים בזמן אמת לרווחיות מקסימלית", descEn: "AI engine analyzes your data and optimizes budgets in real-time for maximum profitability" },
@@ -41,7 +41,7 @@ export default function LandingPage() {
 
   useEffect(() => {
     const user = getUser();
-    if (user) router.replace("/modules");
+    if (user) router.replace(isOnboardingComplete() ? "/modules" : "/onboarding");
   }, [router]);
 
   const t = (he: string, en: string) => isHe ? he : en;

@@ -1,14 +1,15 @@
 "use client";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getUser } from "../lib/auth";
+import { getUser, isOnboardingComplete } from "../lib/auth";
 
 export default function ModulesLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
     const user = getUser();
-    if (!user) router.replace("/login");
+    if (!user) { router.replace("/login"); return; }
+    if (!isOnboardingComplete()) { router.replace("/onboarding"); return; }
   }, [router]);
 
   return <>{children}</>;

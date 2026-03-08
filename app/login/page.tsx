@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signInWithGoogle, signInWithEmail, signUpWithEmail, setUser, getUser } from "../lib/auth";
+import { signInWithGoogle, signInWithEmail, signUpWithEmail, setUser, getUser, isOnboardingComplete } from "../lib/auth";
 
 function LoginForm() {
   const router = useRouter();
@@ -16,17 +16,22 @@ function LoginForm() {
   const isHe = lang === "he";
 
   useEffect(() => {
-    if (getUser()) router.replace("/modules");
+    const u = getUser();
+    if (u) router.replace(isOnboardingComplete() ? "/modules" : "/onboarding");
   }, [router]);
 
   const t = (he: string, en: string) => isHe ? he : en;
+
+  function afterLogin() {
+    router.replace(isOnboardingComplete() ? "/modules" : "/onboarding");
+  }
 
   async function handleGoogle() {
     setLoading("google"); setError("");
     try {
       const user = await signInWithGoogle();
       setUser(user);
-      router.replace("/modules");
+      afterLogin();
     } catch {
       setError(t("שגיאה בהתחברות עם Google", "Error signing in with Google"));
       setLoading(null);
@@ -41,7 +46,7 @@ function LoginForm() {
         ? await signUpWithEmail(name, email, password)
         : await signInWithEmail(email, password);
       setUser(user);
-      router.replace("/modules");
+      afterLogin();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "error";
       setError(msg === "invalid_email" ? t("כתובת אימייל לא תקינה", "Invalid email address") : t("שגיאה בהתחברות", "Sign in error"));
