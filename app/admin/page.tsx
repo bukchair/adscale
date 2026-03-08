@@ -128,6 +128,13 @@ export default function AdminPage() {
 
   const isHe = lang === "he";
   const t = (he: string, en: string) => isHe ? he : en;
+  const safeDisplayName = (name: string | undefined, email: string) => {
+    if (!name || name.startsWith("http://") || name.startsWith("https://")) {
+      const base = email.split("@")[0].replace(/[._]/g, " ");
+      return base.charAt(0).toUpperCase() + base.slice(1);
+    }
+    return name;
+  };
 
   useEffect(() => {
     const u = getUser();
@@ -219,7 +226,7 @@ export default function AdminPage() {
             <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700 }}>👑 {t("פאנל בעלים", "Owner Panel")}</div>
           </div>
           <div style={{ width: 1, height: 28, background: D.border, margin: "0 6px" }} />
-          <span style={{ fontSize: 13, color: D.muted }}>{user.name} — {user.email}</span>
+          <span style={{ fontSize: 13, color: D.muted }}>{safeDisplayName(user.name, user.email)} — {user.email}</span>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>

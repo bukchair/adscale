@@ -3,6 +3,14 @@ import { useState } from "react";
 import { C } from "../theme";
 import { ROLES, MODULE_PERMISSIONS, getAllUsers, updateUserRole, removeUserById, setUser, getConnections, type Role, type AuthUser } from "../../lib/auth";
 
+function displayName(user: AuthUser): string {
+  if (!user.name || user.name.startsWith("http://") || user.name.startsWith("https://")) {
+    const base = user.email.split("@")[0].replace(/[._]/g, " ");
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  }
+  return user.name;
+}
+
 const ALL_MODULES = [
   { id: "overview",          he: "סקירה כללית",       en: "Overview" },
   { id: "financial-reports", he: "דוחות כספיים",       en: "Financial Reports" },
@@ -156,7 +164,7 @@ export default function UsersModule({ lang }: UsersModuleProps) {
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: ROLES[u.role].bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{u.avatar || "👤"}</div>
                   <div>
-                    <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>{u.name}</div>
+                    <div style={{ fontWeight: 700, color: C.text, fontSize: 15 }}>{displayName(u)}</div>
                     <div style={{ color: C.textSub, fontSize: 13 }}>{u.email}</div>
                     <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{t("הצטרף","Joined")} {new Date(u.createdAt).toLocaleDateString(isHe ? "he-IL" : "en-US")}</div>
                   </div>
