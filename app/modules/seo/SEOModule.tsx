@@ -335,7 +335,7 @@ export default function SEOModule({ lang }: { lang: Lang }) {
                       {lang === "he" ? issue.detail : issue.detailEn}
                     </div>
                     <div style={{
-                      background: C.accentLight, border: `1px solid ${C.accent}22`,
+                      background: C.accentLight, border: `1px solid ${C.accentA}`,
                       borderRadius: 8, padding: "8px 12px", fontSize: 13,
                     }}>
                       <span style={{ color: C.textMuted, fontWeight: 600 }}>{t("💡 הצעת AI: ", "💡 AI Suggestion: ")}</span>
@@ -376,7 +376,7 @@ export default function SEOModule({ lang }: { lang: Lang }) {
       {bulkApplied > 0 && (
         <div style={{
           marginTop: 16, padding: "12px 20px", background: C.greenLight,
-          border: `1px solid ${C.green}33`, borderRadius: 10, fontSize: 13, color: C.greenText,
+          border: `1px solid ${C.greenA}`, borderRadius: 10, fontSize: 13, color: C.greenText,
         }}>
           ✅ {t(`יושמו ${bulkApplied} שיפורי SEO בהצלחה`, `Successfully applied ${bulkApplied} SEO improvements`)}
         </div>
@@ -509,7 +509,7 @@ export default function SEOModule({ lang }: { lang: Lang }) {
                 </div>
                 {page.geoScore < 70 && (
                   <div style={{
-                    marginTop: 12, background: C.purpleLight, border: `1px solid ${C.purple}33`,
+                    marginTop: 12, background: C.purpleLight, border: `1px solid ${C.purpleA2}`,
                     borderRadius: 8, padding: "10px 14px", fontSize: 13,
                   }}>
                     <span style={{ color: C.purple, fontWeight: 700 }}>🤖 {t("הצעת AI: ", "AI Suggestion: ")}</span>
@@ -594,7 +594,7 @@ export default function SEOModule({ lang }: { lang: Lang }) {
             {bulkStep === 2 && (
               <div>
                 <div style={{
-                  background: C.greenLight, border: `1px solid ${C.green}33`,
+                  background: C.greenLight, border: `1px solid ${C.greenA}`,
                   borderRadius: 8, padding: "10px 16px", fontSize: 13, color: C.greenText,
                   marginBottom: 16, fontWeight: 600,
                 }}>
@@ -663,7 +663,7 @@ export default function SEOModule({ lang }: { lang: Lang }) {
       {/* AI sync banner */}
       <div style={{
         background: `linear-gradient(135deg, ${C.accentLight}, ${C.purpleLight})`,
-        border: `1px solid ${C.accent}33`,
+        border: `1px solid ${C.accentA2}`,
         borderRadius: 12,
         padding: "12px 18px",
         marginBottom: 16,

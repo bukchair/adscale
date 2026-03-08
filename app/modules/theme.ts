@@ -1,67 +1,77 @@
-// AdScale – light theme color palette
+// AdScale – dynamic theme using CSS custom properties
+// Works with both light and dark themes defined in globals.css
 export const C = {
   // Page structure
-  pageBg:        "#f1f5f9",
-  card:          "#ffffff",
-  cardAlt:       "#f8fafc",
-  hover:         "#f8fafc",
-  inputBg:       "#f8fafc",
+  pageBg:        "var(--c-bg)",
+  card:          "var(--c-card)",
+  cardAlt:       "var(--c-card-alt)",
+  hover:         "var(--c-hover)",
+  inputBg:       "var(--c-input-bg)",
 
   // Borders
-  border:        "#e2e8f0",
-  borderMid:     "#cbd5e1",
-  borderStrong:  "#94a3b8",
+  border:        "var(--c-border)",
+  borderMid:     "var(--c-border-mid)",
+  borderStrong:  "var(--c-border-strong)",
 
   // Text
-  text:          "#1e293b",
-  textSub:       "#475569",
-  textMuted:     "#94a3b8",
+  text:          "var(--c-text)",
+  textSub:       "var(--c-text-sub)",
+  textMuted:     "var(--c-text-muted)",
 
   // Brand / Accent — indigo
-  accent:        "#6366f1",
-  accentHover:   "#4f46e5",
-  accentLight:   "#eef2ff",
-  accentMid:     "#818cf8",
+  accent:        "var(--c-accent)",
+  accentHover:   "var(--c-accent-hover)",
+  accentLight:   "var(--c-accent-light)",
+  accentMid:     "var(--c-accent-mid)",
+
+  // Alpha variants (use instead of `${C.accent}22` hex-alpha patterns)
+  accentA:       "var(--c-accent-a)",   // ~13% opacity — replaces ${C.accent}22
+  accentA2:      "var(--c-accent-a2)",  // ~20% opacity — replaces ${C.accent}33
+  greenA:        "var(--c-green-a)",    // ~20% opacity — replaces ${C.green}33
+  redA:          "var(--c-red-a)",      // ~20% opacity — replaces ${C.red}33
+  purpleA:       "var(--c-purple-a)",   // ~13% opacity — replaces ${C.purple}22
+  purpleA2:      "var(--c-purple-a2)",  // ~20% opacity — replaces ${C.purple}33
+  purpleA3:      "var(--c-purple-a3)",  // ~3% opacity  — replaces ${C.purple}08
 
   // Status
-  green:         "#10b981",
-  greenLight:    "#d1fae5",
-  greenText:     "#065f46",
+  green:         "var(--c-green)",
+  greenLight:    "var(--c-green-light)",
+  greenText:     "var(--c-green-text)",
 
-  amber:         "#f59e0b",
-  amberLight:    "#fef3c7",
-  amberText:     "#92400e",
+  amber:         "var(--c-amber)",
+  amberLight:    "var(--c-amber-light)",
+  amberText:     "var(--c-amber-text)",
 
-  red:           "#ef4444",
-  redLight:      "#fee2e2",
-  redText:       "#991b1b",
+  red:           "var(--c-red)",
+  redLight:      "var(--c-red-light)",
+  redText:       "var(--c-red-text)",
 
-  blue:          "#3b82f6",
-  blueLight:     "#dbeafe",
-  blueText:      "#1e40af",
+  blue:          "var(--c-blue)",
+  blueLight:     "var(--c-blue-light)",
+  blueText:      "var(--c-blue-text)",
 
-  purple:        "#8b5cf6",
-  purpleLight:   "#ede9fe",
-  purpleText:    "#5b21b6",
+  purple:        "var(--c-purple)",
+  purpleLight:   "var(--c-purple-light)",
+  purpleText:    "var(--c-purple-text)",
 
-  teal:          "#0d9488",
-  tealLight:     "#ccfbf1",
+  teal:          "var(--c-teal)",
+  tealLight:     "var(--c-teal-light)",
 
-  orange:        "#f97316",
-  orangeLight:   "#ffedd5",
+  orange:        "var(--c-orange)",
+  orangeLight:   "var(--c-orange-light)",
 
   // Shadows
-  shadow:        "0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)",
-  shadowMd:      "0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04)",
-  shadowLg:      "0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -4px rgba(0,0,0,0.04)",
+  shadow:        "var(--c-shadow)",
+  shadowMd:      "var(--c-shadow-md)",
+  shadowLg:      "var(--c-shadow-lg)",
 
   // Sidebar
-  sidebar:            "#ffffff",
-  sidebarBorder:      "#e2e8f0",
-  sidebarActive:      "#eef2ff",
-  sidebarActiveText:  "#4338ca",
-  sidebarText:        "#64748b",
-  sidebarHover:       "#f8fafc",
+  sidebar:            "var(--c-sidebar)",
+  sidebarBorder:      "var(--c-sidebar-border)",
+  sidebarActive:      "var(--c-sidebar-active)",
+  sidebarActiveText:  "var(--c-sidebar-active-text)",
+  sidebarText:        "var(--c-sidebar-text)",
+  sidebarHover:       "var(--c-sidebar-hover)",
 
   // Misc
   radius:   12,
