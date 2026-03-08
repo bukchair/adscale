@@ -90,7 +90,7 @@ interface ConnPlatform {
 const CONN_PLATFORMS: ConnPlatform[] = [
   {
     id: "google-ads", name: "Google Ads", shortName: "Google", icon: "🔵", color: "#4285f4",
-    fields: ["customerId", "developerToken"],
+    fields: ["customer_id", "dev_token"],
     affectsHe: ["המלצות AI", "ניהול תקציב", "ניתוח חיפושים", "מילות שליליות", "רווחיות"],
     affectsEn: ["AI Recommendations", "Budget Control", "Search Intelligence", "Negative Keywords", "Profitability"],
     impactHe: "נתוני קמפיינים חיים, הוצאות, ROAS, המרות ומילות מפתח",
@@ -100,7 +100,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "meta-ads", name: "Meta Ads", shortName: "Meta", icon: "🔷", color: "#1877f2",
-    fields: ["accessToken", "adAccountId"],
+    fields: ["access_token", "account_id"],
     affectsHe: ["קהלים", "Creative Lab", "אישורים"],
     affectsEn: ["Audiences", "Creative Lab", "Approvals"],
     impactHe: "ביצועי קמפיינים ב-Facebook/Instagram, קהלים ותגובות למודעות",
@@ -110,7 +110,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "tiktok-ads", name: "TikTok Ads", shortName: "TikTok", icon: "🎵", color: "#00c2b4",
-    fields: ["accessToken", "advertiserId"],
+    fields: ["access_token", "advertiser_id"],
     affectsHe: ["קהלים", "Creative Lab"],
     affectsEn: ["Audiences", "Creative Lab"],
     impactHe: "נתוני קמפיינים ב-TikTok, ביצועי וידאו ומעורבות",
@@ -120,7 +120,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "woocommerce", name: "WooCommerce", shortName: "WooComm", icon: "🛍️", color: "#7f54b3",
-    fields: ["storeUrl", "consumerKey", "consumerSecret"],
+    fields: ["store_url", "consumer_key", "consumer_secret"],
     affectsHe: ["מוצרים", "SEO & GEO", "Creative Lab", "רווחיות"],
     affectsEn: ["Products", "SEO & GEO", "Creative Lab", "Profitability"],
     impactHe: "קטלוג מוצרים, הזמנות, הכנסות ונתוני מלאי",
@@ -130,7 +130,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "shopify", name: "Shopify", shortName: "Shopify", icon: "🟢", color: "#96bf48",
-    fields: ["shopDomain", "accessToken"],
+    fields: ["store_url", "access_token"],
     affectsHe: ["מוצרים", "Creative Lab", "רווחיות"],
     affectsEn: ["Products", "Creative Lab", "Profitability"],
     impactHe: "קטלוג מוצרים, הזמנות והכנסות מ-Shopify",
@@ -140,7 +140,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "ga4", name: "Google Analytics 4", shortName: "GA4", icon: "📈", color: "#e37400",
-    fields: ["measurementId", "propertyId"],
+    fields: ["measurement_id", "property_id"],
     affectsHe: ["סקירה כללית", "רווחיות", "SEO & GEO"],
     affectsEn: ["Overview", "Profitability", "SEO & GEO"],
     impactHe: "מבקרים, יחס המרה, אירועים ונתיבי משתמשים",
@@ -150,7 +150,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "gsc", name: "Google Search Console", shortName: "GSC", icon: "🔍", color: "#34a853",
-    fields: ["siteUrl"],
+    fields: ["site_url"],
     affectsHe: ["SEO & GEO", "ניתוח חיפושים"],
     affectsEn: ["SEO & GEO", "Search Intelligence"],
     impactHe: "דירוגים, קליקים, חשיפות ומילות מפתח בגוגל",
@@ -160,7 +160,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "openai", name: "OpenAI", shortName: "OpenAI", icon: "⚡", color: "#10a37f",
-    fields: ["apiKey"],
+    fields: ["api_key"],
     affectsHe: ["Creative Lab", "המלצות AI", "SEO & GEO"],
     affectsEn: ["Creative Lab", "AI Recommendations", "SEO & GEO"],
     impactHe: "יצירת קריאייטיב, כתיבת מודעות ותמונות עם GPT-4o ו-DALL·E 3",
@@ -170,7 +170,7 @@ const CONN_PLATFORMS: ConnPlatform[] = [
   },
   {
     id: "anthropic", name: "Anthropic / Claude", shortName: "Claude", icon: "🧠", color: "#b87333",
-    fields: ["apiKey"],
+    fields: ["api_key"],
     affectsHe: ["המלצות AI", "Creative Lab", "SEO & GEO"],
     affectsEn: ["AI Recommendations", "Creative Lab", "SEO & GEO"],
     impactHe: "ניתוח אסטרטגי, קופירייטינג ו-AI SEO עם Claude",
