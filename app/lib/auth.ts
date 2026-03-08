@@ -70,7 +70,17 @@ export const MODULE_PERMISSIONS: Record<Role, string[]> = {
 /* ── Current user ───────────────────────────────────────────────── */
 export function getUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
-  try { return JSON.parse(localStorage.getItem(KEY_USER) ?? "null"); } catch { return null; }
+  try {
+    const u: AuthUser | null = JSON.parse(localStorage.getItem(KEY_USER) ?? "null");
+    if (!u) return null;
+    const clean = sanitizeName(u.name, u.email);
+    if (clean !== u.name) {
+      const fixed = { ...u, name: clean };
+      localStorage.setItem(KEY_USER, JSON.stringify(fixed));
+      return fixed;
+    }
+    return u;
+  } catch { return null; }
 }
 export function setUser(user: AuthUser): void {
   if (typeof window === "undefined") return;
@@ -125,7 +135,7 @@ export async function loadProfileFromServer(): Promise<AuthUser | null> {
     const profile: AuthUser | null = await res.json();
     if (!profile) return null;
     // Server name/avatar take priority (won't be the email-derived fallback)
-    const merged = { ...user, name: profile.name, avatar: profile.avatar ?? user.avatar };
+    const merged = { ...user, name: sanitizeName(profile.name, user.email), avatar: profile.avatar ?? user.avatar };
     localStorage.setItem(KEY_USER, JSON.stringify(merged));
     return merged;
   } catch { return null; }
@@ -417,7 +427,7 @@ export async function signInWithEmail(email: string, _password: string): Promise
     const res = await fetch("/api/user/profile", { headers: { "x-user-email": email } });
     if (res.ok) {
       const profile: AuthUser | null = await res.json();
-      if (profile?.name) { setUser(profile); return profile; }
+      if (profile?.name) { const p = { ...profile, name: sanitizeName(profile.name, email) }; setUser(p); return p; }
     }
   } catch { /* offline, fall through */ }
   // 3. Truly new user — register with email prefix as temporary name

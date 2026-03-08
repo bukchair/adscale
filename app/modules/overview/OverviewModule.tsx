@@ -24,8 +24,8 @@ interface DashboardData {
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 function mkT(lang: Lang) {
-  return (he: string, en: string, es = en, de = en, fr = en, pt = en): string => {
-    const map: Record<Lang, string> = { he, en, es, de, fr, pt };
+  return (he: string, en: string, es = en, de = en, fr = en, pt = en, ru = en): string => {
+    const map: Partial<Record<Lang, string>> = { he, en, es, de, fr, pt, ru };
     return map[lang] ?? en;
   };
 }

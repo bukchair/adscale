@@ -499,7 +499,7 @@ function PermissionsModal({ lang, user, onClose }: {
 }
 
 /* ── Language Selector Dropdown ─────────────────────────────────── */
-function LangDropdown({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+function LangDropdown({ lang, onChange, compact }: { lang: Lang; onChange: (l: Lang) => void; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const meta = LANG_META[lang];
@@ -512,17 +512,24 @@ function LangDropdown({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => v
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  const LANGS: Lang[] = ["he", "en", "es", "de", "fr", "pt"];
+  const LANGS: Lang[] = ["he", "en", "es", "de", "fr", "pt", "ru"];
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <button onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "7px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.cardAlt, cursor: "pointer", fontSize: 12 }}>
-        <span>{meta.flag}</span>
-        <span style={{ flex: 1, textAlign: "start", color: C.text, fontWeight: 600 }}>{meta.label}</span>
-        <span style={{ color: C.textMuted, fontSize: 10 }}>▾</span>
-      </button>
+      {compact ? (
+        <button onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, cursor: "pointer", fontSize: 13 }} title={meta.label}>
+          <span>{meta.flag}</span>
+          <span style={{ fontSize: 11, color: C.textMuted }}>▾</span>
+        </button>
+      ) : (
+        <button onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "7px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.cardAlt, cursor: "pointer", fontSize: 12 }}>
+          <span>{meta.flag}</span>
+          <span style={{ flex: 1, textAlign: "start", color: C.text, fontWeight: 600 }}>{meta.label}</span>
+          <span style={{ color: C.textMuted, fontSize: 10 }}>▾</span>
+        </button>
+      )}
       {open && (
-        <div style={{ position: "absolute", bottom: "calc(100% + 4px)", left: 0, right: 0, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, boxShadow: C.shadowLg, zIndex: 500, overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", insetInlineEnd: 0, minWidth: 140, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, boxShadow: C.shadowLg, zIndex: 500, overflow: "hidden" }}>
           {LANGS.map(l => {
             const m = LANG_META[l];
             return (
@@ -629,11 +636,6 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
           </button>
         </div>
       )}
-
-      {/* Language selector */}
-      <div style={{ padding: "10px 8px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-        <LangDropdown lang={lang} onChange={onLangChange} />
-      </div>
 
       {/* Super Admin: link to Owner Panel */}
       {user?.platformRole === "super_admin" && (
@@ -830,6 +832,9 @@ export default function ModulesPage() {
           <button className="as-mobile-only" onClick={() => setIsDark(d => !d)} style={{ background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 16 }}>
             {isDark ? "☀️" : "🌙"}
           </button>
+
+          {/* Language switcher */}
+          <LangDropdown lang={lang} onChange={setLang} compact />
 
           {/* Refresh */}
           <button onClick={refetch} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.textSub, cursor: "pointer", fontSize: 16 }} title={tl(lang, UI.refresh!)}>↻</button>
