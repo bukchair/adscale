@@ -69,6 +69,42 @@
   --c-sidebar-active-text: #4338ca;
   --c-sidebar-text:        #64748b;
   --c-sidebar-hover:       #f8fafc;
+
+  /* ── Landing / Auth / Article pages — Light mode ── */
+  --lp-bg:                #f8fafc;
+  --lp-nav-bg:            rgba(248,250,252,0.92);
+  --lp-card-bg:           #ffffff;
+  --lp-card-bg-subtle:    rgba(0,0,0,0.03);
+  --lp-card-border:       rgba(0,0,0,0.08);
+  --lp-card-border-accent:rgba(99,102,241,0.25);
+  --lp-text:              #1e293b;
+  --lp-text-muted:        rgba(30,41,59,0.6);
+  --lp-text-faint:        rgba(30,41,59,0.4);
+  --lp-text-ultra-faint:  rgba(30,41,59,0.28);
+  --lp-text-tiny:         rgba(30,41,59,0.18);
+  --lp-input-bg:          #f1f5f9;
+  --lp-input-border:      #e2e8f0;
+  --lp-divider:           rgba(0,0,0,0.07);
+  --lp-hero-gradient:     linear-gradient(180deg, #eef2ff 0%, #f8fafc 100%);
+  --lp-white-glass:       rgba(99,102,241,0.07);
+  --lp-white-glass-border:rgba(99,102,241,0.15);
+
+  /* ── View (guest dashboard) page — Light mode ── */
+  --vw-bg:         #f0f4f8;
+  --vw-topbar:     #ffffff;
+  --vw-tab-bg:     #ffffff;
+  --vw-card:       #ffffff;
+  --vw-card-alt:   #f8fafc;
+  --vw-border:     #e2e8f0;
+  --vw-border-mid: #f1f5f9;
+  --vw-text:       #1e293b;
+  --vw-text-sub:   #475569;
+  --vw-text-muted: #64748b;
+  --vw-text-tiny:  #94a3b8;
+  --vw-btn-bg:     #f0f4f8;
+  --vw-btn-color:  #475569;
+  --vw-shimmer-a:  #e2e8f0;
+  --vw-shimmer-b:  #f1f5f9;
 }
 
 /* ─────────────────────────────────────────────
@@ -132,6 +168,42 @@
   --c-sidebar-active-text: #818cf8;
   --c-sidebar-text:        #94a3b8;
   --c-sidebar-hover:       #263248;
+
+  /* ── Landing / Auth / Article pages — Dark mode ── */
+  --lp-bg:                #0a0a14;
+  --lp-nav-bg:            rgba(10,10,20,0.92);
+  --lp-card-bg:           rgba(255,255,255,0.04);
+  --lp-card-bg-subtle:    rgba(255,255,255,0.03);
+  --lp-card-border:       rgba(255,255,255,0.1);
+  --lp-card-border-accent:rgba(99,102,241,0.25);
+  --lp-text:              #ffffff;
+  --lp-text-muted:        rgba(255,255,255,0.6);
+  --lp-text-faint:        rgba(255,255,255,0.35);
+  --lp-text-ultra-faint:  rgba(255,255,255,0.25);
+  --lp-text-tiny:         rgba(255,255,255,0.12);
+  --lp-input-bg:          rgba(255,255,255,0.05);
+  --lp-input-border:      rgba(255,255,255,0.15);
+  --lp-divider:           rgba(255,255,255,0.07);
+  --lp-hero-gradient:     linear-gradient(180deg, #0d0d1a 0%, #0a0a14 100%);
+  --lp-white-glass:       rgba(255,255,255,0.05);
+  --lp-white-glass-border:rgba(255,255,255,0.12);
+
+  /* ── View (guest dashboard) page — Dark mode ── */
+  --vw-bg:         #0f172a;
+  --vw-topbar:     #1e293b;
+  --vw-tab-bg:     #1e293b;
+  --vw-card:       #1e293b;
+  --vw-card-alt:   #162032;
+  --vw-border:     #334155;
+  --vw-border-mid: #253043;
+  --vw-text:       #f1f5f9;
+  --vw-text-sub:   #cbd5e1;
+  --vw-text-muted: #94a3b8;
+  --vw-text-tiny:  #64748b;
+  --vw-btn-bg:     #263248;
+  --vw-btn-color:  #cbd5e1;
+  --vw-shimmer-a:  #1e293b;
+  --vw-shimmer-b:  #263248;
 }
 
 body {
