@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { getUser, isSuperAdmin, clearUser, type AuthUser } from "../lib/auth";
+import { getUser, isSuperAdmin, clearUser, clearAllData, type AuthUser } from "../lib/auth";
 import {
   getTenants, saveTenant, deleteTenant, updateTenantStatus, updateTenantPlan,
   seedDemoTenants, setViewingAsTenant, clearViewingAs,
@@ -123,6 +123,8 @@ export default function AdminPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [lang, setLang] = useState<"he" | "en">("he");
   const [activeSection, setActiveSection] = useState<"tenants" | "analytics" | "settings">("tenants");
+  const [clearingData, setClearingData] = useState(false);
+  const [clearConfirm, setClearConfirm] = useState(false);
 
   const isHe = lang === "he";
   const t = (he: string, en: string) => isHe ? he : en;
@@ -229,6 +231,33 @@ export default function AdminPage() {
             style={{ background: D.accentL, border: `1px solid ${D.accent}44`, borderRadius: 8, padding: "6px 14px", color: D.accent, cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
             ← {t("חזור לממשק", "Back to App")}
           </button>
+          {!clearConfirm ? (
+            <button onClick={() => setClearConfirm(true)}
+              style={{ background: "transparent", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 8, padding: "6px 14px", color: "#ef4444", cursor: "pointer", fontSize: 13 }}>
+              {t("מחיקת כל הנתונים", "Clear All Data")}
+            </button>
+          ) : (
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#ef4444" }}>{t("בטוח?", "Sure?")}</span>
+              <button
+                disabled={clearingData}
+                onClick={async () => {
+                  setClearingData(true);
+                  await clearAllData();
+                  setClearingData(false);
+                  setClearConfirm(false);
+                  setTenants([]);
+                  window.location.reload();
+                }}
+                style={{ background: "#ef4444", border: "none", borderRadius: 8, padding: "6px 14px", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, opacity: clearingData ? 0.6 : 1 }}>
+                {clearingData ? t("מוחק...", "Clearing...") : t("כן, מחק הכל", "Yes, clear all")}
+              </button>
+              <button onClick={() => setClearConfirm(false)}
+                style={{ background: "transparent", border: `1px solid ${D.border}`, borderRadius: 8, padding: "6px 10px", color: D.muted, cursor: "pointer", fontSize: 13 }}>
+                {t("ביטול", "Cancel")}
+              </button>
+            </div>
+          )}
           <button onClick={() => { clearUser(); router.replace("/"); }}
             style={{ background: "transparent", border: `1px solid ${D.border}`, borderRadius: 8, padding: "6px 14px", color: D.muted, cursor: "pointer", fontSize: 13 }}>
             {t("יציאה", "Logout")}
