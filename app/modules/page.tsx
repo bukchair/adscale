@@ -495,10 +495,17 @@ export default function ModulesPage() {
     localStorage.setItem("bscale_theme", isDark ? "dark" : "light");
   }, [isDark]);
 
-  // Load connections on mount + refresh when switching to integrations tab
+  // Load connections on mount + refresh when switching tabs
   useEffect(() => {
     setConnections(getConnections());
   }, [activeTab]);
+
+  // Real-time sync: listen for any connection change from anywhere in the app
+  useEffect(() => {
+    const handler = () => setConnections(getConnections());
+    window.addEventListener("bscale:connections-changed", handler);
+    return () => window.removeEventListener("bscale:connections-changed", handler);
+  }, []);
 
   function handleLogout() {
     clearUser();
