@@ -341,7 +341,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
           <div className="as-card" style={{ padding:20 }}>
             <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:12 }}>🚀 {t("פרסום ישיר","Direct Publish")}</div>
             {published ? (
-              <div style={{ background:C.greenLight, border:`1px solid ${C.green}33`, borderRadius:10, padding:"14px 18px", color:C.greenText, fontWeight:700, fontSize:14 }}>
+              <div style={{ background:C.greenLight, border:`1px solid ${C.greenA}`, borderRadius:10, padding:"14px 18px", color:C.greenText, fontWeight:700, fontSize:14 }}>
                 ✅ {t(`המודעה פורסמה ב-${pl.label}!`,`Ad published to ${pl.label}!`)}
               </div>
             ) : (

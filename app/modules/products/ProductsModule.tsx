@@ -200,7 +200,7 @@ export default function ProductsModule({ lang }: { lang: Lang }) {
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <div style={{
                           width: 40, height: 40, borderRadius: 8,
-                          background: C.accentLight, border: `1px solid ${C.accent}22`,
+                          background: C.accentLight, border: `1px solid ${C.accentA}`,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           fontSize: 20, flexShrink: 0,
                         }}>{p.image}</div>

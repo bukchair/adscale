@@ -386,7 +386,7 @@ function ConnectionCard({ def, lang }: { def: IntegrationDef; lang: Lang }) {
 
           {/* Test result */}
           {st.testResult && (
-            <div style={{ margin: "12px 18px 0", padding: "10px 14px", borderRadius: 8, background: st.testResult === "ok" ? C.greenLight : C.redLight, border: `1px solid ${st.testResult === "ok" ? C.green : C.red}33`, fontSize: 13, fontWeight: 600, color: st.testResult === "ok" ? C.greenText : C.redText }}>
+            <div style={{ margin: "12px 18px 0", padding: "10px 14px", borderRadius: 8, background: st.testResult === "ok" ? C.greenLight : C.redLight, border: `1px solid ${st.testResult === "ok" ? C.greenA : C.redA}`, fontSize: 13, fontWeight: 600, color: st.testResult === "ok" ? C.greenText : C.redText }}>
               {st.testResult === "ok"
                 ? `✅ ${t("החיבור תקין! לחץ 'שמור' להפעלה", "Connection OK! Click 'Save' to activate")}`
                 : `❌ ${t("פרטים שגויים או חסרים — בדוק שוב ועיין במדריך", "Incorrect or missing details — check again and see guide")}`}
@@ -465,10 +465,10 @@ export default function IntegrationsModule({ lang }: { lang: Lang }) {
       <div>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.purple, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
           <span>{CATEGORY_META.ai.he}</span>
-          <div style={{ flex: 1, height: 1, background: `${C.purple}33` }} />
+          <div style={{ flex: 1, height: 1, background: `${C.purpleA2}` }} />
           <span style={{ fontSize: 11, fontWeight: 500, color: C.textMuted }}>{t("נדרש לניתוח SEO/GEO ויצירת מודעות", "Required for SEO/GEO analysis and ad generation")}</span>
         </div>
-        <div style={{ background: `${C.purple}08`, border: `1px solid ${C.purple}22`, borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ background: `${C.purpleA3}`, border: `1px solid ${C.purpleA}`, borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
           {INTEGRATIONS.filter(d => d.category === "ai").map(def => (
             <ConnectionCard key={def.id} def={def} lang={lang} />
           ))}

@@ -358,7 +358,7 @@ export default function AudiencesModule({ lang }: { lang: Lang }) {
           </div>
 
           {/* AI recommendation */}
-          <div className="as-card" style={{ padding:20, background:C.accentLight, border:`1px solid ${C.accent}22` }}>
+          <div className="as-card" style={{ padding:20, background:C.accentLight, border:`1px solid ${C.accentA}` }}>
             <div style={{ fontSize:15, fontWeight:700, color:C.accent, marginBottom:12 }}>🤖 {t("המלצות AI לקהלים","AI Audience Recommendations")}</div>
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
               {[
