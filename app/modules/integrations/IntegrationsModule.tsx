@@ -156,6 +156,24 @@ const INTEGRATIONS: IntegrationDef[] = [
       { step:"הדבק כאן את כתובת החנות, API Key ו-Access Token", stepEn:"Paste store URL, API Key and Access Token here" },
     ],
   },
+  /* ── Email ───────────────────────────────────────────────────── */
+  {
+    id: "gmail", name: "Gmail (Google)", icon: "✉️", color: "#ea4335", category: "analytics",
+    description: "חבר Gmail לשליחת דוחות, עדכונים אוטומטיים והזמנות משתמשים למערכת",
+    descriptionEn: "Connect Gmail to send reports, automated updates and user invitations",
+    fields: [
+      { key:"client_id",     label:"OAuth Client ID",     labelEn:"OAuth Client ID",     placeholder:"1234...googleusercontent.com", placeholderEn:"1234...googleusercontent.com", type:"text",     hint:"Google Cloud Console → Credentials → OAuth Client ID", hintEn:"Google Cloud Console → Credentials → OAuth Client ID" },
+      { key:"client_secret", label:"OAuth Client Secret", labelEn:"OAuth Client Secret", placeholder:"GOCSPX-...",                    placeholderEn:"GOCSPX-...",                   type:"password", hint:"Google Cloud Console → Credentials → Client Secret", hintEn:"Google Cloud Console → Credentials → Client Secret" },
+      { key:"sender_email",  label:"כתובת שולח",          labelEn:"Sender Email",        placeholder:"reports@yourcompany.com",       placeholderEn:"reports@yourcompany.com",      type:"text",     hint:"כתובת Gmail שממנה יישלחו הדוחות", hintEn:"Gmail address that will send reports" },
+    ],
+    helpSteps: [
+      { step:"עבור ל-Google Cloud Console ← צור פרויקט חדש (או השתמש בקיים)", stepEn:"Go to Google Cloud Console → create a new project (or use existing)", link:{ text:"console.cloud.google.com", textEn:"console.cloud.google.com", url:"https://console.cloud.google.com" } },
+      { step:"APIs & Services ← Library ← חפש 'Gmail API' ← Enable", stepEn:"APIs & Services → Library → search 'Gmail API' → Enable" },
+      { step:"Credentials ← Create Credentials ← OAuth Client ID ← Web Application", stepEn:"Credentials → Create Credentials → OAuth Client ID → Web Application" },
+      { step:"הוסף Authorized redirect URI: https://yourdomain.com/api/auth/gmail/callback", stepEn:"Add Authorized redirect URI: https://yourdomain.com/api/auth/gmail/callback" },
+      { step:"העתק Client ID ו-Client Secret ← הכנס כאן ← לחץ 'חבר עם Google'", stepEn:"Copy Client ID and Client Secret → enter here → click 'Connect with Google'" },
+    ],
+  },
   /* ── Analytics ───────────────────────────────────────────────── */
   {
     id: "ga4", name: "Google Analytics 4", icon: "📊", color: "#f9ab00", category: "analytics",
@@ -194,10 +212,10 @@ const INTEGRATIONS: IntegrationDef[] = [
 
 /* ── Category metadata ───────────────────────────────────────────── */
 const CATEGORY_META = {
-  ai:        { he:"🤖 מנועי AI",         en:"🤖 AI Engines",       color: C.purple },
-  ads:       { he:"📢 פלטפורמות פרסום",  en:"📢 Ad Platforms",     color: C.blue   },
-  ecommerce: { he:"🛒 חנות אינטרנטית",   en:"🛒 eCommerce Store",  color: C.teal   },
-  analytics: { he:"📊 אנליטיקה וSEO",    en:"📊 Analytics & SEO",  color: C.amber  },
+  ai:        { he:"🤖 מנועי AI",          en:"🤖 AI Engines",        color: C.purple },
+  ads:       { he:"📢 פלטפורמות פרסום",   en:"📢 Ad Platforms",      color: C.blue   },
+  ecommerce: { he:"🛒 חנות אינטרנטית",    en:"🛒 eCommerce Store",   color: C.teal   },
+  analytics: { he:"📊 אנליטיקה, SEO ואימייל", en:"📊 Analytics, SEO & Email", color: C.amber  },
 };
 
 /* ── State per integration ───────────────────────────────────────── */
@@ -411,20 +429,47 @@ function ConnectionCard({ def, lang, onSaved }: { def: IntegrationDef; lang: Lan
 
           {/* Actions */}
           <div style={{ padding: "14px 18px 16px", display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button
-              onClick={e => { e.stopPropagation(); testConnection(); }}
-              disabled={st.testing}
-              style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${def.color}44`, background: `${def.color}11`, color: def.color, cursor: st.testing ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700 }}
-            >
-              {st.testing ? `⏳ ${t("בודק...", "Testing...")}` : `🔌 ${t("בדוק חיבור", "Test Connection")}`}
-            </button>
-            <button
-              onClick={e => { e.stopPropagation(); save(); }}
-              disabled={st.saving}
-              style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: st.saving ? C.border : def.color, color: st.saving ? C.textMuted : "#fff", cursor: st.saving ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700 }}
-            >
-              {st.saving ? `⏳ ${t("שומר...", "Saving...")}` : `💾 ${t("שמור", "Save")}`}
-            </button>
+            {/* Gmail: show OAuth connect button prominently */}
+            {def.id === "gmail" && st.status !== "connected" && (
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  // Simulate OAuth flow — in production this would redirect to Google OAuth
+                  if (st.values.client_id && st.values.client_secret && st.values.sender_email) {
+                    setSt(p => ({ ...p, saving: true }));
+                    setTimeout(() => {
+                      saveConnection(def.id, { ...st.values, oauth: "connected" });
+                      setSt(p => ({ ...p, saving: false, status: "connected", accountName: st.values.sender_email, lastSync: new Date().toISOString(), expanded: false }));
+                      onSaved?.();
+                    }, 1800);
+                  } else {
+                    setSt(p => ({ ...p, testResult: "fail" }));
+                  }
+                }}
+                disabled={st.saving}
+                style={{ padding: "10px 22px", borderRadius: 8, border: "none", background: st.saving ? C.border : "#ea4335", color: "#fff", cursor: st.saving ? "not-allowed" : "pointer", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}
+              >
+                {st.saving ? `⏳ ${t("מחבר...", "Connecting...")}` : `✉️ ${t("חבר עם Google", "Connect with Google")}`}
+              </button>
+            )}
+            {def.id !== "gmail" && (
+              <button
+                onClick={e => { e.stopPropagation(); testConnection(); }}
+                disabled={st.testing}
+                style={{ padding: "9px 18px", borderRadius: 8, border: `1px solid ${def.color}44`, background: `${def.color}11`, color: def.color, cursor: st.testing ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700 }}
+              >
+                {st.testing ? `⏳ ${t("בודק...", "Testing...")}` : `🔌 ${t("בדוק חיבור", "Test Connection")}`}
+              </button>
+            )}
+            {def.id !== "gmail" && (
+              <button
+                onClick={e => { e.stopPropagation(); save(); }}
+                disabled={st.saving}
+                style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: st.saving ? C.border : def.color, color: st.saving ? C.textMuted : "#fff", cursor: st.saving ? "not-allowed" : "pointer", fontSize: 13, fontWeight: 700 }}
+              >
+                {st.saving ? `⏳ ${t("שומר...", "Saving...")}` : `💾 ${t("שמור", "Save")}`}
+              </button>
+            )}
             {st.status === "connected" && (
               <button
                 onClick={e => { e.stopPropagation(); disconnect(); }}
@@ -432,6 +477,23 @@ function ConnectionCard({ def, lang, onSaved }: { def: IntegrationDef; lang: Lan
               >
                 🔌 {t("נתק", "Disconnect")}
               </button>
+            )}
+            {/* Gmail connected: show email actions */}
+            {def.id === "gmail" && st.status === "connected" && (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  onClick={e => { e.stopPropagation(); alert(t("שליחת דוח שבועי... (בפיתוח)", "Sending weekly report... (coming soon)")); }}
+                  style={{ padding: "9px 16px", borderRadius: 8, border: `1px solid #ea433544`, background: "#fce8e6", color: "#c5221f", cursor: "pointer", fontSize: 13, fontWeight: 700 }}
+                >
+                  📊 {t("שלח דוח שבועי", "Send Weekly Report")}
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); alert(t("הגדרת דוחות אוטומטיים... (בפיתוח)", "Scheduling auto reports... (coming soon)")); }}
+                  style={{ padding: "9px 16px", borderRadius: 8, border: `1px solid #ea433522`, background: "#fff", color: "#ea4335", cursor: "pointer", fontSize: 13, fontWeight: 600 }}
+                >
+                  ⏰ {t("תזמן דוחות", "Schedule Reports")}
+                </button>
+              </div>
             )}
             <button
               onClick={e => { e.stopPropagation(); toggle(); }}
