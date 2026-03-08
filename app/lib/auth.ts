@@ -122,21 +122,27 @@ export function getConnections(): Record<string, Connection> {
   if (typeof window === "undefined") return {};
   try { return JSON.parse(localStorage.getItem(KEY_CONNECTIONS) ?? "{}"); } catch { return {}; }
 }
+function notifyConnectionsChanged() {
+  window.dispatchEvent(new CustomEvent("bscale:connections-changed"));
+}
 export function saveConnection(id: string, fields: Record<string, string>): void {
   if (typeof window === "undefined") return;
   const all = getConnections();
   all[id] = { connected: true, connectedAt: new Date().toISOString(), fields };
   localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(all));
+  notifyConnectionsChanged();
 }
 export function removeConnection(id: string): void {
   if (typeof window === "undefined") return;
   const all = getConnections();
   delete all[id];
   localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(all));
+  notifyConnectionsChanged();
 }
 export function clearConnections(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(KEY_CONNECTIONS);
+  notifyConnectionsChanged();
 }
 
 export function canAccess(user: AuthUser | null, moduleId: string): boolean {
