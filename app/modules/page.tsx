@@ -19,10 +19,12 @@ import ProductsModule from "./products/ProductsModule";
 import AudiencesModule from "./audiences/AudiencesModule";
 import UsersModule from "./users/UsersModule";
 import FinancialReportsModule from "./financial-reports/FinancialReportsModule";
-import { getUser, clearUser, getConnections, loadConnectionsFromServer, isSuperAdmin, type Connection } from "../lib/auth";
+import { getUser, clearUser, getConnections, loadConnectionsFromServer, isSuperAdmin, type Connection, ROLES, MODULE_PERMISSIONS } from "../lib/auth";
 import { getViewingAsTenantId, getTenantById, clearViewingAs } from "../lib/tenant";
+import type { Lang } from "../lib/i18n";
+import { LANG_META, tl, NAV_GROUP_LABELS, MODULE_NAMES, MODULE_INFO, UI } from "../lib/i18n";
 
-export type Lang = "he" | "en";
+export type { Lang };
 
 function sanitizeDisplayName(name: string | undefined, email: string): string {
   if (!name || name.startsWith("http://") || name.startsWith("https://")) {
@@ -34,45 +36,32 @@ function sanitizeDisplayName(name: string | undefined, email: string): string {
 
 /* ── Navigation items ──────────────────────────────────────────── */
 const NAV_ITEMS = [
-  { id: "overview",          icon: "📊", he: "סקירה כללית",    en: "Overview",            group: "performance" },
-  { id: "profitability",     icon: "💰", he: "רווחיות",        en: "Profitability",       group: "performance" },
-  { id: "budget",            icon: "📈", he: "ניהול תקציב",    en: "Budget Control",      group: "performance" },
-  { id: "recommendations",   icon: "🤖", he: "המלצות AI",      en: "AI Recommendations",  group: "campaigns" },
-  { id: "search-terms",      icon: "🔍", he: "ניתוח חיפושים",  en: "Search Intelligence", group: "campaigns" },
-  { id: "negative-keywords", icon: "🚫", he: "מילות שליליות",   en: "Negative Keywords",   group: "campaigns" },
-  { id: "seo",               icon: "🎯", he: "מרכז SEO / GEO",  en: "SEO / GEO Center",   group: "growth" },
-  { id: "products",          icon: "🛍️", he: "מוצרים",          en: "Products",            group: "growth" },
-  { id: "audiences",         icon: "👥", he: "קהלים",            en: "Audiences",           group: "growth" },
-  { id: "creative-lab",      icon: "✍️", he: "מעבדת יצירה",     en: "Creative Lab",        group: "growth" },
-  { id: "financial-reports",  icon: "💹", he: "דוחות כספיים",   en: "Financial Reports",   group: "performance" },
-  { id: "approvals",         icon: "✅", he: "אישורים",         en: "Approvals",           group: "manage" },
-  { id: "automation",        icon: "⚙️", he: "אוטומציה",       en: "Automation",          group: "manage" },
-  { id: "audit-log",         icon: "📋", he: "יומן פעולות",     en: "Audit Log",           group: "manage" },
-  { id: "integrations",      icon: "🔗", he: "חיבורים",        en: "Integrations",        group: "manage" },
-  { id: "users",             icon: "👤", he: "משתמשים",        en: "Users & Roles",       group: "manage" },
+  { id: "overview",          icon: "📊", group: "performance" },
+  { id: "profitability",     icon: "💰", group: "performance" },
+  { id: "budget",            icon: "📈", group: "performance" },
+  { id: "financial-reports", icon: "💹", group: "performance" },
+  { id: "recommendations",   icon: "🤖", group: "campaigns"   },
+  { id: "search-terms",      icon: "🔍", group: "campaigns"   },
+  { id: "negative-keywords", icon: "🚫", group: "campaigns"   },
+  { id: "seo",               icon: "🎯", group: "growth"      },
+  { id: "products",          icon: "🛍️", group: "growth"      },
+  { id: "audiences",         icon: "👥", group: "growth"      },
+  { id: "creative-lab",      icon: "✍️", group: "growth"      },
+  { id: "approvals",         icon: "✅", group: "manage"      },
+  { id: "automation",        icon: "⚙️", group: "manage"      },
+  { id: "audit-log",         icon: "📋", group: "manage"      },
+  { id: "integrations",      icon: "🔗", group: "manage"      },
+  { id: "users",             icon: "👤", group: "manage"      },
 ] as const;
 
 type TabId = typeof NAV_ITEMS[number]["id"];
 
-const NAV_GROUPS = {
-  he: [
-    { id: "performance", label: "ביצועים" },
-    { id: "campaigns",   label: "קמפיינים" },
-    { id: "growth",      label: "צמיחה" },
-    { id: "manage",      label: "ניהול" },
-  ],
-  en: [
-    { id: "performance", label: "Performance" },
-    { id: "campaigns",   label: "Campaigns" },
-    { id: "growth",      label: "Growth" },
-    { id: "manage",      label: "Manage" },
-  ],
-};
+const NAV_GROUPS = ["performance", "campaigns", "growth", "manage"] as const;
 
 const DATE_PRESETS = [
-  { he: "7 ימים",  en: "7d",  days: 7 },
-  { he: "14 ימים", en: "14d", days: 14 },
-  { he: "30 ימים", en: "30d", days: 30 },
+  { he: "7 ימים",  en: "7d",  es: "7d",   de: "7T",  fr: "7j",  pt: "7d",  days: 7  },
+  { he: "14 ימים", en: "14d", es: "14d",  de: "14T", fr: "14j", pt: "14d", days: 14 },
+  { he: "30 ימים", en: "30d", es: "30d",  de: "30T", fr: "30j", pt: "30d", days: 30 },
 ];
 
 const BADGES: Partial<Record<TabId, { count: number; color: string }>> = {
@@ -97,6 +86,7 @@ interface ConnPlatform {
   impactEn: string;
   missingImpactHe: string;
   missingImpactEn: string;
+  creatorOnly?: boolean; // Gemini is set at creator level
 }
 
 const CONN_PLATFORMS: ConnPlatform[] = [
@@ -141,16 +131,6 @@ const CONN_PLATFORMS: ConnPlatform[] = [
     missingImpactEn: "Products, revenue and SEO are not synced from the store.",
   },
   {
-    id: "shopify", name: "Shopify", shortName: "Shopify", icon: "🟢", color: "#96bf48",
-    fields: ["store_url", "access_token"],
-    affectsHe: ["מוצרים", "Creative Lab", "רווחיות"],
-    affectsEn: ["Products", "Creative Lab", "Profitability"],
-    impactHe: "קטלוג מוצרים, הזמנות והכנסות מ-Shopify",
-    impactEn: "Product catalog, orders and revenue from Shopify",
-    missingImpactHe: "נתוני Shopify לא מסונכרנים.",
-    missingImpactEn: "Shopify data not synced.",
-  },
-  {
     id: "ga4", name: "Google Analytics 4", shortName: "GA4", icon: "📈", color: "#e37400",
     fields: ["measurement_id", "property_id"],
     affectsHe: ["סקירה כללית", "רווחיות", "SEO & GEO"],
@@ -171,26 +151,6 @@ const CONN_PLATFORMS: ConnPlatform[] = [
     missingImpactEn: "SEO & GEO analysis limited — no real search data.",
   },
   {
-    id: "openai", name: "OpenAI", shortName: "OpenAI", icon: "⚡", color: "#10a37f",
-    fields: ["api_key"],
-    affectsHe: ["Creative Lab", "המלצות AI", "SEO & GEO"],
-    affectsEn: ["Creative Lab", "AI Recommendations", "SEO & GEO"],
-    impactHe: "יצירת קריאייטיב, כתיבת מודעות ותמונות עם GPT-4o ו-DALL·E 3",
-    impactEn: "Creative generation, ad copywriting and images with GPT-4o & DALL·E 3",
-    missingImpactHe: "AI לתוכן ותמונות לא זמין.",
-    missingImpactEn: "AI content and image generation unavailable.",
-  },
-  {
-    id: "anthropic", name: "Anthropic / Claude", shortName: "Claude", icon: "🧠", color: "#b87333",
-    fields: ["api_key"],
-    affectsHe: ["המלצות AI", "Creative Lab", "SEO & GEO"],
-    affectsEn: ["AI Recommendations", "Creative Lab", "SEO & GEO"],
-    impactHe: "ניתוח אסטרטגי, קופירייטינג ו-AI SEO עם Claude",
-    impactEn: "Strategic analysis, copywriting and AI SEO with Claude",
-    missingImpactHe: "ניתוח AI מעמיק ואסטרטגיה לא זמינים.",
-    missingImpactEn: "Deep AI analysis and strategy unavailable.",
-  },
-  {
     id: "gmail", name: "Gmail", shortName: "Gmail", icon: "✉️", color: "#ea4335",
     fields: ["client_id", "client_secret", "sender_email"],
     affectsHe: ["דוחות כספיים", "משתמשים", "אוטומציה"],
@@ -199,6 +159,17 @@ const CONN_PLATFORMS: ConnPlatform[] = [
     impactEn: "Send automated reports, updates and user invitations by email",
     missingImpactHe: "שליחת דוחות ועדכונים באימייל לא זמינה.",
     missingImpactEn: "Email reports and updates unavailable.",
+  },
+  {
+    id: "gemini", name: "Google Gemini AI", shortName: "Gemini", icon: "✨", color: "#9333ea",
+    fields: ["api_key"],
+    affectsHe: ["Creative Lab", "המלצות AI", "SEO & GEO", "ניתוח חיפושים"],
+    affectsEn: ["Creative Lab", "AI Recommendations", "SEO & GEO", "Search Intelligence"],
+    impactHe: "יצירת קריאייטיב, כתיבת מודעות, ניתוח SEO ותמונות מוצר עם Gemini",
+    impactEn: "Creative generation, ad copywriting, SEO analysis and product images with Gemini",
+    missingImpactHe: "AI לתוכן, תמונות וניתוח אסטרטגי לא זמין.",
+    missingImpactEn: "AI content, images and strategic analysis unavailable.",
+    creatorOnly: false,
   },
 ];
 
@@ -235,17 +206,14 @@ function ConnectionDetailPopup({
       <div className="as-popup-mobile" style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24, width: 340, maxWidth: "calc(100vw - 24px)", boxShadow: C.shadowLg, position: "relative" }}
         onClick={e => e.stopPropagation()}>
         <button onClick={onClose} style={{ position: "absolute", top: 12, insetInlineEnd: 12, background: "none", border: "none", fontSize: 18, cursor: "pointer", color: C.textMuted }}>✕</button>
-
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
           <div style={{ width: 48, height: 48, borderRadius: 14, background: platform.color + "15", border: `1px solid ${platform.color}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>{platform.icon}</div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 16, color: C.text }}>{platform.name}</div>
             <div style={{ fontSize: 12, color: quality > 0 ? color : C.textMuted, fontWeight: 600, marginTop: 2 }}>
-              {quality === 0 ? t("לא מחובר", "Not Connected") : quality === 100 ? t("מחובר ✓", "Connected ✓") : t(`חלקי — ${quality}%`, `Partial — ${quality}%`)}
+              {quality === 0 ? tl(lang, UI.notConnected!) : quality === 100 ? tl(lang, UI.connected!) : `${tl(lang, {he:"חלקי",en:"Partial",es:"Parcial",de:"Teilweise",fr:"Partiel",pt:"Parcial"})} — ${quality}%`}
             </div>
           </div>
-          {/* Quality ring */}
           <svg width="56" height="56" style={{ marginInlineStart: "auto", transform: isHe ? "scaleX(-1)" : "none" }}>
             <circle cx="28" cy="28" r={r} fill="none" stroke={C.border} strokeWidth="4" />
             <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="4"
@@ -254,27 +222,21 @@ function ConnectionDetailPopup({
             <text x="28" y="33" textAnchor="middle" fontSize="11" fontWeight="700" fill={color}>{quality}%</text>
           </svg>
         </div>
-
-        {/* Impact description */}
         <div style={{ background: C.cardAlt, borderRadius: 10, padding: "12px 14px", marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{t("מה חיבור זה מספק", "What this connection provides")}</div>
+          <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{tl(lang, UI.whatProvides!)}</div>
           <div style={{ fontSize: 13, color: C.textSub, lineHeight: 1.6 }}>{isHe ? platform.impactHe : platform.impactEn}</div>
         </div>
-
-        {/* Affected modules */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{t("משפיע על", "Affects modules")}</div>
+          <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{tl(lang, UI.affects!)}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
             {(isHe ? platform.affectsHe : platform.affectsEn).map(mod => (
               <span key={mod} style={{ background: C.accentLight, color: C.accent, borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>{mod}</span>
             ))}
           </div>
         </div>
-
-        {/* Fields status */}
         {quality < 100 && quality > 0 && (
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{t("שדות נדרשים", "Required fields")}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{tl(lang, UI.requiredFields!)}</div>
             {platform.fields.map(f => {
               const filled = !!conn?.fields?.[f]?.trim();
               return (
@@ -285,110 +247,301 @@ function ConnectionDetailPopup({
             })}
           </div>
         )}
-
-        {/* Missing impact warning */}
         {quality < 100 && (
           <div style={{ background: quality === 0 ? C.redLight : C.amberLight, border: `1px solid ${quality === 0 ? C.red : C.amber}30`, borderRadius: 10, padding: "10px 12px", marginBottom: 16, fontSize: 12, color: quality === 0 ? C.redText : C.amberText, lineHeight: 1.5 }}>
             ⚠️ {isHe ? platform.missingImpactHe : platform.missingImpactEn}
           </div>
         )}
-
         <button onClick={onGoToConnections} style={{ width: "100%", background: platform.color, border: "none", borderRadius: 10, padding: "11px 0", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
-          {quality === 0 ? t("חבר עכשיו", "Connect Now") : t("ערוך חיבור", "Edit Connection")}
+          {quality === 0 ? tl(lang, UI.connectNow!) : tl(lang, UI.editConn!)}
         </button>
       </div>
     </div>
   );
 }
 
-/* ── Connection Status Bar ──────────────────────────────────────── */
-function ConnectionStatusBar({ lang, connections, onGoToConnections }: {
+/* ── Compact Connection Quality Bubble (replaces full bar) ──────── */
+function QualityBubble({ lang, connections, onGoToConnections }: {
   lang: Lang;
   connections: Record<string, Connection>;
   onGoToConnections: () => void;
 }) {
-  const isHe = lang === "he";
-  const t = (he: string, en: string) => isHe ? he : en;
-  const [popup, setPopup] = useState<ConnPlatform | null>(null);
+  const [open, setOpen] = useState(false);
+  const [detailPlatform, setDetailPlatform] = useState<ConnPlatform | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   const connectedCount = CONN_PLATFORMS.filter(p => connections[p.id]?.connected).length;
+  const totalCount = CONN_PLATFORMS.length;
   const avgQuality = Math.round(
-    CONN_PLATFORMS.reduce((acc, p) => acc + getConnectionQuality(p, connections[p.id]), 0) / CONN_PLATFORMS.length
+    CONN_PLATFORMS.reduce((acc, p) => acc + getConnectionQuality(p, connections[p.id]), 0) / totalCount
   );
+  const color = qualityColor(avgQuality);
+
+  const issues = CONN_PLATFORMS.filter(p => getConnectionQuality(p, connections[p.id]) < 100);
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
 
   return (
-    <>
-      <div style={{ background: C.cardAlt, borderBottom: `1px solid ${C.border}`, padding: "6px 20px", flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
-        {/* Summary */}
-        <div className="as-desktop-only" style={{ alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 11, color: C.textMuted, whiteSpace: "nowrap" }}>
-            {t("חיבורים", "Connections")}:
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: qualityColor(avgQuality) }}>
-            {connectedCount}/{CONN_PLATFORMS.length}
-          </span>
-          <div style={{ width: 48, height: 5, background: C.border, borderRadius: 3, overflow: "hidden" }}>
-            <div style={{ width: `${(connectedCount / CONN_PLATFORMS.length) * 100}%`, height: "100%", background: qualityColor(avgQuality), borderRadius: 3, transition: "width 0.4s" }} />
+    <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
+      {/* Bubble trigger */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "5px 11px", borderRadius: 20, cursor: "pointer",
+          border: `1px solid ${open ? color : color + "50"}`,
+          background: open ? color + "12" : color + "08",
+          transition: "all 0.15s",
+        }}
+      >
+        <span style={{ fontSize: 14 }}>🔗</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color }} className="as-desktop-only">
+          {connectedCount}/{totalCount}
+        </span>
+        <span style={{
+          fontSize: 10, fontWeight: 700, color: "#fff",
+          background: color, borderRadius: 10, padding: "1px 6px",
+        }}>{avgQuality}%</span>
+        <span style={{ fontSize: 10, color: C.textMuted }}>▾</span>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 8px)", insetInlineEnd: 0,
+          background: C.card, border: `1px solid ${C.border}`, borderRadius: 16,
+          boxShadow: C.shadowLg, width: 320, maxWidth: "calc(100vw - 24px)", zIndex: 200,
+          padding: 16,
+        }}>
+          {/* Header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{tl(lang, UI.connQuality!)}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {/* Overall ring */}
+              <svg width="40" height="40">
+                <circle cx="20" cy="20" r="16" fill="none" stroke={C.border} strokeWidth="3.5" />
+                <circle cx="20" cy="20" r="16" fill="none" stroke={color} strokeWidth="3.5"
+                  strokeDasharray={`${2 * Math.PI * 16 * avgQuality / 100} ${2 * Math.PI * 16}`}
+                  strokeLinecap="round" transform="rotate(-90 20 20)" />
+                <text x="20" y="25" textAnchor="middle" fontSize="9" fontWeight="700" fill={color}>{avgQuality}%</text>
+              </svg>
+            </div>
+          </div>
+
+          {/* Platform list */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+            {CONN_PLATFORMS.map(p => {
+              const q = getConnectionQuality(p, connections[p.id]);
+              const c = qualityColor(q);
+              return (
+                <button key={p.id} onClick={() => { setDetailPlatform(p); setOpen(false); }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 8, background: q > 0 ? c + "08" : "transparent", border: `1px solid ${q > 0 ? c + "30" : C.border}`, cursor: "pointer", width: "100%", textAlign: "start" }}>
+                  <span style={{ fontSize: 14 }}>{p.icon}</span>
+                  <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: q > 0 ? C.text : C.textMuted }}>{p.name}</span>
+                  {q > 0 ? (
+                    <span style={{ fontSize: 10, fontWeight: 700, background: c, color: "#fff", borderRadius: 8, padding: "2px 7px" }}>{q}%</span>
+                  ) : (
+                    <span style={{ fontSize: 10, color: C.textMuted }}>—</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Issues checklist */}
+          <div style={{ background: C.cardAlt, borderRadius: 10, padding: "10px 12px", marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>{tl(lang, UI.issues!)}</div>
+            {issues.length === 0 ? (
+              <div style={{ fontSize: 12, color: C.green }}>{tl(lang, UI.noIssues!)}</div>
+            ) : (
+              issues.slice(0, 5).map(p => (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: C.textSub, marginBottom: 4 }}>
+                  <span style={{ color: "#f59e0b", flexShrink: 0 }}>⚠</span>
+                  <span>{lang === "he" ? p.missingImpactHe.split(".")[0] : p.missingImpactEn.split(".")[0]}</span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <button onClick={() => { onGoToConnections(); setOpen(false); }}
+            style={{ width: "100%", background: C.accent, color: "#fff", border: "none", borderRadius: 10, padding: "9px 0", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+            {tl(lang, UI.manageConns!)} 🔗
+          </button>
+        </div>
+      )}
+
+      {/* Detail popup */}
+      {detailPlatform && (
+        <ConnectionDetailPopup
+          platform={detailPlatform}
+          quality={getConnectionQuality(detailPlatform, connections[detailPlatform.id])}
+          conn={connections[detailPlatform.id]}
+          lang={lang}
+          onClose={() => setDetailPlatform(null)}
+          onGoToConnections={() => { onGoToConnections(); setDetailPlatform(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ── Module Info Modal ──────────────────────────────────────────── */
+function ModuleInfoModal({ tabId, lang, onClose }: { tabId: TabId; lang: Lang; onClose: () => void }) {
+  const item = NAV_ITEMS.find(i => i.id === tabId);
+  if (!item) return null;
+  const name = tl(lang, MODULE_NAMES[tabId] ?? { he: tabId, en: tabId, es: tabId, de: tabId, fr: tabId, pt: tabId });
+  const info = tl(lang, MODULE_INFO[tabId] ?? { he: "", en: "", es: "", de: "", fr: "", pt: "" });
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={onClose}>
+      <div style={{ background: C.card, borderRadius: 16, padding: 28, maxWidth: 400, width: "100%", boxShadow: C.shadowLg, position: "relative" }}
+        onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} style={{ position: "absolute", top: 12, insetInlineEnd: 12, background: "none", border: "none", fontSize: 20, cursor: "pointer", color: C.textMuted }}>✕</button>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>{item.icon}</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: C.text, marginBottom: 12 }}>{name}</div>
+        <div style={{ fontSize: 14, color: C.textSub, lineHeight: 1.7, marginBottom: 20 }}>{info}</div>
+        <button onClick={onClose} style={{ background: C.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+          {tl(lang, UI.understood!)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Permissions Modal ──────────────────────────────────────────── */
+function PermissionsModal({ lang, user, onClose }: {
+  lang: Lang;
+  user: { name: string; email: string; role: string; platformRole?: string };
+  onClose: () => void;
+}) {
+  const roleInfo = ROLES[user.role as keyof typeof ROLES];
+  const allowedModules = MODULE_PERMISSIONS[user.role as keyof typeof MODULE_PERMISSIONS] ?? [];
+  const allModuleIds = NAV_ITEMS.map(i => i.id);
+  const accessible = allowedModules[0] === "*" ? allModuleIds : allowedModules;
+  const restricted = allModuleIds.filter(id => !accessible.includes(id));
+  const isCreator = user.platformRole === "super_admin";
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ background: C.card, borderRadius: 20, padding: 32, maxWidth: 460, width: "100%", boxShadow: C.shadowLg }}>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 44, marginBottom: 8 }}>{isCreator ? "👑" : "👤"}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>
+            {tl(lang, UI.welcomeTitle!)}
+          </div>
+          <div style={{ fontSize: 13, color: C.textMuted }}>{user.email}</div>
+        </div>
+
+        {/* Role badge */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{ background: isCreator ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : roleInfo?.bg ?? C.accentLight, color: isCreator ? "#fff" : roleInfo?.color ?? C.accent, borderRadius: 20, padding: "6px 20px", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
+            {isCreator ? "👑 " + (lang === "he" ? "יוצר המערכת" : "System Creator") : (lang === "he" ? roleInfo?.he : roleInfo?.en) ?? user.role}
           </div>
         </div>
 
-        {/* Platform bubbles */}
-        <div className="as-conn-bar" style={{ flex: 1, display: "flex", alignItems: "center", gap: 6 }}>
-          {CONN_PLATFORMS.map(platform => {
-            const quality = getConnectionQuality(platform, connections[platform.id]);
-            const color = qualityColor(quality);
-            const isConn = quality > 0;
-            return (
-              <button
-                key={platform.id}
-                onClick={() => setPopup(popup?.id === platform.id ? null : platform)}
-                title={`${platform.name}: ${quality}%`}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
-                  padding: "4px 10px", borderRadius: 20, cursor: "pointer",
-                  border: `1px solid ${popup?.id === platform.id ? color : isConn ? color + "50" : C.border}`,
-                  background: popup?.id === platform.id ? color + "15" : isConn ? color + "08" : "transparent",
-                  transition: "all 0.15s",
-                }}
-              >
-                <span style={{ fontSize: 13 }}>{platform.icon}</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: isConn ? color : C.textMuted, whiteSpace: "nowrap" }} className="as-desktop-only">
-                  {platform.shortName}
+        <div style={{ fontSize: 13, color: C.textSub, textAlign: "center", marginBottom: 20 }}>
+          {tl(lang, UI.permissionsInfo!)}
+        </div>
+
+        {/* Accessible modules */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.green, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+            ✓ {tl(lang, UI.canAccess!)}
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {accessible.slice(0, 10).map(id => {
+              const item = NAV_ITEMS.find(i => i.id === id);
+              return (
+                <span key={id} style={{ background: C.greenLight, color: C.greenText ?? C.green, borderRadius: 12, padding: "3px 10px", fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                  {item?.icon} {tl(lang, MODULE_NAMES[id] ?? { he: id, en: id, es: id, de: id, fr: id, pt: id })}
                 </span>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, color: "#fff",
-                  background: color, borderRadius: 10, padding: "1px 5px", minWidth: 24, textAlign: "center",
-                  display: quality === 0 ? "none" : "inline-block",
-                }}>{quality}%</span>
-                {quality === 0 && <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.border, display: "inline-block" }} />}
+              );
+            })}
+            {accessible.length > 10 && (
+              <span style={{ background: C.cardAlt, color: C.textMuted, borderRadius: 12, padding: "3px 10px", fontSize: 11 }}>+{accessible.length - 10}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Restricted modules */}
+        {restricted.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.red, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+              ✗ {tl(lang, UI.noAccess!)}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {restricted.map(id => {
+                const item = NAV_ITEMS.find(i => i.id === id);
+                return (
+                  <span key={id} style={{ background: C.redLight, color: C.redText ?? C.red, borderRadius: 12, padding: "3px 10px", fontSize: 11, display: "flex", alignItems: "center", gap: 4, opacity: 0.7 }}>
+                    {item?.icon} {tl(lang, MODULE_NAMES[id] ?? { he: id, en: id, es: id, de: id, fr: id, pt: id })}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <button onClick={onClose} style={{ width: "100%", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", border: "none", borderRadius: 12, padding: "13px 0", fontWeight: 700, fontSize: 15, cursor: "pointer", marginTop: 8 }}>
+          {tl(lang, UI.understood!)}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Language Selector Dropdown ─────────────────────────────────── */
+function LangDropdown({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const meta = LANG_META[lang];
+
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  const LANGS: Lang[] = ["he", "en", "es", "de", "fr", "pt"];
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button onClick={() => setOpen(o => !o)} style={{ display: "flex", alignItems: "center", gap: 6, width: "100%", padding: "7px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.cardAlt, cursor: "pointer", fontSize: 12 }}>
+        <span>{meta.flag}</span>
+        <span style={{ flex: 1, textAlign: "start", color: C.text, fontWeight: 600 }}>{meta.label}</span>
+        <span style={{ color: C.textMuted, fontSize: 10 }}>▾</span>
+      </button>
+      {open && (
+        <div style={{ position: "absolute", bottom: "calc(100% + 4px)", left: 0, right: 0, background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, boxShadow: C.shadowLg, zIndex: 500, overflow: "hidden" }}>
+          {LANGS.map(l => {
+            const m = LANG_META[l];
+            return (
+              <button key={l} onClick={() => { onChange(l); setOpen(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", border: "none", background: l === lang ? C.accentLight : "transparent", cursor: "pointer", fontSize: 12, color: l === lang ? C.accent : C.text, fontWeight: l === lang ? 700 : 400 }}>
+                <span>{m.flag}</span>
+                <span>{m.label}</span>
+                {l === lang && <span style={{ marginInlineStart: "auto", fontSize: 10 }}>✓</span>}
               </button>
             );
           })}
         </div>
-
-        {/* Go to connections */}
-        <button onClick={onGoToConnections} style={{ flexShrink: 0, background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "4px 10px", cursor: "pointer", fontSize: 11, color: C.textSub, whiteSpace: "nowrap" }} className="as-desktop-only">
-          {t("נהל חיבורים", "Manage")} 🔗
-        </button>
-      </div>
-
-      {/* Popup */}
-      {popup && (
-        <ConnectionDetailPopup
-          platform={popup}
-          quality={getConnectionQuality(popup, connections[popup.id])}
-          conn={connections[popup.id]}
-          lang={lang}
-          onClose={() => setPopup(null)}
-          onGoToConnections={() => { onGoToConnections(); setPopup(null); }}
-        />
       )}
-    </>
+    </div>
   );
 }
 
 /* ── Sidebar component ─────────────────────────────────────────── */
-function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark, isDark, user }: {
+function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark, isDark, user, onShowInfo }: {
   lang: Lang;
   active: TabId;
   onSelect: (id: TabId) => void;
@@ -397,33 +550,38 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
   onToggleDark: () => void;
   isDark: boolean;
   user: { name: string; email: string; avatar?: string; role: string; platformRole?: string } | null;
+  onShowInfo: (id: TabId) => void;
 }) {
-  const t = (he: string, en: string) => lang === "he" ? he : en;
-  const groups = NAV_GROUPS[lang];
+  const groups = NAV_GROUPS;
 
   const navItem = (item: typeof NAV_ITEMS[number]) => {
     const isActive = active === item.id;
     const badge = BADGES[item.id];
+    const label = tl(lang, MODULE_NAMES[item.id] ?? { he: item.id, en: item.id, es: item.id, de: item.id, fr: item.id, pt: item.id });
     return (
-      <button key={item.id} onClick={() => onSelect(item.id)} style={{
-        width: "100%", display: "flex", alignItems: "center", gap: 10,
-        padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer",
-        background: isActive ? C.sidebarActive : "transparent",
-        color: isActive ? C.sidebarActiveText : C.sidebarText,
-        fontSize: 13, fontWeight: isActive ? 600 : 400,
-        textAlign: "start", transition: "background 0.12s, color 0.12s",
-        marginBottom: 2,
-      }}>
-        <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>
-        <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {lang === "he" ? item.he : item.en}
-        </span>
-        {badge && (
-          <span style={{ background: badge.color, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 10, padding: "1px 6px", flexShrink: 0 }}>
-            {badge.count}
-          </span>
-        )}
-      </button>
+      <div key={item.id} style={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 2 }}>
+        <button onClick={() => onSelect(item.id)} style={{
+          flex: 1, display: "flex", alignItems: "center", gap: 10,
+          padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer",
+          background: isActive ? C.sidebarActive : "transparent",
+          color: isActive ? C.sidebarActiveText : C.sidebarText,
+          fontSize: 13, fontWeight: isActive ? 600 : 400,
+          textAlign: "start", transition: "background 0.12s, color 0.12s",
+        }}>
+          <span style={{ fontSize: 15, flexShrink: 0 }}>{item.icon}</span>
+          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</span>
+          {badge && (
+            <span style={{ background: badge.color, color: "#fff", fontSize: 10, fontWeight: 700, borderRadius: 10, padding: "1px 6px", flexShrink: 0 }}>
+              {badge.count}
+            </span>
+          )}
+        </button>
+        {/* Info button */}
+        <button onClick={() => onShowInfo(item.id)} title={tl(lang, UI.aboutModule!)}
+          style={{ padding: "4px 6px", background: "none", border: "none", cursor: "pointer", fontSize: 12, color: C.textMuted, borderRadius: 6, opacity: 0.6, flexShrink: 0 }}>
+          ℹ
+        </button>
+      </div>
     );
   };
 
@@ -434,10 +592,9 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
         <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⚡</div>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>BScale AI</div>
-          <div style={{ fontSize: 11, color: C.textMuted }}>{t("מערכת הצמיחה", "AI Growth OS")}</div>
+          <div style={{ fontSize: 11, color: C.textMuted }}>{tl(lang, UI.aiGrowthOS!)}</div>
         </div>
-        {/* Dark mode toggle */}
-        <button onClick={onToggleDark} title={t(isDark ? "מצב בהיר" : "מצב כהה", isDark ? "Light mode" : "Dark mode")}
+        <button onClick={onToggleDark} title={isDark ? tl(lang, UI.lightMode ?? {he:"מצב בהיר",en:"Light mode",es:"Modo claro",de:"Hellmodus",fr:"Mode clair",pt:"Modo claro"}) : tl(lang, UI.darkMode ?? {he:"מצב כהה",en:"Dark mode",es:"Modo oscuro",de:"Dunkelmodus",fr:"Mode sombre",pt:"Modo escuro"})}
           style={{ marginInlineStart: "auto", background: isDark ? "rgba(129,140,248,0.15)" : C.cardAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: "5px 7px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>
           {isDark ? "☀️" : "🌙"}
         </button>
@@ -445,11 +602,12 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "12px 8px", overflowY: "auto" }}>
-        {groups.map(group => {
-          const items = NAV_ITEMS.filter(i => i.group === group.id);
+        {groups.map(groupId => {
+          const items = NAV_ITEMS.filter(i => i.group === groupId);
+          const groupLabel = tl(lang, NAV_GROUP_LABELS[groupId] ?? { he: groupId, en: groupId, es: groupId, de: groupId, fr: groupId, pt: groupId });
           return (
-            <div key={group.id} style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", padding: "0 10px 6px" }}>{group.label}</div>
+            <div key={groupId} style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: "0.07em", padding: "0 10px 6px" }}>{groupLabel}</div>
               {items.map(navItem)}
             </div>
           );
@@ -467,24 +625,14 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
             </div>
           </div>
           <button onClick={onLogout} style={{ width: "100%", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 12, color: C.textSub, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            🚪 {t("התנתקות", "Logout")}
+            🚪 {tl(lang, UI.logout!)}
           </button>
         </div>
       )}
 
-      {/* Lang toggle */}
+      {/* Language selector */}
       <div style={{ padding: "10px 8px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-        <div style={{ display: "flex", gap: 6, padding: "0 2px" }}>
-          {(["he", "en"] as const).map(l => (
-            <button key={l} onClick={() => onLangChange(l)} style={{
-              flex: 1, padding: "7px 6px", borderRadius: 8,
-              border: `1px solid ${lang === l ? C.accent : C.border}`,
-              background: lang === l ? C.accentLight : "transparent",
-              color: lang === l ? C.accent : C.textMuted,
-              fontSize: 12, fontWeight: lang === l ? 700 : 400, cursor: "pointer", transition: "all 0.15s",
-            }}>{l === "he" ? "🇮🇱 עברית" : "🇺🇸 English"}</button>
-          ))}
-        </div>
+        <LangDropdown lang={lang} onChange={onLangChange} />
       </div>
 
       {/* Super Admin: link to Owner Panel */}
@@ -493,8 +641,8 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
           <a href="/admin" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))", border: `1px solid ${C.accent}44`, borderRadius: 10, textDecoration: "none" }}>
             <span style={{ fontSize: 16 }}>👑</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{t("פאנל בעלים", "Owner Panel")}</div>
-              <div style={{ fontSize: 10, color: C.textMuted }}>{t("ניהול לקוחות ומנויים", "Manage customers & subscriptions")}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{tl(lang, UI.ownerPanel!)}</div>
+              <div style={{ fontSize: 10, color: C.textMuted }}>{tl(lang, UI.ownerPanelSub!)}</div>
             </div>
             <span style={{ fontSize: 12, color: C.textMuted }}>›</span>
           </a>
@@ -504,7 +652,7 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
       {/* Creator credits */}
       <div style={{ padding: "8px 12px", borderTop: `1px solid ${C.border}`, flexShrink: 0, textAlign: "center" }}>
         <div style={{ fontSize: 10, color: C.textMuted, lineHeight: 1.5 }}>
-          פותח ע״י <span style={{ fontWeight: 600, color: C.textSub }}>אשר בוקשפן</span>
+          {lang === "he" ? "פותח ע״י" : "Built by"} <span style={{ fontWeight: 600, color: C.textSub }}>אשר בוקשפן</span>
         </div>
         <div style={{ fontSize: 10, color: C.textMuted }}>052-5640054</div>
       </div>
@@ -515,29 +663,41 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
 /* ── Main Page ─────────────────────────────────────────────────── */
 export default function ModulesPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
-  const [lang, setLang] = useState<Lang>("he");
+  const [lang, setLang] = useState<Lang>(() => {
+    if (typeof window === "undefined") return "he";
+    return (localStorage.getItem("bscale_lang") as Lang) ?? "he";
+  });
   const [preset, setPreset] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentUser] = useState(() => getUser());
   const [connections, setConnections] = useState<Record<string, Connection>>(() => getConnections());
-  // true while fetching connections from server (prevents modules from loading with empty connections)
   const [connReady, setConnReady] = useState(false);
-  // Impersonation: super_admin viewing a tenant's workspace
   const [viewingAsTenantId] = useState(() => getViewingAsTenantId());
   const viewingAsTenant = viewingAsTenantId ? getTenantById(viewingAsTenantId) : null;
-  const isAdmin = isSuperAdmin(currentUser);
   const [isDark, setIsDark] = useState<boolean>(() =>
     typeof window !== "undefined" && localStorage.getItem("bscale_theme") === "dark"
   );
+  const [infoTabId, setInfoTabId] = useState<TabId | null>(null);
+  const [showPermissions, setShowPermissions] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("bscale_perms_seen") !== "1";
+  });
   const router = useRouter();
 
-  // Apply dark/light theme to document
+  // Apply dark/light theme
   useEffect(() => {
     document.documentElement.dataset.theme = isDark ? "dark" : "";
     localStorage.setItem("bscale_theme", isDark ? "dark" : "light");
   }, [isDark]);
 
-  // On mount: pull connections from server first, THEN mark as ready so modules load with real data
+  // Persist language
+  useEffect(() => {
+    localStorage.setItem("bscale_lang", lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = LANG_META[lang].dir;
+  }, [lang]);
+
+  // Load connections from server
   useEffect(() => {
     loadConnectionsFromServer()
       .then(() => setConnections(getConnections()))
@@ -547,7 +707,6 @@ export default function ModulesPage() {
     if (connReady) setConnections(getConnections());
   }, [activeTab, connReady]);
 
-  // Real-time sync: listen for any connection change from anywhere in the app
   useEffect(() => {
     const handler = () => setConnections(getConnections());
     window.addEventListener("bscale:connections-changed", handler);
@@ -559,7 +718,12 @@ export default function ModulesPage() {
     router.replace("/");
   }
 
-  const dir = lang === "he" ? "rtl" : "ltr";
+  function handleDismissPermissions() {
+    localStorage.setItem("bscale_perms_seen", "1");
+    setShowPermissions(false);
+  }
+
+  const dir = LANG_META[lang].dir;
   const t = (he: string, en: string) => lang === "he" ? he : en;
 
   const { data, loading, refetch } = useDashboard(
@@ -570,6 +734,7 @@ export default function ModulesPage() {
   const isLive = data?.isLive ?? false;
 
   const activeItem = NAV_ITEMS.find(i => i.id === activeTab)!;
+  const activeLabel = tl(lang, MODULE_NAMES[activeTab] ?? { he: activeTab, en: activeTab, es: activeTab, de: activeTab, fr: activeTab, pt: activeTab });
 
   const handleSelect = (id: TabId) => {
     setActiveTab(id);
@@ -585,38 +750,53 @@ export default function ModulesPage() {
 
   const sidebarProps = {
     lang, active: activeTab, onSelect: handleSelect, onLangChange: setLang,
-    onLogout: handleLogout, onToggleDark: () => setIsDark(d => !d), isDark, user: currentUser,
+    onLogout: handleLogout, onToggleDark: () => setIsDark(d => !d), isDark,
+    user: currentUser, onShowInfo: (id: TabId) => setInfoTabId(id),
   };
 
-  // Stats metric border colors (using fixed rgba since status colors don't change between themes)
+  const presetLabel = (p: typeof DATE_PRESETS[0]) => {
+    const key = lang as keyof typeof p;
+    return (p[key] as string) ?? p.en;
+  };
+
   const metrics = [
-    { label: t("הוצאה", "Spend"),      val: `₪${Math.round(summary.totalSpent).toLocaleString()}`,    color: "var(--c-accent)", borderColor: "rgba(99,102,241,0.2)",   icon: "💸", bg: C.accentLight },
-    { label: t("הכנסה", "Revenue"),     val: `₪${Math.round(summary.totalRevenue).toLocaleString()}`,  color: "var(--c-green)",  borderColor: "rgba(16,185,129,0.2)",   icon: "💰", bg: C.greenLight  },
-    { label: "ROAS",                    val: `${summary.avgRoas.toFixed(2)}x`,                          color: "var(--c-amber)",  borderColor: "rgba(245,158,11,0.2)",   icon: "🎯", bg: C.amberLight  },
-    { label: t("המרות", "Conversions"), val: Math.round(summary.totalConversions).toLocaleString(),     color: "var(--c-blue)",   borderColor: "rgba(59,130,246,0.2)",   icon: "📊", bg: C.blueLight   },
+    { label: tl(lang, UI.spend!),       val: `₪${Math.round(summary.totalSpent).toLocaleString()}`,    color: "var(--c-accent)", borderColor: "rgba(99,102,241,0.2)",   icon: "💸", bg: C.accentLight },
+    { label: tl(lang, UI.revenue!),     val: `₪${Math.round(summary.totalRevenue).toLocaleString()}`,  color: "var(--c-green)",  borderColor: "rgba(16,185,129,0.2)",   icon: "💰", bg: C.greenLight  },
+    { label: tl(lang, UI.roas!),        val: `${summary.avgRoas.toFixed(2)}x`,                          color: "var(--c-amber)",  borderColor: "rgba(245,158,11,0.2)",   icon: "🎯", bg: C.amberLight  },
+    { label: tl(lang, UI.conversions!), val: Math.round(summary.totalConversions).toLocaleString(),     color: "var(--c-blue)",   borderColor: "rgba(59,130,246,0.2)",   icon: "📊", bg: C.blueLight   },
   ];
 
   return (
     <div className="as-app" style={{ direction: dir }}>
 
-      {/* ── Desktop Sidebar ───────────────────────────────────────── */}
+      {/* ── Permissions Modal (on first login) ────────────────── */}
+      {showPermissions && currentUser && (
+        <PermissionsModal lang={lang} user={currentUser} onClose={handleDismissPermissions} />
+      )}
+
+      {/* ── Module Info Modal ─────────────────────────────────── */}
+      {infoTabId && (
+        <ModuleInfoModal tabId={infoTabId} lang={lang} onClose={() => setInfoTabId(null)} />
+      )}
+
+      {/* ── Desktop Sidebar ───────────────────────────────────── */}
       <div className="as-sidebar-wrapper">
         <Sidebar {...sidebarProps} />
       </div>
 
-      {/* ── Mobile drawer overlay ─────────────────────────────────── */}
+      {/* ── Mobile drawer overlay ─────────────────────────────── */}
       <div className={`as-sidebar-overlay ${drawerOpen ? "open" : ""}`} onClick={() => setDrawerOpen(false)} />
       <div className={`as-sidebar-drawer ${dir === "rtl" ? "rtl" : ""} ${drawerOpen ? "open" : ""}`}>
         <Sidebar {...sidebarProps} />
       </div>
 
-      {/* ── Main content ──────────────────────────────────────────── */}
+      {/* ── Main content ──────────────────────────────────────── */}
       <div className="as-main">
 
-        {/* ── Top header bar ──────────────────────────────────────── */}
-        <header style={{
+        {/* ── Top header bar ──────────────────────────────────── */}
+        <header className="as-header-bar" style={{
           background: C.card, borderBottom: `1px solid ${C.border}`,
-          padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 12,
+          padding: "0 20px", height: 56, display: "flex", alignItems: "center", gap: 10,
           position: "sticky", top: 0, zIndex: 50, boxShadow: C.shadow, flexShrink: 0,
         }}>
           {/* Mobile hamburger */}
@@ -629,19 +809,22 @@ export default function ModulesPage() {
           <div className="as-desktop-only" style={{ flex: 1, alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 13, color: C.textMuted }}>BScale</span>
             <span style={{ fontSize: 13, color: C.textMuted, margin: "0 4px" }}>/</span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{activeItem.icon} {lang === "he" ? activeItem.he : activeItem.en}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{activeItem.icon} {activeLabel}</span>
           </div>
 
-          {/* Date presets */}
+          {/* Date presets (desktop) */}
           <div className="as-desktop-only" style={{ background: C.pageBg, borderRadius: 8, padding: 3, gap: 2, border: `1px solid ${C.border}` }}>
             {DATE_PRESETS.map((p, i) => (
               <button key={i} onClick={() => setPreset(i)} style={{
                 padding: "4px 12px", borderRadius: 6, border: "none", cursor: "pointer",
                 fontSize: 12, fontWeight: 600, background: preset === i ? C.accent : "transparent",
                 color: preset === i ? "#fff" : C.textSub, transition: "all 0.15s",
-              }}>{lang === "he" ? p.he : p.en}</button>
+              }}>{presetLabel(p)}</button>
             ))}
           </div>
+
+          {/* ── Connection Quality Bubble (replaces old bar) ── */}
+          <QualityBubble lang={lang} connections={connections} onGoToConnections={goToConnections} />
 
           {/* Mobile dark toggle */}
           <button className="as-mobile-only" onClick={() => setIsDark(d => !d)} style={{ background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 16 }}>
@@ -649,7 +832,7 @@ export default function ModulesPage() {
           </button>
 
           {/* Refresh */}
-          <button onClick={refetch} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.textSub, cursor: "pointer", fontSize: 16 }} title={t("רענן", "Refresh")}>↻</button>
+          <button onClick={refetch} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.textSub, cursor: "pointer", fontSize: 16 }} title={tl(lang, UI.refresh!)}>↻</button>
 
           {/* Live indicator */}
           <div className="as-desktop-only" style={{
@@ -660,25 +843,20 @@ export default function ModulesPage() {
             border: `1px solid ${isLive ? C.greenA : C.border}`,
           }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: isLive ? C.green : C.textMuted, display: "inline-block" }} />
-            {isLive ? t("חי", "Live") : t("דמו", "Demo")}
+            {isLive ? tl(lang, UI.live!) : tl(lang, UI.demo!)}
           </div>
         </header>
 
-        {/* ── Impersonation banner (super_admin viewing a tenant) ── */}
+        {/* ── Impersonation banner ─────────────────────────────── */}
         {viewingAsTenant && (
           <div style={{ background: "#f59e0b", color: "#000", padding: "8px 20px", display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
             <span>👁️ {lang === "he" ? `צופה כ: ${viewingAsTenant.name}` : `Viewing as: ${viewingAsTenant.name}`}</span>
-            <button
-              onClick={() => { clearViewingAs(); router.push("/admin"); }}
-              style={{ marginInlineStart: "auto", background: "rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.25)", borderRadius: 8, padding: "4px 14px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#000" }}
-            >
+            <button onClick={() => { clearViewingAs(); router.push("/admin"); }}
+              style={{ marginInlineStart: "auto", background: "rgba(0,0,0,0.15)", border: "1px solid rgba(0,0,0,0.25)", borderRadius: 8, padding: "4px 14px", cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#000" }}>
               {lang === "he" ? "← חזור לפאנל" : "← Back to Panel"}
             </button>
           </div>
         )}
-
-        {/* ── Connection Status Bar ─────────────────────────────── */}
-        <ConnectionStatusBar lang={lang} connections={connections} onGoToConnections={goToConnections} />
 
         {/* ── Stats bar ─────────────────────────────────────────── */}
         <div className="as-stats-bar" style={{ background: C.card, borderBottom: `1px solid ${C.border}`, padding: "12px 20px", flexShrink: 0 }}>
@@ -700,14 +878,13 @@ export default function ModulesPage() {
         {/* ── Module content ────────────────────────────────────── */}
         <div className="as-content" style={{ flex: 1, background: C.pageBg }}>
           {!connReady ? (
-            /* Wait for cross-device connection sync before mounting modules */
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", gap: 12, color: C.textMuted, fontSize: 14 }}>
               <div style={{ width: 20, height: 20, border: `2px solid ${C.accent}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-              {lang === "he" ? "טוען חיבורים..." : "Loading connections..."}
+              {t("טוען חיבורים...", "Loading connections...")}
             </div>
           ) : (
             <>
-              {activeTab === "overview"          && <OverviewModule lang={lang} />}
+              {activeTab === "overview"          && <OverviewModule lang={lang} connections={connections} onGoToConnections={goToConnections} />}
               {activeTab === "financial-reports" && <FinancialReportsModule lang={lang} />}
               {activeTab === "recommendations"   && <RecommendationsModule lang={lang} />}
               {activeTab === "search-terms"      && <SearchTermsModule lang={lang} />}
@@ -727,11 +904,12 @@ export default function ModulesPage() {
           )}
         </div>
 
-        {/* ── Mobile bottom nav ────────────────────────────────── */}
+        {/* ── Mobile bottom nav ─────────────────────────────────── */}
         <nav className="as-mobile-bottom-nav">
           {BOTTOM_TABS.map(id => {
             const item = NAV_ITEMS.find(i => i.id === id)!;
             const isActive = activeTab === id;
+            const label = tl(lang, MODULE_NAMES[id] ?? { he: id, en: id, es: id, de: id, fr: id, pt: id });
             return (
               <button key={id} onClick={() => setActiveTab(id)} style={{
                 flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
@@ -739,7 +917,7 @@ export default function ModulesPage() {
                 color: isActive ? C.accent : C.textMuted, fontSize: 10, fontWeight: isActive ? 700 : 400,
               }}>
                 <span style={{ fontSize: 20 }}>{item.icon}</span>
-                <span>{lang === "he" ? item.he.split(" ")[0] : item.en.split(" ")[0]}</span>
+                <span style={{ maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label.split(" ")[0]}</span>
               </button>
             );
           })}
@@ -749,7 +927,7 @@ export default function ModulesPage() {
             color: C.textMuted, fontSize: 10,
           }}>
             <span style={{ fontSize: 20 }}>☰</span>
-            <span>{t("עוד", "More")}</span>
+            <span>{tl(lang, UI.more!)}</span>
           </button>
         </nav>
       </div>

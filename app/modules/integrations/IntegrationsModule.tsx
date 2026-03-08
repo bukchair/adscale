@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { C } from "../theme";
-import { getConnections, saveConnection, removeConnection } from "../../lib/auth";
+import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser } from "../../lib/auth";
 import type { Lang } from "../page";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -35,35 +35,19 @@ interface IntegrationDef {
 const INTEGRATIONS: IntegrationDef[] = [
   /* ── AI ─────────────────────────────────────────────────────── */
   {
-    id: "openai", name: "OpenAI", icon: "🧠", color: "#10a37f", category: "ai",
-    description: "מחבר את BScale ל-ChatGPT / GPT-4 לניתוח SEO, יצירת מודעות ותוכן",
-    descriptionEn: "Connects BScale to ChatGPT / GPT-4 for SEO analysis, ad generation and content",
+    id: "gemini", name: "Google Gemini", icon: "✨", color: "#4285f4", category: "ai",
+    description: "מחבר ל-Gemini Pro לניתוח SEO, ניתוח תמונות מוצר ויצירת מודעות — מסונכרן עם WooCommerce",
+    descriptionEn: "Connects to Gemini Pro for SEO analysis, product image analysis and ad generation — synced with WooCommerce",
     fields: [
-      { key:"api_key",   label:"מפתח API",        labelEn:"API Key",         placeholder:"sk-...",              placeholderEn:"sk-...",              type:"password", hint:"נמצא ב-OpenAI Platform → API Keys", hintEn:"Found at OpenAI Platform → API Keys" },
-      { key:"model",     label:"מודל מועדף",       labelEn:"Preferred Model", placeholder:"gpt-4o",              placeholderEn:"gpt-4o",              type:"text",     hint:"ברירת מחדל: gpt-4o", hintEn:"Default: gpt-4o" },
+      { key:"api_key", label:"מפתח API",     labelEn:"API Key",         placeholder:"AIza...",               placeholderEn:"AIza...",               type:"password", hint:"נמצא ב-Google AI Studio → Get API Key", hintEn:"Found at Google AI Studio → Get API Key" },
+      { key:"model",   label:"מודל מועדף",   labelEn:"Preferred Model", placeholder:"gemini-2.0-flash",      placeholderEn:"gemini-2.0-flash",      type:"text",     hint:"ברירת מחדל: gemini-2.0-flash (מהיר וחכם)", hintEn:"Default: gemini-2.0-flash (fast and smart)" },
     ],
     helpSteps: [
-      { step:"היכנס ל-OpenAI Platform", stepEn:"Go to OpenAI Platform", link:{ text:"platform.openai.com", textEn:"platform.openai.com", url:"https://platform.openai.com" } },
-      { step:"לחץ על שמך בפינה העליונה ← API Keys", stepEn:"Click your name top-right → API Keys" },
-      { step:"לחץ '+ Create new secret key' ← תן שם ← Create", stepEn:"Click '+ Create new secret key' → name it → Create" },
-      { step:"העתק את המפתח (יוצג פעם אחת בלבד!)", stepEn:"Copy the key — it's shown only once!" },
-      { step:"הדבק כאן ולחץ 'בדוק חיבור'", stepEn:"Paste here and click 'Test Connection'" },
-    ],
-  },
-  {
-    id: "anthropic", name: "Anthropic (Claude)", icon: "🤖", color: "#d97706", category: "ai",
-    description: "מחבר ל-Claude Sonnet/Opus לניתוח GEO, SEO ויצירת תוכן חכמה",
-    descriptionEn: "Connects to Claude Sonnet/Opus for GEO, SEO analysis and smart content creation",
-    fields: [
-      { key:"api_key", label:"מפתח API",       labelEn:"API Key",         placeholder:"sk-ant-...",           placeholderEn:"sk-ant-...",           type:"password", hint:"נמצא ב-Anthropic Console → API Keys", hintEn:"Found at Anthropic Console → API Keys" },
-      { key:"model",   label:"מודל מועדף",     labelEn:"Preferred Model", placeholder:"claude-sonnet-4-6",   placeholderEn:"claude-sonnet-4-6",   type:"text",     hint:"ברירת מחדל: claude-sonnet-4-6", hintEn:"Default: claude-sonnet-4-6" },
-    ],
-    helpSteps: [
-      { step:"היכנס ל-Anthropic Console", stepEn:"Go to Anthropic Console", link:{ text:"console.anthropic.com", textEn:"console.anthropic.com", url:"https://console.anthropic.com" } },
-      { step:"בתפריט השמאלי בחר 'API Keys'", stepEn:"In the left menu select 'API Keys'" },
-      { step:"לחץ '+ Create Key' ← תן שם ← Create", stepEn:"Click '+ Create Key' → name it → Create" },
-      { step:"העתק את המפתח", stepEn:"Copy the key" },
-      { step:"הדבק כאן ולחץ 'בדוק חיבור'", stepEn:"Paste here and click 'Test Connection'" },
+      { step:"עבור ל-Google AI Studio", stepEn:"Go to Google AI Studio", link:{ text:"aistudio.google.com", textEn:"aistudio.google.com", url:"https://aistudio.google.com/apikey" } },
+      { step:"לחץ 'Get API Key' ← 'Create API Key'", stepEn:"Click 'Get API Key' → 'Create API Key'" },
+      { step:"בחר פרויקט Google Cloud קיים או צור חדש", stepEn:"Select an existing Google Cloud project or create new" },
+      { step:"העתק את מפתח ה-API (מתחיל ב-AIza...)", stepEn:"Copy the API key (starts with AIza...)" },
+      { step:"הדבק כאן ולחץ 'בדוק חיבור' — Gemini ינתח SEO ויצור מודעות", stepEn:"Paste here and click 'Test Connection' — Gemini will analyze SEO and generate ads" },
     ],
   },
   /* ── Ads ─────────────────────────────────────────────────────── */
@@ -251,7 +235,7 @@ function initState(id: string): IntgState {
 }
 
 /* ── Individual connection card ──────────────────────────────────── */
-function ConnectionCard({ def, lang, onSaved }: { def: IntegrationDef; lang: Lang; onSaved?: () => void }) {
+function ConnectionCard({ def, lang, onSaved, isCreator }: { def: IntegrationDef; lang: Lang; onSaved?: () => void; isCreator?: boolean }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const [st, setSt] = useState<IntgState>(() => initState(def.id));
 
@@ -272,6 +256,10 @@ function ConnectionCard({ def, lang, onSaved }: { def: IntegrationDef; lang: Lan
     await new Promise(r => setTimeout(r, 1200));
     // Persist to localStorage
     saveConnection(def.id, st.values);
+    // If creator is saving Gemini key, share it platform-wide
+    if (def.id === "gemini" && isCreator && st.values.api_key) {
+      await saveCreatorGeminiKey(st.values.api_key);
+    }
     const accountName = st.values.store_url || st.values.site_url || st.values.account_id || t("חיבור פעיל", "Active connection");
     setSt(p => ({
       ...p, saving: false, status: "connected", expanded: false,
@@ -325,7 +313,14 @@ function ConnectionCard({ def, lang, onSaved }: { def: IntegrationDef; lang: Lan
 
         {/* Name + status */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{def.name}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, display: "flex", alignItems: "center", gap: 6 }}>
+            {def.name}
+            {def.id === "gemini" && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, background: isCreator ? "#7c3aed22" : "#6366f122", color: isCreator ? "#7c3aed" : "#6366f1", border: `1px solid ${isCreator ? "#7c3aed44" : "#6366f144"}` }}>
+                {isCreator ? (lang === "he" ? "👑 ברמת יוצר" : "👑 Creator Level") : (lang === "he" ? "🔗 משותף ע\"י יוצר" : "🔗 Shared by Creator")}
+              </span>
+            )}
+          </div>
           <div style={{ fontSize: 11, color: C.textMuted, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {st.accountName || (lang === "he" ? def.description : def.descriptionEn)}
           </div>
@@ -511,12 +506,10 @@ function ConnectionCard({ def, lang, onSaved }: { def: IntegrationDef; lang: Lan
 /* ── Main module ────────────────────────────────────────────────── */
 export default function IntegrationsModule({ lang, onConnectionsChanged }: { lang: Lang; onConnectionsChanged?: () => void }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
-
-  const categories = ["ai", "ads", "ecommerce", "analytics"] as const;
+  const isCreator = typeof window !== "undefined" && getUser()?.email === CREATOR_EMAIL;
 
   const allDefs = INTEGRATIONS;
   const connected = allDefs.filter(d => {
-    // re-compute from initial state only (for summary)
     const s = initState(d.id);
     return s.status === "connected";
   });
@@ -546,9 +539,14 @@ export default function IntegrationsModule({ lang, onConnectionsChanged }: { lan
           <div style={{ flex: 1, height: 1, background: `${C.purpleA2}` }} />
           <span style={{ fontSize: 11, fontWeight: 500, color: C.textMuted }}>{t("נדרש לניתוח SEO/GEO ויצירת מודעות", "Required for SEO/GEO analysis and ad generation")}</span>
         </div>
+        {!isCreator && (
+          <div style={{ marginBottom: 8, padding: "10px 14px", borderRadius: 10, background: "#ede9fe", border: "1px solid #7c3aed33", fontSize: 12, color: "#7c3aed", fontWeight: 600 }}>
+            ✨ {t("מפתח Gemini AI מוגדר ברמת יוצר המערכת ומשותף לכל המשתמשים. אין צורך להגדיר מפתח נפרד.", "The Gemini AI key is set at the system creator level and shared with all users. No separate key required.")}
+          </div>
+        )}
         <div style={{ background: `${C.purpleA3}`, border: `1px solid ${C.purpleA}`, borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
           {INTEGRATIONS.filter(d => d.category === "ai").map(def => (
-            <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} />
+            <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} isCreator={isCreator} />
           ))}
         </div>
       </div>
@@ -565,7 +563,7 @@ export default function IntegrationsModule({ lang, onConnectionsChanged }: { lan
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {defs.map(def => (
-                <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} />
+                <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} isCreator={isCreator} />
               ))}
             </div>
           </div>

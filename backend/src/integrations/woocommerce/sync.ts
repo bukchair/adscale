@@ -51,6 +51,19 @@ export class WooCommerceSyncService {
       );
 
       for (const p of products) {
+        // Strip HTML tags from descriptions
+        const stripHtml = (html: string) => (html || "").replace(/<[^>]+>/g, "").trim();
+
+        // Collect all images with alt text
+        const images = (p.images || []).map((img: any) => ({
+          id: img.id,
+          src: img.src,
+          alt: img.alt || p.name,
+        }));
+
+        const shortDesc = stripHtml(p.short_description);
+        const longDesc  = stripHtml(p.description);
+
         await db.product.upsert({
           where: { storeId_externalId: { storeId, externalId: String(p.id) } },
           create: {
@@ -65,12 +78,19 @@ export class WooCommerceSyncService {
             categories: p.categories?.map((c: any) => c.name) || [],
             tags: p.tags?.map((t: any) => t.name) || [],
             imageUrl: p.images?.[0]?.src || null,
+            shortDescription: shortDesc || null,
+            longDescription:  longDesc  || null,
+            images: images.length > 0 ? images : undefined,
           },
           update: {
             name: p.name,
             price: Number(p.price || p.regular_price || 0),
             salePrice: p.sale_price ? Number(p.sale_price) : null,
             stockStatus: p.stock_status,
+            shortDescription: shortDesc || null,
+            longDescription:  longDesc  || null,
+            imageUrl: p.images?.[0]?.src || null,
+            images: images.length > 0 ? images : undefined,
           },
         });
         totalSynced++;
