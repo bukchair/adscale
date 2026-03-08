@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useDashboard, getDaysAgo, getToday } from "@/hooks/useDashboard";
 import { C } from "./theme";
 import OverviewModule from "./overview/OverviewModule";
@@ -16,6 +17,8 @@ import IntegrationsModule from "./integrations/IntegrationsModule";
 import SEOModule from "./seo/SEOModule";
 import ProductsModule from "./products/ProductsModule";
 import AudiencesModule from "./audiences/AudiencesModule";
+import UsersModule from "./users/UsersModule";
+import { getUser, clearUser } from "../lib/auth";
 
 export type Lang = "he" | "en";
 
@@ -39,6 +42,7 @@ const NAV_ITEMS = [
   { id: "automation",        icon: "⚙️", he: "אוטומציה",       en: "Automation",          group: "manage" },
   { id: "audit-log",         icon: "📋", he: "יומן פעולות",     en: "Audit Log",           group: "manage" },
   { id: "integrations",      icon: "🔗", he: "חיבורים",        en: "Integrations",        group: "manage" },
+  { id: "users",             icon: "👤", he: "משתמשים",        en: "Users & Roles",       group: "manage" },
 ] as const;
 
 type TabId = typeof NAV_ITEMS[number]["id"];
@@ -73,11 +77,13 @@ const BADGES: Partial<Record<TabId, { count: number; color: string }>> = {
 };
 
 /* ── Sidebar component ─────────────────────────────────────────── */
-function Sidebar({ lang, active, onSelect, onLangChange }: {
+function Sidebar({ lang, active, onSelect, onLangChange, onLogout, user }: {
   lang: Lang;
   active: TabId;
   onSelect: (id: TabId) => void;
   onLangChange: (l: Lang) => void;
+  onLogout: () => void;
+  user: { name: string; email: string; avatar?: string; role: string } | null;
 }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const groups = NAV_GROUPS[lang];
@@ -171,8 +177,24 @@ function Sidebar({ lang, active, onSelect, onLangChange }: {
         })}
       </nav>
 
+      {/* User info + logout */}
+      {user && (
+        <div style={{ padding: "12px 10px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, padding: "8px", background: C.cardAlt, borderRadius: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>{user.avatar || "👤"}</div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
+              <div style={{ fontSize: 11, color: C.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
+            </div>
+          </div>
+          <button onClick={onLogout} style={{ width: "100%", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 12, color: C.textSub, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            🚪 {t("יציאה","Logout")}
+          </button>
+        </div>
+      )}
+
       {/* Lang toggle */}
-      <div style={{ padding: "12px 8px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+      <div style={{ padding: "10px 8px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
         <div style={{ display: "flex", gap: 6, padding: "0 2px" }}>
           {(["he", "en"] as const).map(l => (
             <button
@@ -200,6 +222,13 @@ export default function ModulesPage() {
   const [lang, setLang] = useState<Lang>("he");
   const [preset, setPreset] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentUser] = useState(() => getUser());
+  const router = useRouter();
+
+  function handleLogout() {
+    clearUser();
+    router.replace("/login");
+  }
 
   const dir = lang === "he" ? "rtl" : "ltr";
   const t = (he: string, en: string) => lang === "he" ? he : en;
@@ -225,7 +254,7 @@ export default function ModulesPage() {
 
       {/* ── Desktop Sidebar ───────────────────────────────────────── */}
       <div className="as-sidebar-wrapper">
-        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} onLangChange={setLang} />
+        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} onLangChange={setLang} onLogout={handleLogout} user={currentUser} />
       </div>
 
       {/* ── Mobile drawer overlay ─────────────────────────────────── */}
@@ -234,7 +263,7 @@ export default function ModulesPage() {
         onClick={() => setDrawerOpen(false)}
       />
       <div className={`as-sidebar-drawer ${dir === "rtl" ? "rtl" : ""} ${drawerOpen ? "open" : ""}`}>
-        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} onLangChange={setLang} />
+        <Sidebar lang={lang} active={activeTab} onSelect={handleSelect} onLangChange={setLang} onLogout={handleLogout} user={currentUser} />
       </div>
 
       {/* ── Main content ──────────────────────────────────────────── */}
@@ -369,6 +398,7 @@ export default function ModulesPage() {
           {activeTab === "audit-log"         && <AuditLogModule lang={lang} />}
           {activeTab === "automation"        && <AutomationModule lang={lang} />}
           {activeTab === "integrations"      && <IntegrationsModule lang={lang} />}
+          {activeTab === "users"             && <UsersModule lang={lang} />}
         </div>
 
         {/* Mobile bottom nav */}
