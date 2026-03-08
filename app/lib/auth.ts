@@ -139,22 +139,43 @@ async function syncToServer(all: Record<string, Connection>) {
   } catch { /* silent — local still works */ }
 }
 
-/** Load connections from server and merge into localStorage (server wins). */
+/** Load connections from server and merge into localStorage (server wins on conflict).
+ *  If local has connections that server doesn't know about, push them up too. */
 export async function loadConnectionsFromServer(): Promise<void> {
   if (typeof window === "undefined") return;
   try {
     const user = getUser();
     if (!user?.email) return;
+
     const res = await fetch("/api/user/connections", {
       headers: { "x-user-email": user.email },
     });
     if (!res.ok) return;
+
     const serverConns: Record<string, Connection> = await res.json();
-    if (!serverConns || typeof serverConns !== "object") return;
-    // Merge: server wins over local (server is source of truth across devices)
     const local = getConnections();
+    const serverHasData = serverConns && Object.keys(serverConns).length > 0;
+    const localHasData  = Object.keys(local).length > 0;
+
+    if (!serverHasData && !localHasData) return;
+
+    if (!serverHasData && localHasData) {
+      // Server file doesn't exist yet — push local connections up so mobile can see them
+      await syncToServer(local);
+      return; // localStorage already has the data; no need to write again
+    }
+
+    // Merge: server wins on conflicts (it's the cross-device source of truth)
     const merged = { ...local, ...serverConns };
     localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(merged));
+
+    // If local had keys the server didn't, push the merged set back up
+    const mergedKeys = Object.keys(merged);
+    const serverKeys = Object.keys(serverConns);
+    if (mergedKeys.some(k => !serverKeys.includes(k))) {
+      await syncToServer(merged);
+    }
+
     notifyConnectionsChanged();
   } catch { /* silent */ }
 }
