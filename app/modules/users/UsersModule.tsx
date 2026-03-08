@@ -48,6 +48,7 @@ export default function UsersModule({ lang }: UsersModuleProps) {
       email: inviteEmail,
       avatar: "👤",
       role: inviteRole,
+      platformRole: "tenant_member",
       createdAt: new Date().toISOString(),
     };
     setUser(newUser); // persists to localStorage all-users list
