@@ -321,7 +321,7 @@ export function canAccess(user: AuthUser | null, moduleId: string): boolean {
 
 /* ── Name sanitization ──────────────────────────────────────────── */
 function sanitizeName(name: string | null | undefined, email: string): string {
-  if (!name || name.startsWith("http://") || name.startsWith("https://")) {
+  if (!name || name.startsWith("http://") || name.startsWith("https://") || name.startsWith("//") || /^[\w.-]+\.[a-z]{2,}\//.test(name)) {
     // Fallback: first part of email, capitalize first letter
     const base = email.split("@")[0].replace(/[._]/g, " ");
     return base.charAt(0).toUpperCase() + base.slice(1);
