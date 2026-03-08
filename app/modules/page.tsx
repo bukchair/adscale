@@ -645,7 +645,7 @@ export default function ModulesPage() {
           {activeTab === "approvals"         && <ApprovalsModule lang={lang} />}
           {activeTab === "audit-log"         && <AuditLogModule lang={lang} />}
           {activeTab === "automation"        && <AutomationModule lang={lang} />}
-          {activeTab === "integrations"      && <IntegrationsModule lang={lang} />}
+          {activeTab === "integrations"      && <IntegrationsModule lang={lang} onConnectionsChanged={() => setConnections(getConnections())} />}
           {activeTab === "users"             && <UsersModule lang={lang} />}
         </div>
 

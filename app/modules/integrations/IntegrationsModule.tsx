@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { C } from "../theme";
+import { getConnections, saveConnection, removeConnection } from "../../lib/auth";
 import type { Lang } from "../page";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -213,18 +214,26 @@ interface IntgState {
 }
 
 function initState(id: string): IntgState {
-  const defaults: Record<string, Partial<IntgState>> = {
-    google_ads:    { status:"connected",    accountName:"My Store — Google Ads",  lastSync:new Date(Date.now()-3600000).toISOString() },
-    meta:          { status:"connected",    accountName:"My Store Facebook Page", lastSync:new Date(Date.now()-7200000).toISOString() },
-    woocommerce:   { status:"connected",    accountName:"mystore.co.il",          lastSync:new Date(Date.now()-1800000).toISOString() },
-    ga4:           { status:"connected",    accountName:"GA4 — MyStore",          lastSync:new Date(Date.now()-86400000).toISOString() },
-    gsc:           { status:"error" },
-  };
-  return { status:"disconnected", values:{}, expanded:false, helpOpen:false, saving:false, testing:false, ...(defaults[id]||{}) };
+  if (typeof window !== "undefined") {
+    const conns = getConnections();
+    const saved = conns[id];
+    if (saved?.connected) {
+      const fields = saved.fields ?? {};
+      const accountName = fields.store_url || fields.site_url || fields.account_id || "Active connection";
+      return {
+        status: "connected",
+        values: fields,
+        accountName,
+        lastSync: saved.connectedAt || new Date().toISOString(),
+        expanded: false, helpOpen: false, saving: false, testing: false,
+      };
+    }
+  }
+  return { status:"disconnected", values:{}, expanded:false, helpOpen:false, saving:false, testing:false };
 }
 
 /* ── Individual connection card ──────────────────────────────────── */
-function ConnectionCard({ def, lang }: { def: IntegrationDef; lang: Lang }) {
+function ConnectionCard({ def, lang, onSaved }: { def: IntegrationDef; lang: Lang; onSaved?: () => void }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const [st, setSt] = useState<IntgState>(() => initState(def.id));
 
@@ -243,15 +252,22 @@ function ConnectionCard({ def, lang }: { def: IntegrationDef; lang: Lang }) {
   const save = async () => {
     setSt(p => ({ ...p, saving: true }));
     await new Promise(r => setTimeout(r, 1200));
+    // Persist to localStorage
+    saveConnection(def.id, st.values);
+    const accountName = st.values.store_url || st.values.site_url || st.values.account_id || t("חיבור פעיל", "Active connection");
     setSt(p => ({
       ...p, saving: false, status: "connected", expanded: false,
-      accountName: p.values.store_url || p.values.site_url || t("חיבור פעיל","Active connection"),
+      accountName,
       lastSync: new Date().toISOString(),
     }));
+    onSaved?.();
   };
 
-  const disconnect = () =>
+  const disconnect = () => {
+    removeConnection(def.id);
     setSt({ status:"disconnected", values:{}, expanded:false, helpOpen:false, saving:false, testing:false });
+    onSaved?.();
+  };
 
   const STATUS_COLORS: Record<Status, string> = {
     connected:"#10b981", disconnected:"#94a3b8", error:"#ef4444", testing:"#f59e0b",
@@ -431,7 +447,7 @@ function ConnectionCard({ def, lang }: { def: IntegrationDef; lang: Lang }) {
 }
 
 /* ── Main module ────────────────────────────────────────────────── */
-export default function IntegrationsModule({ lang }: { lang: Lang }) {
+export default function IntegrationsModule({ lang, onConnectionsChanged }: { lang: Lang; onConnectionsChanged?: () => void }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
 
   const categories = ["ai", "ads", "ecommerce", "analytics"] as const;
@@ -470,7 +486,7 @@ export default function IntegrationsModule({ lang }: { lang: Lang }) {
         </div>
         <div style={{ background: `${C.purpleA3}`, border: `1px solid ${C.purpleA}`, borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
           {INTEGRATIONS.filter(d => d.category === "ai").map(def => (
-            <ConnectionCard key={def.id} def={def} lang={lang} />
+            <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} />
           ))}
         </div>
       </div>
@@ -487,7 +503,7 @@ export default function IntegrationsModule({ lang }: { lang: Lang }) {
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {defs.map(def => (
-                <ConnectionCard key={def.id} def={def} lang={lang} />
+                <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} />
               ))}
             </div>
           </div>
