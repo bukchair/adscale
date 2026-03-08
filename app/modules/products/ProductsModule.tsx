@@ -84,20 +84,48 @@ const SEO_SCORE_BG = (s: number) =>
   s >= 75 ? C.greenLight : s >= 50 ? C.amberLight : C.redLight;
 
 /* ─────────────────────── SEO Modal ─────────────────────── */
-function SeoModal({ product, suggestion, lang, onClose }: {
+function SeoModal({ product, suggestion, lang, onClose, connections }: {
   product: DisplayProduct;
   suggestion: SeoSuggestion | null;
   lang: Lang;
   onClose: () => void;
+  connections: Record<string, import("../../lib/auth").Connection>;
 }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
-  const [copied, setCopied] = useState<string | null>(null);
+  const [copied, setCopied]   = useState<string | null>(null);
+  const [applying, setApplying] = useState<string | null>(null);
+  const [applyDone, setApplyDone] = useState<string[]>([]);
+  const [applyError, setApplyError] = useState<string | null>(null);
 
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(key);
       setTimeout(() => setCopied(null), 1500);
     });
+  };
+
+  const applyToWoo = async (field: "short_description" | "name" | "alt", value: string, key: string) => {
+    if (applying) return;
+    setApplying(key);
+    setApplyError(null);
+    try {
+      const woo = connections.woocommerce;
+      const res = await fetch("/api/seo/apply", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-connections": JSON.stringify({ woocommerce: woo?.fields ?? {} }),
+        },
+        body: JSON.stringify({ productId: Number(product.id), field, value }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || "Unknown error");
+      setApplyDone(prev => [...prev, key]);
+    } catch (e: any) {
+      setApplyError(e.message);
+    } finally {
+      setApplying(null);
+    }
   };
 
   if (!suggestion) return null;
@@ -129,6 +157,11 @@ function SeoModal({ product, suggestion, lang, onClose }: {
         </div>
 
         <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+          {applyError && (
+            <div style={{ padding: "8px 12px", borderRadius: 8, background: C.redLight, color: C.redText, fontSize: 12 }}>
+              ❌ {applyError}
+            </div>
+          )}
           {/* SEO Title */}
           <SeoField
             label={t("כותרת SEO", "SEO Title")}
@@ -137,6 +170,9 @@ function SeoModal({ product, suggestion, lang, onClose }: {
             hintColor={suggestion.title.length >= 60 && suggestion.title.length <= 70 ? C.green : C.amber}
             onCopy={() => copy(suggestion.title, "title")}
             copied={copied === "title"}
+            applyDone={applyDone.includes("title")}
+            applying={applying === "title"}
+            onApply={() => applyToWoo("name", suggestion.title, "title")}
             t={t}
           />
           {/* Meta Description */}
@@ -147,6 +183,9 @@ function SeoModal({ product, suggestion, lang, onClose }: {
             hintColor={suggestion.metaDescription.length >= 150 && suggestion.metaDescription.length <= 160 ? C.green : C.amber}
             onCopy={() => copy(suggestion.metaDescription, "meta")}
             copied={copied === "meta"}
+            applyDone={applyDone.includes("meta")}
+            applying={applying === "meta"}
+            onApply={() => applyToWoo("short_description", suggestion.metaDescription, "meta")}
             t={t}
           />
           {/* Alt Text */}
@@ -157,6 +196,9 @@ function SeoModal({ product, suggestion, lang, onClose }: {
             hintColor={suggestion.altText.length > 5 ? C.green : C.red}
             onCopy={() => copy(suggestion.altText, "alt")}
             copied={copied === "alt"}
+            applyDone={applyDone.includes("alt")}
+            applying={applying === "alt"}
+            onApply={() => applyToWoo("alt", suggestion.altText, "alt")}
             t={t}
           />
 
@@ -192,9 +234,10 @@ function SeoModal({ product, suggestion, lang, onClose }: {
   );
 }
 
-function SeoField({ label, value, hint, hintColor, onCopy, copied, t }: {
+function SeoField({ label, value, hint, hintColor, onCopy, copied, onApply, applying, applyDone, t }: {
   label: string; value: string; hint: string; hintColor: string;
   onCopy: () => void; copied: boolean;
+  onApply?: () => void; applying?: boolean; applyDone?: boolean;
   t: (he: string, en: string) => string;
 }) {
   return (
@@ -204,19 +247,21 @@ function SeoField({ label, value, hint, hintColor, onCopy, copied, t }: {
         <span style={{ fontSize: 11, color: hintColor }}>{hint}</span>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-        <div style={{
-          flex: 1, padding: "10px 12px", background: C.pageBg,
-          border: `1px solid ${C.border}`, borderRadius: 8,
-          fontSize: 13, color: C.text, lineHeight: 1.5,
-        }}>{value}</div>
-        <button
-          onClick={onCopy}
-          style={{
-            flexShrink: 0, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
-            border: `1px solid ${C.border}`, background: copied ? C.greenLight : C.card,
-            color: copied ? C.greenText : C.textSub, cursor: "pointer", whiteSpace: "nowrap",
-          }}
-        >{copied ? "✓" : t("העתק", "Copy")}</button>
+        <div style={{ flex: 1, padding: "10px 12px", background: C.pageBg, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, color: C.text, lineHeight: 1.5 }}>
+          {value}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <button onClick={onCopy}
+            style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: `1px solid ${C.border}`, background: copied ? C.greenLight : C.card, color: copied ? C.greenText : C.textSub, cursor: "pointer", whiteSpace: "nowrap" }}>
+            {copied ? "✓" : t("העתק", "Copy")}
+          </button>
+          {onApply && (
+            <button onClick={onApply} disabled={applying || applyDone}
+              style={{ flexShrink: 0, padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, border: "none", background: applyDone ? C.greenLight : applying ? C.border : C.green, color: applyDone ? C.greenText : applying ? C.textMuted : "#fff", cursor: (applying || applyDone) ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+              {applyDone ? "✅" : applying ? "⏳" : t("שמור", "Save")}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -652,6 +697,7 @@ export default function ProductsModule({ lang }: { lang: Lang }) {
           suggestion={aiSuggestions[modalProduct.id]}
           lang={lang}
           onClose={() => setModalProduct(null)}
+          connections={getConnections()}
         />
       )}
     </div>
