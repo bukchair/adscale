@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     if (!url) throw new Error("WOOCOMMERCE_URL not set");
     const wcKey    = wooConn.consumer_key    || process.env.WOOCOMMERCE_KEY;
     const wcSecret = wooConn.consumer_secret || process.env.WOOCOMMERCE_SECRET;
-    const wcAuth   = wcKey && wcSecret
+    const wcAuth: Record<string, string> = wcKey && wcSecret
       ? { Authorization: "Basic " + Buffer.from(`${wcKey}:${wcSecret}`).toString("base64") }
       : {};
 
@@ -327,7 +327,7 @@ export async function GET(req: NextRequest) {
   try {
     let clientEmail  = process.env.GA4_CLIENT_EMAIL ?? "";
     let privateKeyRaw = process.env.GA4_PRIVATE_KEY ?? "";
-    let propertyId   = ga4Conn.property_id || process.env.GA4_PROPERTY_ID ?? "";
+    let propertyId   = (ga4Conn.property_id || process.env.GA4_PROPERTY_ID) ?? "";
     // If the client passed a service account JSON, use it
     if (ga4Conn.service_json) {
       try {
