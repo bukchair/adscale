@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
 /**
- * Use Claude to generate SEO-optimized content for a WooCommerce product issue.
+ * AI SEO suggestion — prefers Gemini when key available, falls back to Claude, then rule-based.
  * POST body: { issueType, productName, productDescription, productCategory, price, lang }
- * Returns: { suggestion: string, field: string }
+ * Returns: { suggestion: string, field: string, engine: "gemini"|"claude"|"rule" }
  */
 export async function POST(req: NextRequest) {
   const connectionsHeader = req.headers.get("x-connections");
   let conns: Record<string, Record<string, string>> = {};
   try { conns = JSON.parse(connectionsHeader || "{}"); } catch {}
-
-  const apiKey =
-    conns.anthropic?.api_key ||
-    process.env.ANTHROPIC_API_KEY;
 
   const body = await req.json().catch(() => ({})) as {
     issueType: string;
@@ -22,6 +19,7 @@ export async function POST(req: NextRequest) {
     productCategory?: string;
     price?: number;
     lang?: string;
+    connections?: Record<string, Record<string, string>>;
   };
 
   const { issueType, productName, productDescription = "", productCategory = "", price, lang = "he" } = body;
@@ -36,38 +34,61 @@ export async function POST(req: NextRequest) {
     weak_slug:     "slug",
     no_schema:     "schema",
   };
-
   const field = fieldMap[issueType] ?? "short_description";
 
-  // If no AI key, return a rule-based suggestion
-  if (!apiKey) {
-    const ruleBased = buildRuleBased(issueType, productName, productDescription, productCategory, price, isHe);
-    return NextResponse.json({ suggestion: ruleBased, field, demo: true });
+  // Gemini takes priority
+  const geminiKey =
+    body.connections?.gemini?.api_key ||
+    conns.gemini?.api_key ||
+    process.env.GEMINI_API_KEY;
+
+  if (geminiKey) {
+    const model = body.connections?.gemini?.model || conns.gemini?.model || "gemini-2.0-flash";
+    const prompt = buildPrompt(issueType, productName, productDescription, productCategory, price, isHe);
+    try {
+      const ai = new GoogleGenAI({ apiKey: geminiKey });
+      const response = await ai.models.generateContent({ model, contents: prompt });
+      const text = (response.text ?? "").trim().replace(/^["'`]+|["'`]+$/g, "").replace(/^```[a-z]*\n?/, "").replace(/\n?```$/, "").trim();
+      return NextResponse.json({ suggestion: text, field, engine: "gemini" });
+    } catch (e: any) {
+      // fall through to Claude
+    }
   }
 
-  const prompt = buildPrompt(issueType, productName, productDescription, productCategory, price, isHe);
+  // Claude fallback
+  const claudeKey =
+    body.connections?.anthropic?.api_key ||
+    conns.anthropic?.api_key ||
+    process.env.ANTHROPIC_API_KEY;
 
-  try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      messages: [{ role: "user", content: prompt }],
-    });
-    const text = ((message.content[0] as any).text ?? "").trim();
-    // Strip any quotes or markdown
-    const clean = text.replace(/^["'`]+|["'`]+$/g, "").replace(/^```[a-z]*\n?/, "").replace(/\n?```$/, "").trim();
-    return NextResponse.json({ suggestion: clean, field });
-  } catch (e: any) {
-    // Fallback to rule-based on error
-    const ruleBased = buildRuleBased(issueType, productName, productDescription, productCategory, price, isHe);
-    return NextResponse.json({ suggestion: ruleBased, field, error: e.message });
+  if (claudeKey) {
+    const prompt = buildPrompt(issueType, productName, productDescription, productCategory, price, isHe);
+    try {
+      const client = new Anthropic({ apiKey: claudeKey });
+      const message = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 512,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const text = ((message.content[0] as any).text ?? "").trim()
+        .replace(/^["'`]+|["'`]+$/g, "")
+        .replace(/^```[a-z]*\n?/, "")
+        .replace(/\n?```$/, "")
+        .trim();
+      return NextResponse.json({ suggestion: text, field, engine: "claude" });
+    } catch (e: any) {
+      // fall through to rule-based
+    }
   }
+
+  // Rule-based fallback
+  const ruleBased = buildRuleBased(issueType, productName, productDescription, productCategory, price, isHe);
+  return NextResponse.json({ suggestion: ruleBased, field, engine: "rule", demo: true });
 }
 
 function buildPrompt(issueType: string, name: string, desc: string, category: string, price: number | undefined, isHe: boolean): string {
   const cleanDesc = desc.replace(/<[^>]+>/g, "").slice(0, 400);
-  const priceStr = price ? (isHe ? `₪${price}` : `₪${price}`) : "";
+  const priceStr = price ? `₪${price}` : "";
 
   const tasks: Record<string, string> = {
     missing_title: isHe
@@ -110,12 +131,12 @@ function buildRuleBased(issueType: string, name: string, desc: string, category:
   const cleanDesc = desc.replace(/<[^>]+>/g, "").slice(0, 100);
   const priceStr = price ? `₪${price}` : "";
   switch (issueType) {
-    case "missing_title": return isHe ? `${name} | ${category} | BScale` : `${name} | ${category} | BScale`;
+    case "missing_title": return `${name} | ${category} | BScale`;
     case "missing_meta":  return isHe ? `${name} — ${cleanDesc || category}. קנה עכשיו ב-${priceStr}. משלוח חינם!` : `${name} — ${cleanDesc || category}. Buy now for ${priceStr}. Free shipping!`;
     case "thin_content":  return isHe ? `${name} הוא ${cleanDesc || "מוצר איכותי"} מקטגוריית ${category}. מחיר: ${priceStr}. המוצר כולל אחריות מלאה ומשלוח חינם לכל הארץ.` : `${name} is ${cleanDesc || "a quality product"} from the ${category} category. Price: ${priceStr}. Includes full warranty and free shipping.`;
-    case "missing_alt":   return isHe ? `${name} - ${category}` : `${name} - ${category}`;
+    case "missing_alt":   return `${name} - ${category}`;
     case "duplicate_meta":return isHe ? `${name} הייחודי שלנו ב-${priceStr} — ${cleanDesc || category}. הזמן עכשיו!` : `Our unique ${name} at ${priceStr} — ${cleanDesc || category}. Order now!`;
     case "weak_slug":     return name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 50);
-    default: return isHe ? `${name} — ${cleanDesc}` : `${name} — ${cleanDesc}`;
+    default: return `${name} — ${cleanDesc}`;
   }
 }

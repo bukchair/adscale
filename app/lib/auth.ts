@@ -50,6 +50,9 @@ const KEY_BUSINESS   = "bscale_business";          // legacy — prefer tenant-s
 const KEY_FIRST_DONE = "bscale_first_user_done";   // kept for backwards-compat check
 const KEY_ALL_USERS  = "bscale_all_users";          // legacy global list
 
+/** System creator — always gets super_admin regardless of registration order */
+export const CREATOR_EMAIL = "asher205@gmail.com";
+
 export const ROLES: Record<Role, { he: string; en: string; color: string; bg: string; desc: string; descEn: string }> = {
   admin:   { he: "מנהל",        en: "Admin",   color: "#6366f1", bg: "#eef2ff", desc: "גישה מלאה לכל המודולים, ניהול משתמשים והגדרות", descEn: "Full access to all modules, user management and settings" },
   manager: { he: "מנהל ביניים", en: "Manager", color: "#10b981", bg: "#d1fae5", desc: "גישה לכל המודולים מלבד ניהול משתמשים",              descEn: "Access to all modules except user management" },
@@ -340,8 +343,11 @@ function registerUser(id: string, rawName: string, email: string, avatar?: strin
 
   let user: AuthUser;
 
-  if (!isPlatformOwnerRegistered()) {
-    // ── First user: becomes super_admin ──────────────────────────
+  // Creator email always gets super_admin, regardless of registration order
+  const isCreator = email === CREATOR_EMAIL;
+
+  if (isCreator || !isPlatformOwnerRegistered()) {
+    // ── Creator / first user: becomes super_admin ─────────────────
     user = {
       id, name, email,
       avatar: avatar ?? "👑",
@@ -351,10 +357,14 @@ function registerUser(id: string, rawName: string, email: string, avatar?: strin
       createdAt:    new Date().toISOString(),
       ...(googleId ? { googleId } : {}),
     };
-    setPlatformOwnerId(id);
-    markFirstUserDone();
-    // Seed demo tenants so the admin panel looks populated
-    import("./tenant").then(m => m.seedDemoTenants());
+    if (!isPlatformOwnerRegistered() || isCreator) {
+      setPlatformOwnerId(id);
+      markFirstUserDone();
+    }
+    if (!isCreator) {
+      // Seed demo tenants so the admin panel looks populated
+      import("./tenant").then(m => m.seedDemoTenants());
+    }
   } else {
     // ── Subsequent user: becomes tenant_owner ────────────────────
     const tenant = createTenant(id, name, email);
@@ -370,6 +380,17 @@ function registerUser(id: string, rawName: string, email: string, avatar?: strin
   }
 
   setUser(user);
+
+  // Send welcome email to new users (non-creator)
+  if (!isCreator && typeof window !== "undefined") {
+    const lang = localStorage.getItem("bscale_lang") || "en";
+    void fetch("/api/email/welcome", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name, lang, systemUrl: window.location.origin }),
+    }).catch(() => {});
+  }
+
   return user;
 }
 
@@ -407,6 +428,49 @@ export async function signUpWithEmail(name: string, email: string, _password: st
   await new Promise(r => setTimeout(r, 1000));
   if (!email.includes("@")) throw new Error("invalid_email");
   return registerUser("new_" + Date.now(), name, email);
+}
+
+/* ── Shared Gemini key (creator-level, auto-fallback for all users) ── */
+
+const KEY_CREATOR_GEMINI = "bscale_creator_gemini";
+
+/** Save creator's Gemini key to server and local cache */
+export async function saveCreatorGeminiKey(apiKey: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(KEY_CREATOR_GEMINI, apiKey);
+  try {
+    await fetch("/api/creator/gemini", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: apiKey }),
+    });
+  } catch { /* silent */ }
+}
+
+/** Load creator's shared Gemini key (all users). Returns null if not set. */
+export async function loadCreatorGeminiKey(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const cached = localStorage.getItem(KEY_CREATOR_GEMINI);
+  if (cached) return cached;
+  try {
+    const res = await fetch("/api/creator/gemini");
+    if (!res.ok) return null;
+    const { api_key } = await res.json();
+    if (api_key) { localStorage.setItem(KEY_CREATOR_GEMINI, api_key); return api_key; }
+  } catch { /* offline */ }
+  return null;
+}
+
+/**
+ * Returns effective Gemini connection: user's own key takes priority,
+ * falls back to creator's shared key (if available).
+ */
+export async function getEffectiveGeminiConnection(): Promise<Connection | null> {
+  const conns = getConnections();
+  if (conns.gemini?.connected && conns.gemini.fields?.api_key) return conns.gemini;
+  const creatorKey = await loadCreatorGeminiKey();
+  if (!creatorKey) return null;
+  return { connected: true, fields: { api_key: creatorKey } };
 }
 
 /** Invite a team member into an existing tenant (called from UsersModule) */

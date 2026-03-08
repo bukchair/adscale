@@ -331,20 +331,23 @@ enum RiskLevel {
 // ============================================================
 
 model Product {
-  id              String   @id @default(cuid())
-  storeId         String
-  externalId      String
-  sku             String?
-  name            String
-  status          String   @default("publish")
-  price           Float
-  salePrice       Float?
-  stockStatus     String?
-  categories      String[]
-  tags            String[]
-  imageUrl        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  storeId          String
+  externalId       String
+  sku              String?
+  name             String
+  status           String   @default("publish")
+  price            Float
+  salePrice        Float?
+  stockStatus      String?
+  categories       String[]
+  tags             String[]
+  imageUrl         String?
+  shortDescription String?  // WooCommerce short_description (HTML stripped)
+  longDescription  String?  // WooCommerce description (HTML stripped)
+  images           Json?    // Array of { src: string, alt: string, id: number }
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   store           StoreIntegration @relation(fields: [storeId], references: [id], onDelete: Cascade)
   productCosts    ProductCost[]

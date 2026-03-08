@@ -31,7 +31,7 @@ const ALL_MODULES = [
 ];
 
 
-interface UsersModuleProps { lang: "he" | "en"; }
+interface UsersModuleProps { lang: string; }
 
 export default function UsersModule({ lang }: UsersModuleProps) {
   const isHe = lang === "he";

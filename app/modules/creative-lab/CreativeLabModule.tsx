@@ -13,11 +13,13 @@ interface WCProduct {
   id: string; name: string; nameEn: string; price: number;
   category: string; categoryEn: string; image: string;
   description: string; descriptionEn: string; sku: string;
-  // WooCommerce raw fields (used for Claude API)
+  // WooCommerce raw fields (used for AI APIs)
   short_description?: string;
+  longDescription?: string;
   regular_price?: string;
   sale_price?: string;
   categories?: { id: number; name: string }[];
+  images?: { src: string; alt: string; id?: number }[];
 }
 interface AdVariant { headline: string; body: string; cta: string; score: number; }
 
@@ -171,10 +173,18 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
     return {
       "x-connections": JSON.stringify({
         woocommerce: conns.woocommerce?.fields ?? {},
-        anthropic:   conns.anthropic?.fields  ?? {},
-        openai:      conns.openai?.fields     ?? {},
+        gemini:      conns.gemini?.fields      ?? {},
+        anthropic:   conns.anthropic?.fields   ?? {},
+        openai:      conns.openai?.fields      ?? {},
       }),
     };
+  }
+
+  function activeAiLabel(): string {
+    const conns = getConnections();
+    if (conns.gemini?.fields?.api_key) return lang === "he" ? "Gemini AI" : "Gemini AI";
+    if (conns.anthropic?.fields?.api_key) return "Claude AI";
+    return lang === "he" ? "AI" : "AI";
   }
 
   // Load real WooCommerce products on mount + on connection change
