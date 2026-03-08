@@ -111,6 +111,9 @@ export default function SEOModule({ lang }: { lang: Lang }) {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [bulkApplied, setBulkApplied] = useState(0);
   const [wooConnected, setWooConnected] = useState(false);
+  // AI suggestions per issue id
+  const [aiSuggesting, setAiSuggesting] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<Record<string, string>>({});
 
   const openIssues     = issues.filter(i => i.status === "open");
   const filteredIssues = severityFilter === "all" ? openIssues : openIssues.filter(i => i.severity === severityFilter);
@@ -209,6 +212,29 @@ export default function SEOModule({ lang }: { lang: Lang }) {
 
   const dismissIssue = (id: string) =>
     setIssues(prev => prev.map(i => i.id === id ? { ...i, status: "dismissed" } : i));
+
+  /* ── AI suggest for single issue ─────────────────────────── */
+  const suggestWithAI = async (issue: SEOIssue) => {
+    if (aiSuggesting === issue.id) return;
+    setAiSuggesting(issue.id);
+    try {
+      const res = await fetch("/api/seo/ai-suggest", {
+        method: "POST",
+        headers: { ...getConnHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          issueType: issue.type,
+          productName: lang === "he" ? issue.title : issue.titleEn,
+          productDescription: lang === "he" ? issue.detail : issue.detailEn,
+          lang,
+        }),
+      });
+      const data = await res.json();
+      if (data.suggestion) {
+        setAiSuggestions(prev => ({ ...prev, [issue.id]: data.suggestion }));
+      }
+    } catch {}
+    finally { setAiSuggesting(null); }
+  };
 
   /* ── Bulk apply (applies what can be auto-fixed) ──────────── */
   const bulkApplyAll = async () => {
@@ -395,6 +421,19 @@ export default function SEOModule({ lang }: { lang: Lang }) {
                       <span style={{ color: C.textMuted, fontWeight: 600 }}>{t("💡 הצעה: ", "💡 Suggestion: ")}</span>
                       <span style={{ color: C.accentHover, fontWeight: 500 }}>{lang === "he" ? issue.suggestion : issue.suggestionEn}</span>
                     </div>
+                    {/* AI suggestion */}
+                    {aiSuggestions[issue.id] && (
+                      <div style={{ marginTop: 8, background: `${C.purple}11`, border: `1px solid ${C.purple}33`, borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+                        <span style={{ color: C.purple, fontWeight: 700 }}>✨ AI: </span>
+                        <span style={{ color: C.text, fontWeight: 500 }}>{aiSuggestions[issue.id]}</span>
+                        {issue.productId && issue.field && !["content", "slug", "schema"].includes(issue.field) && (
+                          <button onClick={() => applyIssue({ ...issue, suggestion: aiSuggestions[issue.id], suggestionEn: aiSuggestions[issue.id] })}
+                            style={{ marginInlineStart: 10, padding: "3px 10px", borderRadius: 6, border: "none", background: C.purple, color: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 700 }}>
+                            {t("יישם הצעה זו", "Apply this")}
+                          </button>
+                        )}
+                      </div>
+                    )}
                     {issue.field === "alt" && (
                       <div style={{ marginTop: 6, fontSize: 11, color: C.textMuted }}>
                         ℹ️ {t("alt text יישמר ב-WordPress Media Library", "Alt text will be saved to WordPress Media Library")}
@@ -407,13 +446,19 @@ export default function SEOModule({ lang }: { lang: Lang }) {
                     )}
                   </div>
                 </div>
-                <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                  <button onClick={() => applyIssue(issue)} disabled={applying === issue.id}
-                    style={{ padding: "7px 16px", borderRadius: 8, border: "none", background: applying === issue.id ? C.border : C.green, color: applying === issue.id ? C.textMuted : "#fff", cursor: applying === issue.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
-                    {applying === issue.id ? t("⏳ מיישם...", "⏳ Applying...") : t("✅ יישם", "✅ Apply")}
-                  </button>
-                  <button onClick={() => dismissIssue(issue.id)}
-                    style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.textMuted, cursor: "pointer", fontSize: 12 }}>✕</button>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, flexShrink: 0 }}>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => suggestWithAI(issue)} disabled={aiSuggesting === issue.id}
+                      style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.purple}44`, background: `${C.purple}11`, color: C.purple, cursor: aiSuggesting === issue.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>
+                      {aiSuggesting === issue.id ? "⏳" : "✨ AI"}
+                    </button>
+                    <button onClick={() => applyIssue(issue)} disabled={applying === issue.id}
+                      style={{ padding: "7px 16px", borderRadius: 8, border: "none", background: applying === issue.id ? C.border : C.green, color: applying === issue.id ? C.textMuted : "#fff", cursor: applying === issue.id ? "not-allowed" : "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {applying === issue.id ? t("⏳ מיישם...", "⏳ Applying...") : t("✅ יישם", "✅ Apply")}
+                    </button>
+                    <button onClick={() => dismissIssue(issue.id)}
+                      style={{ padding: "7px 12px", borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.textMuted, cursor: "pointer", fontSize: 12 }}>✕</button>
+                  </div>
                 </div>
               </div>
             </div>

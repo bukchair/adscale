@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { C } from "../theme";
+import { getConnections } from "../../lib/auth";
 import type { Lang } from "../page";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -12,6 +13,11 @@ interface WCProduct {
   id: string; name: string; nameEn: string; price: number;
   category: string; categoryEn: string; image: string;
   description: string; descriptionEn: string; sku: string;
+  // WooCommerce raw fields (used for Claude API)
+  short_description?: string;
+  regular_price?: string;
+  sale_price?: string;
+  categories?: { id: number; name: string }[];
 }
 interface AdVariant { headline: string; body: string; cta: string; score: number; }
 
@@ -143,21 +149,124 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
   const [format, setFormat] = useState<AdFormat>("feed");
   const [genTab, setGenTab] = useState<GenTab>("text");
   const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
   const [variants, setVariants] = useState<AdVariant[]>([]);
   const [chosen, setChosen] = useState(0);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
   const [imgGenerating, setImgGenerating] = useState(false);
   const [imgDone, setImgDone] = useState(false);
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [imgPrompt, setImgPrompt] = useState("");
+  const [tone, setTone] = useState<"enthusiastic" | "professional" | "playful">("enthusiastic");
 
+  // WooCommerce products
+  const [products, setProducts] = useState<WCProduct[]>(WC_PRODUCTS);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [isDemo, setIsDemo] = useState(true);
+  const loadingRef = useRef(false);
+
+  function getConnHeaders(): Record<string, string> {
+    const conns = getConnections();
+    return {
+      "x-connections": JSON.stringify({
+        woocommerce: conns.woocommerce?.fields ?? {},
+        anthropic:   conns.anthropic?.fields  ?? {},
+        openai:      conns.openai?.fields     ?? {},
+      }),
+    };
+  }
+
+  // Load real WooCommerce products on mount + on connection change
+  async function loadProducts() {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    setLoadingProducts(true);
+    try {
+      const res = await fetch("/api/woocommerce/products", { headers: getConnHeaders() });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setIsDemo(data.isDemo ?? true);
+      if (Array.isArray(data.products) && data.products.length > 0) {
+        // Map WooCommerce API products to WCProduct shape
+        const mapped: WCProduct[] = data.products.map((p: any) => ({
+          id: String(p.id),
+          name: p.name,
+          nameEn: p.name,
+          price: parseFloat(p.price || p.regular_price || "0"),
+          category: p.categories?.[0]?.name ?? "",
+          categoryEn: p.categories?.[0]?.name ?? "",
+          image: p.images?.[0]?.src ? "🛍️" : "🛍️", // use emoji as placeholder
+          description: p.description?.replace(/<[^>]+>/g, "").slice(0, 200) ?? "",
+          descriptionEn: p.description?.replace(/<[^>]+>/g, "").slice(0, 200) ?? "",
+          sku: p.sku ?? "",
+          short_description: p.short_description?.replace(/<[^>]+>/g, "") ?? "",
+          regular_price: p.regular_price,
+          sale_price: p.sale_price,
+          categories: p.categories,
+        }));
+        setProducts(mapped);
+      }
+    } catch {
+      // Keep demo products on error
+    } finally {
+      setLoadingProducts(false);
+      loadingRef.current = false;
+    }
+  }
+
+  useEffect(() => {
+    loadProducts();
+    const handler = () => loadProducts();
+    window.addEventListener("bscale:connections-changed", handler);
+    return () => window.removeEventListener("bscale:connections-changed", handler);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Generate ad copy via Claude API
   const doGenerate = async () => {
     if (!product) return;
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 1800));
-    setVariants(generateVariants(product, platform, lang));
-    setGenerating(false);
-    setStep(4);
+    setGenError(null);
+    try {
+      const conns = getConnections();
+      const res = await fetch("/api/ads/generate-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product: {
+            name: lang === "he" ? product.name : product.nameEn,
+            short_description: product.short_description || product.description,
+            description: product.description,
+            price: product.price,
+            regular_price: product.regular_price ?? String(product.price),
+            sale_price: product.sale_price ?? "",
+            categories: product.categories ?? [{ id: 1, name: product.category }],
+          },
+          platform,
+          lang,
+          tone,
+          connections: { anthropic: conns.anthropic?.fields ?? {} },
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const vars: AdVariant[] = (data.variations ?? []).map((v: any, i: number) => ({
+        headline: v.headline ?? "",
+        body: `${v.emoji ?? ""} ${v.description ?? ""}`.trim(),
+        cta: v.cta ?? "",
+        score: 95 - i * 4,
+      }));
+      if (vars.length === 0) throw new Error("No variants returned");
+      setVariants(vars);
+      setStep(4);
+    } catch (e: any) {
+      // Fallback to local generation
+      setVariants(generateVariants(product, platform, lang));
+      setGenError(e.message?.includes("API") ? e.message : null);
+      setStep(4);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const doPublish = async () => {
@@ -167,11 +276,36 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
     setPublished(true);
   };
 
+  // Generate image via OpenAI DALL·E
   const doGenerateImage = async () => {
+    if (!product) return;
     setImgGenerating(true);
-    await new Promise(r => setTimeout(r, 2400));
-    setImgGenerating(false);
-    setImgDone(true);
+    setImgUrl(null);
+    try {
+      const conns = getConnections();
+      const res = await fetch("/api/ads/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product: {
+            name: lang === "he" ? product.name : product.nameEn,
+            price: String(product.price),
+            sale_price: product.sale_price ?? "",
+            categories: product.categories ?? [{ id: 1, name: product.categoryEn }],
+            images: [],
+          },
+          platform,
+          style: "modern",
+          connections: { openai: conns.openai?.fields ?? {} },
+        }),
+      });
+      const data = await res.json();
+      if (data.url) setImgUrl(data.url);
+    } catch {}
+    finally {
+      setImgGenerating(false);
+      setImgDone(true);
+    }
   };
 
   const pl = PLATFORMS.find(p => p.id===platform)!;
@@ -183,20 +317,31 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
       {/* ── Step 1: Product selection ───────────────────────────── */}
       {step===1 && (
         <div className="as-card" style={{ padding:20 }}>
-          <div style={{ fontSize:16, fontWeight:700, color:C.text, marginBottom:4 }}>🛍️ {t("בחר מוצר מ-WooCommerce","Select WooCommerce Product")}</div>
-          <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("המערכת תשתמש בפרטי המוצר ליצירת מודעות מותאמות","Product data will be used to create tailored ads")}</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {WC_PRODUCTS.map(p => (
-              <button key={p.id} onClick={() => { setProduct(p); setImgPrompt(generateImagePrompt(p, platform, format)); setStep(2); }} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 14px", border:`2px solid ${C.border}`, borderRadius:10, background:C.card, cursor:"pointer", textAlign:"start", transition:"all 0.15s" }}>
-                <div style={{ width:40, height:40, borderRadius:8, background:C.accentLight, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{p.image}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{lang==="he"?p.name:p.nameEn}</div>
-                  <div style={{ fontSize:11, color:C.textMuted }}>{lang==="he"?p.category:p.categoryEn} · {p.sku} · <span style={{ color:C.green, fontWeight:600 }}>₪{p.price}</span></div>
-                </div>
-                <span style={{ color:C.accent }}>›</span>
-              </button>
-            ))}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4, flexWrap:"wrap", gap:8 }}>
+            <div style={{ fontSize:16, fontWeight:700, color:C.text }}>🛍️ {t("בחר מוצר מ-WooCommerce","Select WooCommerce Product")}</div>
+            {isDemo && <span style={{ fontSize:11, background:C.amberLight, color:C.amberText, padding:"3px 10px", borderRadius:20, fontWeight:600 }}>⚠️ {t("דמו — חבר WooCommerce","Demo — Connect WooCommerce")}</span>}
+            {!isDemo && <span style={{ fontSize:11, background:C.greenLight, color:C.greenText, padding:"3px 10px", borderRadius:20, fontWeight:600 }}>✅ {t("מוצרים אמיתיים","Live products")}</span>}
           </div>
+          <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("המערכת תשתמש בפרטי המוצר ליצירת מודעות מותאמות עם Claude AI","Product data will be used to create tailored ads with Claude AI")}</div>
+          {loadingProducts ? (
+            <div style={{ textAlign:"center", padding:30, color:C.textMuted, fontSize:13 }}>
+              <div style={{ width:24, height:24, border:`2px solid ${C.accent}`, borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 10px" }} />
+              {t("טוען מוצרים...","Loading products...")}
+            </div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {products.map(p => (
+                <button key={p.id} onClick={() => { setProduct(p); setImgPrompt(generateImagePrompt(p, platform, format)); setStep(2); }} style={{ display:"flex", alignItems:"center", gap:12, padding:"13px 14px", border:`2px solid ${C.border}`, borderRadius:10, background:C.card, cursor:"pointer", textAlign:"start", transition:"all 0.15s" }}>
+                  <div style={{ width:40, height:40, borderRadius:8, background:C.accentLight, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, flexShrink:0 }}>{p.image}</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{lang==="he"?p.name:p.nameEn}</div>
+                    <div style={{ fontSize:11, color:C.textMuted }}>{lang==="he"?p.category:p.categoryEn}{p.sku ? ` · ${p.sku}` : ""} · <span style={{ color:C.green, fontWeight:600 }}>₪{p.price}</span></div>
+                  </div>
+                  <span style={{ color:C.accent }}>›</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -256,19 +401,29 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
           </div>
 
           {genTab==="text" && (
-            <div className="as-card" style={{ padding:24, textAlign:"center" }}>
+            <div className="as-card" style={{ padding:24 }}>
               <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:6 }}>✍️ {t("מחולל טקסט מודעה","Ad Text Generator")}</div>
-              <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("AI יייצר 3 גרסאות מודעה בהתאם למוצר ולפלטפורמה","AI will create 3 ad variants tailored to the product and platform")}</div>
-              <button onClick={doGenerate} disabled={generating} style={{ padding:"13px 32px", borderRadius:10, border:"none", background:generating?C.border:`linear-gradient(135deg,${C.accent},${C.purple})`, color:generating?C.textMuted:"#fff", cursor:generating?"not-allowed":"pointer", fontWeight:700, fontSize:15, boxShadow:C.shadowMd }}>
-                {generating ? `⏳ ${t("מייצר עם AI...","Generating...")}` : `🤖 ${t("צור 3 גרסאות","Generate 3 Variants")}`}
-              </button>
-              {generating && (
-                <div style={{ marginTop:20, display:"inline-flex", flexDirection:"column", gap:6, textAlign:"start" }}>
-                  {[t("ניתוח פרטי מוצר...","Analyzing product..."), t("יוצר כותרות...","Creating headlines..."), t("מייצר גרסאות...","Generating variants...")].map((msg,i)=>(
-                    <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:C.textSub }}><div style={{ width:6, height:6, borderRadius:"50%", background:C.green }} />{msg}</div>
-                  ))}
-                </div>
-              )}
+              <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("Claude AI יייצר 3 גרסאות מודעה בהתאם למוצר ולפלטפורמה","Claude AI will create 3 ad variants tailored to the product and platform")}</div>
+              {/* Tone selector */}
+              <div style={{ fontSize:12, fontWeight:700, color:C.textMuted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>{t("סגנון כתיבה","Writing Tone")}</div>
+              <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+                {([["enthusiastic", t("נלהב 🔥","Enthusiastic 🔥")], ["professional", t("מקצועי 💼","Professional 💼")], ["playful", t("שובב 😄","Playful 😄")]] as const).map(([val, label]) => (
+                  <button key={val} onClick={()=>setTone(val)} style={{ padding:"7px 16px", borderRadius:20, border:`1px solid ${tone===val?C.accent:C.border}`, background:tone===val?C.accentLight:C.card, color:tone===val?C.accent:C.textSub, cursor:"pointer", fontSize:13, fontWeight:600 }}>{label}</button>
+                ))}
+              </div>
+              <div style={{ textAlign:"center" }}>
+                <button onClick={doGenerate} disabled={generating} style={{ padding:"13px 32px", borderRadius:10, border:"none", background:generating?C.border:`linear-gradient(135deg,${C.accent},${C.purple})`, color:generating?C.textMuted:"#fff", cursor:generating?"not-allowed":"pointer", fontWeight:700, fontSize:15, boxShadow:C.shadowMd }}>
+                  {generating ? `⏳ ${t("מייצר עם Claude AI...","Generating with Claude AI...")}` : `🤖 ${t("צור 3 גרסאות","Generate 3 Variants")}`}
+                </button>
+                {genError && <div style={{ marginTop:10, fontSize:12, color:C.amber }}>⚠️ {genError} — {t("נוצרו גרסאות מקומיות","Local variants used")}</div>}
+                {generating && (
+                  <div style={{ marginTop:20, display:"inline-flex", flexDirection:"column", gap:6, textAlign:"start" }}>
+                    {[t("ניתוח פרטי מוצר...","Analyzing product..."), t("שולח ל-Claude AI...","Sending to Claude AI..."), t("מייצר גרסאות...","Generating variants...")].map((msg,i)=>(
+                      <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:C.textSub }}><div style={{ width:6, height:6, borderRadius:"50%", background:C.green }} />{msg}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -291,14 +446,21 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
               )}
               {imgDone && !imgGenerating && (
                 <div>
-                  <div style={{ height:200, background:`linear-gradient(135deg,${C.accentLight},${C.purpleLight})`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8, marginBottom:12 }}>
-                    <span style={{ fontSize:56 }}>{product.image}</span>
-                    <div style={{ fontSize:12, color:C.textSub, fontWeight:600 }}>{lang==="he"?product.name:product.nameEn}</div>
-                    <div style={{ fontSize:10, color:C.textMuted }}>{pl.label} · {format}</div>
+                  <div style={{ borderRadius:10, overflow:"hidden", marginBottom:12 }}>
+                    {imgUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={imgUrl} alt={lang==="he"?product.nameEn:product.nameEn} style={{ width:"100%", maxHeight:300, objectFit:"cover", borderRadius:10 }} />
+                    ) : (
+                      <div style={{ height:200, background:`linear-gradient(135deg,${C.accentLight},${C.purpleLight})`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8 }}>
+                        <span style={{ fontSize:56 }}>{product.image}</span>
+                        <div style={{ fontSize:12, color:C.textSub, fontWeight:600 }}>{lang==="he"?product.name:product.nameEn}</div>
+                        <div style={{ fontSize:10, color:C.textMuted }}>{t("חבר OpenAI ליצירת תמונות אמיתיות","Connect OpenAI for real image generation")}</div>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                    <button style={{ padding:"8px 18px", borderRadius:8, border:"none", background:C.green, color:"#fff", cursor:"pointer", fontWeight:700, fontSize:13 }}>⬇️ {t("הורד","Download")}</button>
-                    <button onClick={()=>setImgDone(false)} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.border}`, background:C.card, color:C.textSub, cursor:"pointer", fontSize:13 }}>🔄 {t("צור מחדש","Regenerate")}</button>
+                    {imgUrl && <a href={imgUrl} download style={{ padding:"8px 18px", borderRadius:8, border:"none", background:C.green, color:"#fff", cursor:"pointer", fontWeight:700, fontSize:13, textDecoration:"none" }}>⬇️ {t("הורד","Download")}</a>}
+                    <button onClick={()=>{setImgDone(false);setImgUrl(null);}} style={{ padding:"8px 18px", borderRadius:8, border:`1px solid ${C.border}`, background:C.card, color:C.textSub, cursor:"pointer", fontSize:13 }}>🔄 {t("צור מחדש","Regenerate")}</button>
                     <button onClick={()=>setStep(4)} style={{ padding:"8px 18px", borderRadius:8, border:"none", background:C.accent, color:"#fff", cursor:"pointer", fontWeight:700, fontSize:13 }}>→ {t("המשך לפרסום","Continue to Publish")}</button>
                   </div>
                 </div>

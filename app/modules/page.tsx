@@ -18,7 +18,7 @@ import SEOModule from "./seo/SEOModule";
 import ProductsModule from "./products/ProductsModule";
 import AudiencesModule from "./audiences/AudiencesModule";
 import UsersModule from "./users/UsersModule";
-import { getUser, clearUser, getConnections, type Connection } from "../lib/auth";
+import { getUser, clearUser, getConnections, loadConnectionsFromServer, type Connection } from "../lib/auth";
 
 export type Lang = "he" | "en";
 
@@ -495,7 +495,10 @@ export default function ModulesPage() {
     localStorage.setItem("bscale_theme", isDark ? "dark" : "light");
   }, [isDark]);
 
-  // Load connections on mount + refresh when switching tabs
+  // On mount: pull connections from server (cross-device sync), then refresh on tab switch
+  useEffect(() => {
+    loadConnectionsFromServer().then(() => setConnections(getConnections()));
+  }, []);
   useEffect(() => {
     setConnections(getConnections());
   }, [activeTab]);

@@ -125,12 +125,47 @@ export function getConnections(): Record<string, Connection> {
 function notifyConnectionsChanged() {
   window.dispatchEvent(new CustomEvent("bscale:connections-changed"));
 }
+
+/** Persist current localStorage connections to the server (keyed by user email). */
+async function syncToServer(all: Record<string, Connection>) {
+  try {
+    const user = getUser();
+    if (!user?.email) return;
+    await fetch("/api/user/connections", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-user-email": user.email },
+      body: JSON.stringify(all),
+    });
+  } catch { /* silent — local still works */ }
+}
+
+/** Load connections from server and merge into localStorage (server wins). */
+export async function loadConnectionsFromServer(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const user = getUser();
+    if (!user?.email) return;
+    const res = await fetch("/api/user/connections", {
+      headers: { "x-user-email": user.email },
+    });
+    if (!res.ok) return;
+    const serverConns: Record<string, Connection> = await res.json();
+    if (!serverConns || typeof serverConns !== "object") return;
+    // Merge: server wins over local (server is source of truth across devices)
+    const local = getConnections();
+    const merged = { ...local, ...serverConns };
+    localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(merged));
+    notifyConnectionsChanged();
+  } catch { /* silent */ }
+}
+
 export function saveConnection(id: string, fields: Record<string, string>): void {
   if (typeof window === "undefined") return;
   const all = getConnections();
   all[id] = { connected: true, connectedAt: new Date().toISOString(), fields };
   localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(all));
   notifyConnectionsChanged();
+  void syncToServer(all);
 }
 export function removeConnection(id: string): void {
   if (typeof window === "undefined") return;
@@ -138,11 +173,13 @@ export function removeConnection(id: string): void {
   delete all[id];
   localStorage.setItem(KEY_CONNECTIONS, JSON.stringify(all));
   notifyConnectionsChanged();
+  void syncToServer(all);
 }
 export function clearConnections(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(KEY_CONNECTIONS);
   notifyConnectionsChanged();
+  void syncToServer({});
 }
 
 export function canAccess(user: AuthUser | null, moduleId: string): boolean {
