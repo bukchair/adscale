@@ -348,6 +348,57 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════
+          TECHNOLOGY ARTICLE TEASER
+      ══════════════════════════════════════════ */}
+      <section style={{ padding: "80px 20px", maxWidth: 900, margin: "0 auto" }}>
+        <div style={{
+          background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))",
+          border: "1px solid rgba(99,102,241,0.2)",
+          borderRadius: 22,
+          padding: "48px 40px",
+          display: "flex",
+          gap: 40,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}>
+          {/* Icon */}
+          <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, flexShrink: 0, boxShadow: "0 8px 32px rgba(99,102,241,0.35)" }}>
+            📖
+          </div>
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 12, color: "#a5b4fc", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>
+              {t("מאמר טכנולוגיה", "Technology Deep-Dive")}
+            </div>
+            <h2 style={{ fontSize: "clamp(18px, 3vw, 28px)", fontWeight: 800, margin: "0 0 12px", lineHeight: 1.25 }}>
+              {t(
+                "כיצד BScale AI מנתח מיליוני נקודות נתונים בזמן אמת",
+                "How BScale AI Analyzes Millions of Data Points in Real Time"
+              )}
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.52)", fontSize: "clamp(13px, 1.8vw, 15px)", lineHeight: 1.75, margin: "0 0 24px" }}>
+              {t(
+                "מאחורי הקלעים: הארכיטקטורה שמאפשרת לנו לעבד נתוני קמפיינים, לזהות דפוסים ולהמליץ על פעולות — הכל בתוך שניות.",
+                "Behind the scenes: the architecture that lets us process campaign data, detect patterns, and recommend actions — all within seconds."
+              )}
+            </p>
+            <button
+              onClick={() => router.push("/article")}
+              style={{
+                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                border: "none", borderRadius: 10,
+                padding: "11px 26px", color: "#fff",
+                cursor: "pointer", fontSize: 14, fontWeight: 700,
+                boxShadow: "0 4px 20px rgba(99,102,241,0.35)",
+              }}
+            >
+              {t("קרא את המאמר המלא ←", "Read Full Article →")}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
           CTA BANNER
       ══════════════════════════════════════════ */}
       <section style={{ padding: "60px 16px", textAlign: "center" }}>
