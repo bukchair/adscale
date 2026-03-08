@@ -242,8 +242,10 @@ export async function loadConnectionsFromServer(): Promise<void> {
     // Restore profile name/avatar if current session has email-derived name
     if (profileRes.ok) {
       const profile: AuthUser | null = await profileRes.json();
-      if (profile?.name && profile.name !== user.name) {
-        const fixed = { ...user, name: profile.name, avatar: profile.avatar ?? user.avatar };
+      const serverName = profile?.name ? sanitizeName(profile.name, user.email) : null;
+      const localName  = sanitizeName(user.name, user.email);
+      if (serverName && serverName !== user.name) {
+        const fixed = { ...user, name: serverName, avatar: profile!.avatar ?? user.avatar };
         localStorage.setItem(KEY_USER, JSON.stringify(fixed));
         // Update lists silently (don't call setUser to avoid re-sync loop)
         if (fixed.tenantId) {
@@ -303,11 +305,27 @@ export function canAccess(user: AuthUser | null, moduleId: string): boolean {
   return perms.includes("*") || perms.includes(moduleId);
 }
 
+/* ── Name sanitization ──────────────────────────────────────────── */
+function sanitizeName(name: string | null | undefined, email: string): string {
+  if (!name || name.startsWith("http://") || name.startsWith("https://")) {
+    // Fallback: first part of email, capitalize first letter
+    const base = email.split("@")[0].replace(/[._]/g, " ");
+    return base.charAt(0).toUpperCase() + base.slice(1);
+  }
+  return name;
+}
+
 /* ── Core registration logic ────────────────────────────────────── */
-function registerUser(id: string, name: string, email: string, avatar?: string, googleId?: string): AuthUser {
+function registerUser(id: string, rawName: string, email: string, avatar?: string, googleId?: string): AuthUser {
+  const name = sanitizeName(rawName, email);
   const allLegacy = _getLegacyAllUsers();
   const existing = allLegacy.find(u => (googleId && u.googleId === googleId) || u.email === email);
-  if (existing) { setUser(existing); return existing; }
+  if (existing) {
+    // Fix bad name in existing record too
+    const fixed = { ...existing, name: sanitizeName(existing.name, existing.email) };
+    setUser(fixed);
+    return fixed;
+  }
 
   let user: AuthUser;
 
@@ -345,8 +363,8 @@ function registerUser(id: string, name: string, email: string, avatar?: string, 
 }
 
 /* ── Auth methods ───────────────────────────────────────────────── */
-export function createOrLoginGoogleUser(googleId: string, name: string, email: string, avatar?: string): AuthUser {
-  return registerUser("g_" + googleId, name, email, avatar, googleId);
+export function createOrLoginGoogleUser(googleId: string, rawName: string, email: string, avatar?: string): AuthUser {
+  return registerUser("g_" + googleId, sanitizeName(rawName, email), email, avatar, googleId);
 }
 
 export async function signInWithGoogle(): Promise<AuthUser> {
