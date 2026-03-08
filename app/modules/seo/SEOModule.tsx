@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { C } from "../theme";
 import { getConnections } from "../../lib/auth";
 import type { Lang } from "../page";
@@ -112,24 +112,31 @@ export default function SEOModule({ lang }: { lang: Lang }) {
   const [bulkApplied, setBulkApplied] = useState(0);
   const [wooConnected, setWooConnected] = useState(false);
 
-  const openIssues    = issues.filter(i => i.status === "open");
+  const openIssues     = issues.filter(i => i.status === "open");
   const filteredIssues = severityFilter === "all" ? openIssues : openIssues.filter(i => i.severity === severityFilter);
 
-  /* ── API helpers ─────────────────────────────────────────── */
-  const buildHeaders = useCallback((): Record<string, string> => {
+  /* ── Connection header builder (pure — no state side-effects) ── */
+  function getConnHeaders(): Record<string, string> {
     const conns = getConnections();
-    const woo = conns.woocommerce;
-    const gsc = conns.gsc;
-    setWooConnected(!!(woo?.connected && woo.fields?.store_url && woo.fields?.consumer_key));
-    return { "x-connections": JSON.stringify({ woocommerce: woo?.fields ?? {}, gsc: gsc?.fields ?? {} }) };
-  }, []);
+    return {
+      "x-connections": JSON.stringify({
+        woocommerce: conns.woocommerce?.fields ?? {},
+        gsc:         conns.gsc?.fields ?? {},
+      }),
+    };
+  }
 
-  const runAnalysis = useCallback(async () => {
+  /* ── Stable refs so async callbacks never cause re-renders ─── */
+  const runningAnalysis  = useRef(false);
+  const runningKeywords  = useRef(false);
+
+  async function runAnalysis() {
+    if (runningAnalysis.current) return;
+    runningAnalysis.current = true;
     setLoadingAnalysis(true);
     setApplyError(null);
     try {
-      const headers = buildHeaders();
-      const res = await fetch("/api/seo/analyze", { headers });
+      const res = await fetch("/api/seo/analyze", { headers: getConnHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setIssues((data.issues ?? []).map((i: any) => ({ ...i, status: "open" as const })));
@@ -138,18 +145,22 @@ export default function SEOModule({ lang }: { lang: Lang }) {
       setGeoScore(data.geoScore ?? 0);
       setProductCount(data.productCount ?? 0);
       setIsDemo(data.isDemo ?? false);
+      // derive wooConnected from returned data
+      setWooConnected(!data.isDemo);
     } catch (e: any) {
-      setApplyError(t("שגיאה בניתוח", "Analysis error") + ": " + e.message);
+      setApplyError("Analysis error: " + e.message);
     } finally {
       setLoadingAnalysis(false);
+      runningAnalysis.current = false;
     }
-  }, [buildHeaders, t]);
+  }
 
-  const loadKeywords = useCallback(async () => {
+  async function loadKeywords() {
+    if (runningKeywords.current) return;
+    runningKeywords.current = true;
     setLoadingKeywords(true);
     try {
-      const headers = buildHeaders();
-      const res = await fetch("/api/seo/keywords", { headers });
+      const res = await fetch("/api/seo/keywords", { headers: getConnHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setKeywords(data.keywords ?? []);
@@ -158,39 +169,39 @@ export default function SEOModule({ lang }: { lang: Lang }) {
       setKeywords([]);
     } finally {
       setLoadingKeywords(false);
+      runningKeywords.current = false;
     }
-  }, [buildHeaders]);
+  }
 
-  // Load data on mount and when connections change
+  // Run once on mount only
   useEffect(() => {
     runAnalysis();
     loadKeywords();
     const handler = () => { runAnalysis(); loadKeywords(); };
     window.addEventListener("bscale:connections-changed", handler);
     return () => window.removeEventListener("bscale:connections-changed", handler);
-  }, [runAnalysis, loadKeywords]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── Apply single issue ───────────────────────────────────── */
   const applyIssue = async (issue: SEOIssue) => {
     if (!issue.productId || !issue.field || ["content", "slug", "schema"].includes(issue.field)) {
-      // Can't auto-fix content/slug — mark as applied in UI only
       setIssues(prev => prev.map(i => i.id === issue.id ? { ...i, status: "applied" } : i));
       return;
     }
     setApplying(issue.id);
     setApplyError(null);
     try {
-      const headers = { ...buildHeaders(), "Content-Type": "application/json" };
       const res = await fetch("/api/seo/apply", {
         method: "POST",
-        headers,
+        headers: { ...getConnHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ productId: issue.productId, field: issue.field, value: issue.suggestion }),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || "Unknown error");
       setIssues(prev => prev.map(i => i.id === issue.id ? { ...i, status: "applied" } : i));
     } catch (e: any) {
-      setApplyError(t("שגיאה ביישום", "Apply error") + ": " + e.message);
+      setApplyError("Apply error: " + e.message);
     } finally {
       setApplying(null);
     }
@@ -208,7 +219,7 @@ export default function SEOModule({ lang }: { lang: Lang }) {
     setApplyError(null);
     let applied = 0;
 
-    const headers = { ...buildHeaders(), "Content-Type": "application/json" };
+    const headers = { ...getConnHeaders(), "Content-Type": "application/json" };
     for (const issue of toApply) {
       try {
         const res = await fetch("/api/seo/apply", {
@@ -575,7 +586,7 @@ export default function SEOModule({ lang }: { lang: Lang }) {
       if (!selectedIssues.length) return;
       setBulkApplying(true);
       setBulkDone(0);
-      const headers = { ...buildHeaders(), "Content-Type": "application/json" };
+      const headers = { ...getConnHeaders(), "Content-Type": "application/json" };
       let done = 0;
       for (const issue of selectedIssues) {
         try {
