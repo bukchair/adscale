@@ -84,11 +84,48 @@ export function setUser(user: AuthUser): void {
   const li = legacy.findIndex(u => u.id === user.id);
   if (li >= 0) legacy[li] = user; else legacy.push(user);
   localStorage.setItem(KEY_ALL_USERS, JSON.stringify(legacy));
+  // Sync profile to server so other devices can load it
+  void _syncProfileToServer(user);
 }
 export function clearUser(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(KEY_USER);
   localStorage.removeItem(KEY_ONBOARDING);
+}
+
+/** Wipe all local-storage bscale_ keys + server-side data files */
+export async function clearAllData(): Promise<void> {
+  if (typeof window === "undefined") return;
+  await fetch("/api/admin/clear-all-data", { method: "DELETE" }).catch(() => {});
+  const keys = Object.keys(localStorage).filter(k => k.startsWith("bscale_"));
+  keys.forEach(k => localStorage.removeItem(k));
+}
+
+async function _syncProfileToServer(user: AuthUser): Promise<void> {
+  try {
+    if (!user.email) return;
+    await fetch("/api/user/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-user-email": user.email },
+      body: JSON.stringify(user),
+    });
+  } catch { /* silent */ }
+}
+
+export async function loadProfileFromServer(): Promise<AuthUser | null> {
+  if (typeof window === "undefined") return null;
+  try {
+    const user = getUser();
+    if (!user?.email) return null;
+    const res = await fetch("/api/user/profile", { headers: { "x-user-email": user.email } });
+    if (!res.ok) return null;
+    const profile: AuthUser | null = await res.json();
+    if (!profile) return null;
+    // Server name/avatar take priority (won't be the email-derived fallback)
+    const merged = { ...user, name: profile.name, avatar: profile.avatar ?? user.avatar };
+    localStorage.setItem(KEY_USER, JSON.stringify(merged));
+    return merged;
+  } catch { return null; }
 }
 
 /* ── Platform-role helpers ──────────────────────────────────────── */
@@ -195,9 +232,30 @@ export async function loadConnectionsFromServer(): Promise<void> {
   try {
     const user = getUser();
     if (!user?.email) return;
-    const res = await fetch("/api/user/connections", { headers: { "x-user-email": user.email } });
-    if (!res.ok) return;
-    const serverConns: Record<string, Connection> = await res.json();
+
+    // Load profile + connections in parallel
+    const [connRes, profileRes] = await Promise.all([
+      fetch("/api/user/connections", { headers: { "x-user-email": user.email } }),
+      fetch("/api/user/profile",     { headers: { "x-user-email": user.email } }),
+    ]);
+
+    // Restore profile name/avatar if current session has email-derived name
+    if (profileRes.ok) {
+      const profile: AuthUser | null = await profileRes.json();
+      if (profile?.name && profile.name !== user.name) {
+        const fixed = { ...user, name: profile.name, avatar: profile.avatar ?? user.avatar };
+        localStorage.setItem(KEY_USER, JSON.stringify(fixed));
+        // Update lists silently (don't call setUser to avoid re-sync loop)
+        if (fixed.tenantId) {
+          const all = getAllUsers(fixed.tenantId);
+          const idx = all.findIndex(u => u.id === fixed.id);
+          if (idx >= 0) { all[idx] = fixed; localStorage.setItem(tenantUsersKey(fixed.tenantId!), JSON.stringify(all)); }
+        }
+      }
+    }
+
+    if (!connRes.ok) return;
+    const serverConns: Record<string, Connection> = await connRes.json();
     const local = getConnections(user);
     const serverHasData = Object.keys(serverConns).length > 0;
     const localHasData  = Object.keys(local).length > 0;
@@ -300,10 +358,19 @@ export async function signInWithGoogle(): Promise<AuthUser> {
 export async function signInWithEmail(email: string, _password: string): Promise<AuthUser> {
   await new Promise(r => setTimeout(r, 900));
   if (!email.includes("@")) throw new Error("invalid_email");
+  // 1. Check local cache
   const all = _getLegacyAllUsers();
   const existing = all.find(u => u.email === email);
   if (existing) { setUser(existing); return existing; }
-  // New sign-in with unknown email = register them
+  // 2. Try server profile (so name is correct on new devices)
+  try {
+    const res = await fetch("/api/user/profile", { headers: { "x-user-email": email } });
+    if (res.ok) {
+      const profile: AuthUser | null = await res.json();
+      if (profile?.name) { setUser(profile); return profile; }
+    }
+  } catch { /* offline, fall through */ }
+  // 3. Truly new user — register with email prefix as temporary name
   return registerUser("email_" + Date.now(), email.split("@")[0], email);
 }
 
