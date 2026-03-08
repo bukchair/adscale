@@ -1,6 +1,7 @@
 // src/hooks/useDashboard.ts
 "use client";
 import { useState, useEffect } from "react";
+import { getConnections } from "@/app/lib/auth";
 
 export type Platform = "google" | "meta" | "tiktok";
 export type CampaignStatus = "active" | "paused" | "draft" | "removed";
@@ -109,7 +110,15 @@ export function useDashboard(from: string, to?: string) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/dashboard?from=${from}&to=${to}`);
+        const conns = getConnections();
+        const connHeader = JSON.stringify({
+          woocommerce: conns.woocommerce?.fields ?? {},
+          ga4:         conns.ga4?.fields ?? {},
+          gsc:         conns.gsc?.fields ?? {},
+        });
+        const res = await fetch(`/api/dashboard?from=${from}&to=${to}`, {
+          headers: { "x-connections": connHeader },
+        });
         if (!res.ok) throw new Error(`API error ${res.status}`);
         const json = await res.json();
         if (json && json.summary) {

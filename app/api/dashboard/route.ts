@@ -16,17 +16,54 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from") || new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
   const to = searchParams.get("to") || new Date().toISOString().split("T")[0];
-  const url = process.env.WOOCOMMERCE_URL;
+
+  // Read client-side connections (passed as header) so dashboard works without env vars
+  let clientConns: Record<string, Record<string, string>> = {};
+  try {
+    const h = req.headers.get("x-connections");
+    if (h) clientConns = JSON.parse(h);
+  } catch {}
+  const wooConn = clientConns.woocommerce ?? {};
+  const ga4Conn = clientConns.ga4 ?? {};
+
+  const url = wooConn.store_url || wooConn.url || process.env.WOOCOMMERCE_URL;
 
   const apiErrors: string[] = [];
 
-  // WooCommerce
+  // WooCommerce — try custom bscale endpoint first, fall back to native WC orders API
   let totalRevenue = 0, totalConversions = 0;
   try {
     if (!url) throw new Error("WOOCOMMERCE_URL not set");
-    const wcRes = await fetch(`${url}/wp-json/bscale/v1/summary?from=${from}&to=${to}`, { signal: AbortSignal.timeout(8000) });
-    if (wcRes.ok) { const d = await wcRes.json(); totalRevenue = d.totalRevenue; totalConversions = d.totalConversions; }
-    else apiErrors.push(`woocommerce:${wcRes.status}`);
+    const wcKey    = wooConn.consumer_key    || process.env.WOOCOMMERCE_KEY;
+    const wcSecret = wooConn.consumer_secret || process.env.WOOCOMMERCE_SECRET;
+    const wcAuth   = wcKey && wcSecret
+      ? { Authorization: "Basic " + Buffer.from(`${wcKey}:${wcSecret}`).toString("base64") }
+      : {};
+
+    // Try the custom bscale plugin endpoint first
+    const wcRes = await fetch(`${url.replace(/\/$/, "")}/wp-json/bscale/v1/summary?from=${from}&to=${to}`, {
+      headers: wcAuth, signal: AbortSignal.timeout(8000),
+    });
+    if (wcRes.ok) {
+      const d = await wcRes.json();
+      totalRevenue = d.totalRevenue ?? 0;
+      totalConversions = d.totalConversions ?? 0;
+    } else if (wcKey && wcSecret) {
+      // Fall back to native WooCommerce REST API orders endpoint
+      const ordersUrl = `${url.replace(/\/$/, "")}/wp-json/wc/v3/orders?after=${from}T00:00:00&before=${to}T23:59:59&status=completed,processing&per_page=100`;
+      const ordersRes = await fetch(ordersUrl, { headers: wcAuth, signal: AbortSignal.timeout(8000) });
+      if (ordersRes.ok) {
+        const orders = await ordersRes.json();
+        if (Array.isArray(orders)) {
+          totalRevenue = orders.reduce((s: number, o: any) => s + parseFloat(o.total || "0"), 0);
+          totalConversions = orders.length;
+        }
+      } else {
+        apiErrors.push(`woocommerce:${wcRes.status}`);
+      }
+    } else {
+      apiErrors.push(`woocommerce:${wcRes.status}`);
+    }
   } catch (e) { apiErrors.push("woocommerce:" + String(e).slice(0, 100)); }
 
   // Google Ads
@@ -285,12 +322,20 @@ export async function GET(req: NextRequest) {
     }
   } catch(e) { apiErrors.push(`tiktok:${String(e).slice(0,150)}`); }
 
-  // GA4
+  // GA4 — credentials from env or from client-side service account JSON
   let ga4Sessions = 0, ga4Users = 0, ga4Revenue = 0;
   try {
-    const clientEmail = process.env.GA4_CLIENT_EMAIL;
-    const privateKeyRaw = process.env.GA4_PRIVATE_KEY;
-    const propertyId = process.env.GA4_PROPERTY_ID;
+    let clientEmail  = process.env.GA4_CLIENT_EMAIL ?? "";
+    let privateKeyRaw = process.env.GA4_PRIVATE_KEY ?? "";
+    let propertyId   = ga4Conn.property_id || process.env.GA4_PROPERTY_ID ?? "";
+    // If the client passed a service account JSON, use it
+    if (ga4Conn.service_json) {
+      try {
+        const sj = JSON.parse(ga4Conn.service_json);
+        if (sj.client_email) clientEmail  = sj.client_email;
+        if (sj.private_key)  privateKeyRaw = sj.private_key;
+      } catch {}
+    }
     if (!clientEmail || !privateKeyRaw || !propertyId) throw new Error("Missing GA4 env vars");
     const privateKey = privateKeyRaw.replace(/\\n/g, "\n");
     const now = Math.floor(Date.now() / 1000);
@@ -364,7 +409,7 @@ export async function GET(req: NextRequest) {
       { platform: "tiktok", spent: tiktokSpent,  revenue: tiktokRevenue, roas: tiktokSpent > 0 ? tiktokRevenue / tiktokSpent : 0, clicks: tiktokClicks, conversions: tiktokConversions, impressions: tiktokImpressions },
     ],
     campaigns,
-    isLive: true,
+    isLive: apiErrors.length < 3, // live if at least some sources responded
     lastUpdated: new Date().toISOString(),
     apiErrors,
     ga4: { sessions: ga4Sessions, users: ga4Users, revenue: ga4Revenue },
