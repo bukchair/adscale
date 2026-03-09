@@ -655,26 +655,30 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
 /* ── Main Page ─────────────────────────────────────────────────── */
 export default function ModulesPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
-  const [lang, setLang] = useState<Lang>(() => {
-    if (typeof window === "undefined") return "he";
-    return (localStorage.getItem("bscale_lang") as Lang) ?? "he";
-  });
+  const [lang, setLang] = useState<Lang>("he"); // always "he" for SSR — updated after mount
   const [preset, setPreset] = useState(0);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [currentUser] = useState(() => getUser());
-  const [connections, setConnections] = useState<Record<string, Connection>>(() => getConnections());
+  const [currentUser, setCurrentUser] = useState<ReturnType<typeof getUser>>(null);
+  const [connections, setConnections] = useState<Record<string, Connection>>({});
   const [connReady, setConnReady] = useState(false);
-  const [viewingAsTenantId] = useState(() => getViewingAsTenantId());
+  const [viewingAsTenantId, setViewingAsTenantId] = useState<string | null>(null);
   const viewingAsTenant = viewingAsTenantId ? getTenantById(viewingAsTenantId) : null;
-  const [isDark, setIsDark] = useState<boolean>(() =>
-    typeof window !== "undefined" && localStorage.getItem("bscale_theme") === "dark"
-  );
+  const [isDark, setIsDark] = useState<boolean>(false); // always false for SSR — updated after mount
   const [infoTabId, setInfoTabId] = useState<TabId | null>(null);
-  const [showPermissions, setShowPermissions] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("bscale_perms_seen") !== "1";
-  });
+  const [showPermissions, setShowPermissions] = useState<boolean>(false); // always false for SSR — updated after mount
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  // Initialize all localStorage-dependent state after mount to avoid hydration mismatch
+  useEffect(() => {
+    setLang((localStorage.getItem("bscale_lang") as Lang) ?? "he");
+    setCurrentUser(getUser());
+    setConnections(getConnections());
+    setViewingAsTenantId(getViewingAsTenantId());
+    setIsDark(localStorage.getItem("bscale_theme") === "dark");
+    setShowPermissions(localStorage.getItem("bscale_perms_seen") !== "1");
+    setMounted(true);
+  }, []);
 
   // Apply dark/light theme
   useEffect(() => {
@@ -689,19 +693,20 @@ export default function ModulesPage() {
     document.documentElement.dir = LANG_META[lang].dir;
   }, [lang]);
 
-  // Redirect to login if no user
+  // Redirect to login if no user (only after mount so we know the real user state)
   useEffect(() => {
-    if (!currentUser) {
+    if (mounted && !currentUser) {
       router.replace("/login");
     }
-  }, [currentUser, router]);
+  }, [mounted, currentUser, router]);
 
-  // Load connections from server
+  // Load connections from server (after mount so user is available)
   useEffect(() => {
+    if (!mounted) return;
     loadConnectionsFromServer()
       .then(() => setConnections(getConnections()))
       .finally(() => setConnReady(true));
-  }, []);
+  }, [mounted]);
   useEffect(() => {
     if (connReady) setConnections(getConnections());
   }, [activeTab, connReady]);
@@ -764,6 +769,16 @@ export default function ModulesPage() {
     { label: tl(lang, UI.roas!),        val: `${summary.avgRoas.toFixed(2)}x`,                          color: "var(--c-amber)",  borderColor: "rgba(245,158,11,0.2)",   icon: "🎯", bg: C.amberLight  },
     { label: tl(lang, UI.conversions!), val: Math.round(summary.totalConversions).toLocaleString(),     color: "var(--c-blue)",   borderColor: "rgba(59,130,246,0.2)",   icon: "📊", bg: C.blueLight   },
   ];
+
+  // Show a minimal loader during SSR / before hydration to avoid mismatch
+  if (!mounted) {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--c-page-bg, #0a0a14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 40, height: 40, border: "3px solid rgba(99,102,241,0.3)", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="as-app" style={{ direction: dir }}>

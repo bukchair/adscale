@@ -1,16 +1,6 @@
 "use client";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getUser, isOnboardingComplete } from "../lib/auth";
 
+// Auth guard is handled inside ModulesPage itself (after mount, avoiding hydration mismatch)
 export default function ModulesLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-
-  useEffect(() => {
-    const user = getUser();
-    if (!user) { router.replace("/login"); return; }
-    if (!isOnboardingComplete()) { router.replace("/onboarding"); return; }
-  }, [router]);
-
   return <>{children}</>;
 }
