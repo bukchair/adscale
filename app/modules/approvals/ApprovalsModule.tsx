@@ -109,7 +109,7 @@ function ApprovalsTab({ lang }: { lang: Lang }) {
               )}
             </div>
             {expanded === req.id && (
-              <div style={{ marginTop: 16, padding: 16, background: C.bg, borderRadius: 8 }}>
+              <div style={{ marginTop: 16, padding: 16, background: C.pageBg, borderRadius: 8 }}>
                 <pre style={{ fontSize: 12, color: C.textMuted, margin: 0, overflow: "auto" }}>{JSON.stringify(req.payload, null, 2)}</pre>
                 <div style={{ marginTop: 12 }}>
                   <input value={notes[req.id] || ""} onChange={(e) => setNotes((prev) => ({ ...prev, [req.id]: e.target.value }))} placeholder={t("הוסף הערה (אופציונלי)...", "Add a note (optional)...")}
@@ -175,20 +175,20 @@ function AutomationsTab({ lang }: { lang: Lang }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <input value={newRule.name} onChange={(e) => setNewRule((p) => ({ ...p, name: e.target.value }))}
               placeholder={t("שם החוק (עברית)", "Rule name (Hebrew)")}
-              style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+              style={{ background: C.pageBg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
             <input value={newRule.nameEn} onChange={(e) => setNewRule((p) => ({ ...p, nameEn: e.target.value }))}
               placeholder="Rule name (English)"
-              style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+              style={{ background: C.pageBg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
             <input value={newRule.trigger} onChange={(e) => setNewRule((p) => ({ ...p, trigger: e.target.value }))}
               placeholder={t("תנאי הפעלה (לדוג׳: POAS < 1.0)", "Trigger condition (e.g. POAS < 1.0)")}
-              style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+              style={{ background: C.pageBg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
             <input value={newRule.action} onChange={(e) => setNewRule((p) => ({ ...p, action: e.target.value }))}
               placeholder={t("פעולה לביצוע", "Action to perform")}
-              style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
+              style={{ background: C.pageBg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }} />
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <select value={newRule.category} onChange={(e) => setNewRule((p) => ({ ...p, category: e.target.value as AutomationRule["category"] }))}
-              style={{ background: C.bg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }}>
+              style={{ background: C.pageBg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13, outline: "none" }}>
               <option value="budget">{t("תקציב", "Budget")}</option>
               <option value="bid">{t("הצעת מחיר", "Bid")}</option>
               <option value="keyword">{t("מילת מפתח", "Keyword")}</option>
@@ -224,11 +224,11 @@ function AutomationsTab({ lang }: { lang: Lang }) {
                   </span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                  <div style={{ background: C.bg, borderRadius: 8, padding: "8px 12px" }}>
+                  <div style={{ background: C.pageBg, borderRadius: 8, padding: "8px 12px" }}>
                     <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>⚡ {t("תנאי הפעלה", "Trigger")}</div>
                     <div style={{ fontSize: 12, color: C.text }}>{lang === "he" ? rule.trigger : rule.triggerEn}</div>
                   </div>
-                  <div style={{ background: C.bg, borderRadius: 8, padding: "8px 12px" }}>
+                  <div style={{ background: C.pageBg, borderRadius: 8, padding: "8px 12px" }}>
                     <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>🔧 {t("פעולה", "Action")}</div>
                     <div style={{ fontSize: 12, color: C.text }}>{lang === "he" ? rule.action : rule.actionEn}</div>
                   </div>
@@ -268,7 +268,7 @@ export default function ApprovalsModule({ lang }: { lang: Lang }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Tab Switcher */}
-      <div style={{ display: "flex", gap: 4, background: C.bg, borderRadius: 10, padding: 4, width: "fit-content" }}>
+      <div style={{ display: "flex", gap: 4, background: C.pageBg, borderRadius: 10, padding: 4, width: "fit-content" }}>
         {TABS.map((tb) => (
           <button key={tb.key} onClick={() => setTab(tb.key)}
             style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.2s",
