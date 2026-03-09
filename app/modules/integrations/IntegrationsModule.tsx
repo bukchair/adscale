@@ -387,7 +387,7 @@ function ConnectionCard({ def, lang, onSaved, isCreator }: { def: IntegrationDef
 
           {/* Form fields */}
           <div style={{ padding: "18px 18px 0" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="as-conn-form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {def.fields.map(f => {
                 const isTextarea = f.type === "textarea";
                 const InputEl = isTextarea ? "textarea" : "input";

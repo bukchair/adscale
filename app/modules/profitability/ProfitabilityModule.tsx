@@ -88,8 +88,8 @@ function ProfitabilityTab({ lang }: { lang: Lang }) {
           <option value="spend">{t("לפי הוצאה","By Spend")}</option>
         </select>
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <div className="as-profit-table-wrap" style={{ background: C.card }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 640 }}>
           <thead>
             <tr style={{ background: C.cardAlt }}>
               {[t("קמפיין","Campaign"),t("ציון","Score"),t("הוצאה","Spend"),t("הכנסה","Revenue"),"COGS",t("רווח","Profit"),"Margin","ROAS","POAS",t("פעולה","Action")].map(h => (
@@ -157,11 +157,11 @@ function FinancialReportsTab({ lang, dateFrom, dateTo }: { lang: Lang; dateFrom:
           </div>
         ))}
       </div>
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflowX: "auto" }}>
+      <div className="as-profit-table-wrap">
         <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, fontSize: 13, fontWeight: 700, color: C.text }}>
           📅 {t("פירוט חודשי","Monthly Breakdown")}
         </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 520 }}>
           <thead>
             <tr style={{ background: C.cardAlt }}>
               {[t("חודש","Month"),t("הכנסה","Revenue"),t("הוצאה","Spend"),"COGS",t("רווח","Profit"),"ROAS",t("מרג'ין","Margin")].map(h => (
@@ -221,14 +221,14 @@ export default function ProfitabilityModule({ lang, dateFrom = "", dateTo = "" }
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${C.border}`, background: C.card, padding: "0 20px" }}>
+      <div className="as-tab-scroll" style={{ gap: 0, borderBottom: `1px solid ${C.border}`, background: C.card, padding: "0 12px" }}>
         {TABS.map(tb => (
           <button key={tb.id} onClick={() => setTab(tb.id)} style={{
-            padding: "12px 20px", border: "none", background: "none", cursor: "pointer",
+            padding: "12px 18px", border: "none", background: "none", cursor: "pointer",
             fontSize: 13, fontWeight: tab === tb.id ? 700 : 400,
             color: tab === tb.id ? C.accent : C.textMuted,
             borderBottom: `2px solid ${tab === tb.id ? C.accent : "transparent"}`,
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex", alignItems: "center", gap: 6, flexShrink: 0, whiteSpace: "nowrap",
           }}>
             {tb.icon} {tb.label}
           </button>

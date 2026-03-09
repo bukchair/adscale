@@ -39,42 +39,42 @@ export default function AuditLogModule({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("🔍 חפש פעולה, משתמש...", "🔍 Search action, user...")}
-          style={{ flex: 1, background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
-        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+          style={{ flex: 1, minWidth: 180, background: "var(--c-input-bg)", border: "1px solid var(--c-border)", color: "var(--c-text)", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
+        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} style={{ background: "var(--c-input-bg)", border: "1px solid var(--c-border)", color: "var(--c-text)", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="all">{t("כל הפעולות", "All Actions")}</option>
           <option value="APPROVAL_APPROVED">{t("אישורים", "Approvals")}</option>
           <option value="SYNC_COMPLETED">{t("סנכרון", "Sync")}</option>
           <option value="OPTIMIZATION_RUN_TRIGGERED">{t("אופטימיזציה", "Optimization")}</option>
         </select>
-        <button style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #e2e8f0", background: "#ffffff", color: "#64748b", cursor: "pointer", fontSize: 13 }}>
+        <button style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--c-border)", background: "var(--c-card)", color: "var(--c-text-sub)", cursor: "pointer", fontSize: 13, whiteSpace: "nowrap" }}>
           📥 {t("ייצוא CSV", "Export CSV")}
         </button>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {filtered.map((log) => (
-          <div key={log.id} style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 10, padding: "14px 18px", cursor: "pointer" }} onClick={() => setExpanded(expanded === log.id ? null : log.id)}>
+          <div key={log.id} style={{ background: "var(--c-card)", border: "1px solid var(--c-border)", borderRadius: 10, padding: "14px 18px", cursor: "pointer" }} onClick={() => setExpanded(expanded === log.id ? null : log.id)}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, background: `${ACTION_COLORS[log.action] || "#8888aa"}22` }}>
                 {ACTION_ICONS[log.action] || "📋"}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 3 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: ACTION_COLORS[log.action] || "#e0e0ff" }}>{ACTION_LABELS[log.action] || log.action}</span>
-                  {log.entityType && <span style={{ fontSize: 11, color: "#64748b", background: "#e2e8f0", padding: "1px 8px", borderRadius: 6 }}>{log.entityType}</span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 3, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: ACTION_COLORS[log.action] || "var(--c-text)" }}>{ACTION_LABELS[log.action] || log.action}</span>
+                  {log.entityType && <span style={{ fontSize: 11, color: "var(--c-text-muted)", background: "var(--c-card-alt)", padding: "1px 8px", borderRadius: 6 }}>{log.entityType}</span>}
                 </div>
-                <div style={{ fontSize: 12, color: "#64748b" }}>
+                <div style={{ fontSize: 12, color: "var(--c-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {log.user ? `👤 ${log.user.name} (${log.user.email})` : `⚡ ${t("מערכת אוטומטית", "Automated System")}`}
                   {" · "}{timeAgo(log.createdAt)}
                 </div>
               </div>
-              <span style={{ fontSize: 11, color: "#64748b" }}>{expanded === log.id ? "▲" : "▼"}</span>
+              <span style={{ fontSize: 11, color: "var(--c-text-muted)", flexShrink: 0 }}>{expanded === log.id ? "▲" : "▼"}</span>
             </div>
             {expanded === log.id && (
-              <div style={{ marginTop: 12, padding: 12, background: "#f8fafc", borderRadius: 8 }}>
-                <pre style={{ fontSize: 12, color: "#a0a0c0", margin: 0 }}>{JSON.stringify(log.metadata, null, 2)}</pre>
+              <div style={{ marginTop: 12, padding: 12, background: "var(--c-card-alt)", borderRadius: 8, overflow: "auto" }}>
+                <pre style={{ fontSize: 12, color: "var(--c-text-muted)", margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{JSON.stringify(log.metadata, null, 2)}</pre>
               </div>
             )}
           </div>

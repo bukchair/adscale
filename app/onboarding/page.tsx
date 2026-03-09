@@ -219,7 +219,7 @@ function BusinessStep({ lang, onNext }: { lang: "he" | "en"; onNext: (data: Busi
 
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         {/* Row 1: Store name + owner */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="as-form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
             <label style={labelStyle}>{t("שם החנות / העסק *", "Store / Business Name *")}</label>
             <input value={form.storeName} onChange={e => set("storeName", e.target.value)} placeholder={t("My Store", "My Store")} style={inputStyle(errors.storeName)} />
@@ -231,7 +231,7 @@ function BusinessStep({ lang, onNext }: { lang: "he" | "en"; onNext: (data: Busi
         </div>
 
         {/* Row 2: Website + phone */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="as-form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
             <label style={labelStyle}>{t("כתובת אתר", "Website URL")}</label>
             <input type="url" value={form.websiteUrl} onChange={e => set("websiteUrl", e.target.value)} placeholder="https://mystore.co.il" style={inputStyle()} dir="ltr" />
@@ -269,7 +269,7 @@ function BusinessStep({ lang, onNext }: { lang: "he" | "en"; onNext: (data: Busi
         </div>
 
         {/* Row 5: Country + currency */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="as-form-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div>
             <label style={labelStyle}>{t("מדינה", "Country")}</label>
             <select value={form.country} onChange={e => set("country", e.target.value)} style={{ ...inputStyle(), appearance: "none" }}>

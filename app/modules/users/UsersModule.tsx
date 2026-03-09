@@ -95,9 +95,9 @@ export default function UsersModule({ lang }: UsersModuleProps) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, background: C.cardAlt, borderRadius: 10, padding: 4, width: "fit-content", marginBottom: 24, border: `1px solid ${C.border}` }}>
+      <div className="as-tab-scroll" style={{ background: C.cardAlt, borderRadius: 10, padding: 4, marginBottom: 24, border: `1px solid ${C.border}`, display: "flex", gap: 4 }}>
         {([["users", t("משתמשים","Users")], ["roles", t("תפקידים והרשאות","Roles & Permissions")]] as [string,string][]).map(([id, label]) => (
-          <button key={id} onClick={() => setActiveTab(id as "users"|"roles")} style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === id ? 700 : 400, background: activeTab === id ? "#fff" : "transparent", color: activeTab === id ? C.accent : C.textSub, boxShadow: activeTab === id ? C.shadow : "none", transition: "all 0.2s" }}>{label}</button>
+          <button key={id} onClick={() => setActiveTab(id as "users"|"roles")} style={{ padding: "8px 20px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 14, fontWeight: activeTab === id ? 700 : 400, background: activeTab === id ? "#fff" : "transparent", color: activeTab === id ? C.accent : C.textSub, boxShadow: activeTab === id ? C.shadow : "none", transition: "all 0.2s", whiteSpace: "nowrap" }}>{label}</button>
         ))}
       </div>
 
@@ -132,7 +132,7 @@ export default function UsersModule({ lang }: UsersModuleProps) {
                 {t("הזמן משתמש חדש","Invite New User")}
                 {gmailConnected && <span style={{ fontSize: 11, background: "#fce8e6", color: "#c5221f", borderRadius: 20, padding: "2px 8px", fontWeight: 600 }}>✉️ Gmail</span>}
               </div>
-              <div className="as-invite-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 160px auto", gap: 12, alignItems: "end" }}>
+              <div className="as-invite-grid">
                 <div>
                   <label style={{ display: "block", fontSize: 12, color: C.textSub, marginBottom: 4 }}>{t("שם","Name")}</label>
                   <input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder={t("שם מלא","Full name")} style={{ width: "100%", background: "#fff", border: `1px solid ${C.border}`, borderRadius: 8, padding: "9px 12px", fontSize: 14, color: C.text, boxSizing: "border-box", outline: "none" }} />
@@ -160,7 +160,7 @@ export default function UsersModule({ lang }: UsersModuleProps) {
           {/* Users list */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {users.map(u => (
-              <div key={u.id} style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div key={u.id} className="as-user-list-item">
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 44, height: 44, borderRadius: "50%", background: ROLES[u.role].bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{u.avatar || "👤"}</div>
                   <div>
@@ -169,7 +169,7 @@ export default function UsersModule({ lang }: UsersModuleProps) {
                     <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{t("הצטרף","Joined")} {new Date(u.createdAt).toLocaleDateString(isHe ? "he-IL" : "en-US")}</div>
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div className="as-user-actions">
                   {editUser?.id === u.id ? (
                     <select defaultValue={u.role} onChange={e => handleRoleChange(u.id, e.target.value as Role)} style={{ background: "#fff", border: `1px solid ${C.accent}`, borderRadius: 8, padding: "7px 12px", fontSize: 14, color: C.text, outline: "none" }}>
                       {(Object.keys(ROLES) as Role[]).map(r => <option key={r} value={r}>{isHe ? ROLES[r].he : ROLES[r].en}</option>)}
@@ -216,7 +216,7 @@ export default function UsersModule({ lang }: UsersModuleProps) {
             <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, fontWeight: 700, color: C.text, fontSize: 15 }}>
               {t("מטריצת הרשאות","Permissions Matrix")}
             </div>
-            <div style={{ overflowX: "auto" }}>
+            <div className="as-permissions-table-wrap">
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: C.cardAlt }}>

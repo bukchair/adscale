@@ -53,10 +53,10 @@ function ApprovalsTab({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <div className="as-tab-scroll" style={{ display: "flex", gap: 10 }}>
           {(["critical", "high", "medium", "low"] as const).map((r) => (
-            <div key={r} style={{ background: `${RISK_COLORS[r]}11`, border: `1px solid ${RISK_COLORS[r]}33`, borderRadius: 8, padding: "8px 16px", textAlign: "center" }}>
+            <div key={r} style={{ background: `${RISK_COLORS[r]}11`, border: `1px solid ${RISK_COLORS[r]}33`, borderRadius: 8, padding: "8px 14px", textAlign: "center", flexShrink: 0 }}>
               <div style={{ fontSize: 20, fontWeight: 700, color: RISK_COLORS[r] }}>{pending.filter((req) => req.riskLevel === r).length}</div>
               <div style={{ fontSize: 11, color: C.textMuted }}>{RISK_LABELS[r]}</div>
             </div>
@@ -71,13 +71,13 @@ function ApprovalsTab({ lang }: { lang: Lang }) {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {requests.map((req) => (
-          <div key={req.id} style={{ background: C.card, border: `1px solid ${RISK_COLORS[req.riskLevel]}33`, borderRight: `4px solid ${RISK_COLORS[req.riskLevel]}`, borderRadius: 12, padding: 20, opacity: req.status !== "PENDING" ? 0.6 : 1 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
-                  <span style={{ fontSize: 20 }}>{TYPE_ICONS[req.type] || "🎯"}</span>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{lang === "he" ? req.title : req.titleEn}</span>
-                  <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 20, background: `${RISK_COLORS[req.riskLevel]}22`, color: RISK_COLORS[req.riskLevel], fontWeight: 600 }}>
+          <div key={req.id} style={{ background: C.card, border: `1px solid ${RISK_COLORS[req.riskLevel]}33`, borderInlineEnd: `4px solid ${RISK_COLORS[req.riskLevel]}`, borderRadius: 12, padding: 20, opacity: req.status !== "PENDING" ? 0.6 : 1 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 20, flexShrink: 0 }}>{TYPE_ICONS[req.type] || "🎯"}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{lang === "he" ? req.title : req.titleEn}</span>
+                  <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 20, background: `${RISK_COLORS[req.riskLevel]}22`, color: RISK_COLORS[req.riskLevel], fontWeight: 600, whiteSpace: "nowrap" }}>
                     {RISK_LABELS[req.riskLevel]}
                   </span>
                   {req.status !== "PENDING" && (
