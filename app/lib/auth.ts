@@ -53,7 +53,9 @@ const KEY_FIRST_DONE = "bscale_first_user_done";   // kept for backwards-compat 
 const KEY_ALL_USERS  = "bscale_all_users";          // legacy global list
 
 /** System creator — always gets super_admin regardless of registration order */
-export const CREATOR_EMAIL = "asher205@gmail.com";
+export const CREATOR_EMAIL   = "asher205@gmail.com";
+export const CREATOR_NAME    = "אשר בוקשפן";
+export const CREATOR_NAME_EN = "Asher Bukchapan";
 
 export const ROLES: Record<Role, { he: string; en: string; color: string; bg: string; desc: string; descEn: string }> = {
   admin:   { he: "מנהל",        en: "Admin",   color: "#6366f1", bg: "#eef2ff", desc: "גישה מלאה לכל המודולים, ניהול משתמשים והגדרות", descEn: "Full access to all modules, user management and settings" },

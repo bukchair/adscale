@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { C } from "../theme";
-import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser } from "../../lib/auth";
+import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser, getBusinessProfile } from "../../lib/auth";
 import type { Lang } from "../page";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -217,7 +217,7 @@ interface IntgState {
   testing: boolean;
 }
 
-function initState(id: string): IntgState {
+function initState(id: string, autofill: Record<string, string> = {}): IntgState {
   if (typeof window !== "undefined") {
     const conns = getConnections();
     const saved = conns[id];
@@ -233,13 +233,30 @@ function initState(id: string): IntgState {
       };
     }
   }
-  return { status:"disconnected", values:{}, expanded:false, helpOpen:false, saving:false, testing:false };
+  // Not yet connected — pre-populate with profile-derived values (user can override)
+  return { status:"disconnected", values: autofill, expanded:false, helpOpen:false, saving:false, testing:false };
 }
 
 /* ── Individual connection card ──────────────────────────────────── */
 function ConnectionCard({ def, lang, onSaved, isCreator }: { def: IntegrationDef; lang: Lang; onSaved?: () => void; isCreator?: boolean }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
-  const [st, setSt] = useState<IntgState>(() => initState(def.id));
+  const [st, setSt] = useState<IntgState>(() => {
+    // Build autofill from saved user profile — only for empty (not yet connected) cards
+    const autofill: Record<string, string> = {};
+    try {
+      const user = getUser();
+      const business = getBusinessProfile(user?.tenantId ?? undefined);
+      // Gmail: pre-fill sender email from logged-in user
+      if (def.id === "gmail" && user?.email) autofill.sender_email = user.email;
+      // GSC: pre-fill property URL from business profile
+      if (def.id === "gsc" && business?.websiteUrl) autofill.site_url = business.websiteUrl;
+      // WooCommerce: pre-fill store URL from business profile
+      if (def.id === "woocommerce" && business?.websiteUrl) autofill.store_url = business.websiteUrl;
+      // Shopify: same
+      if (def.id === "shopify" && business?.websiteUrl) autofill.store_url = business.websiteUrl;
+    } catch { /* ignore — window may not be available */ }
+    return initState(def.id, autofill);
+  });
 
   const setField = (key: string, val: string) =>
     setSt(p => ({ ...p, values: { ...p.values, [key]: val } }));
