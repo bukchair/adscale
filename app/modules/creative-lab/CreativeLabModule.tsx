@@ -133,7 +133,7 @@ function StepBar({ step, lang }: { step: number; lang: Lang }) {
   return (
     <div className="as-wizard-steps" style={{ marginBottom:20 }}>
       {steps.map((s,i) => (
-        <div key={s.n} style={{ flex:1, padding:"13px 8px", textAlign:"center", background:step===s.n?C.accent:step>s.n?C.green:C.card, color:step>=s.n?"#fff":C.textMuted, fontSize:13, fontWeight:600, borderRight:i<3?`1px solid ${C.border}`:"none", transition:"all 0.2s" }}>
+        <div key={s.n} style={{ flex:1, padding:"13px 8px", textAlign:"center", background:step===s.n?C.accent:step>s.n?C.green:C.card, color:step>=s.n?"#fff":C.textMuted, fontSize:13, fontWeight:600, borderInlineEnd:i<3?`1px solid ${C.border}`:"none", transition:"all 0.2s" }}>
           <div style={{ fontSize:16, marginBottom:2 }}>{step>s.n?"✓":s.n}</div>
           <div style={{ fontSize:11 }}>{lang==="he"?s.he:s.en}</div>
         </div>

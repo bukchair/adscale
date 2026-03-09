@@ -40,19 +40,19 @@ export default function BudgetModule({ lang }: { lang: Lang }) {
           { label: t("ניצול תקציב", "Budget Utilization"),       value: `${Math.round(CAMPAIGNS.reduce((s, c) => s + c.avgSpend, 0) / CAMPAIGNS.reduce((s, c) => s + c.dailyBudget, 0) * 100)}%`, color: "#f59e0b" },
           { label: t("שינויים מוצעים", "Suggested Changes"),     value: `${CAMPAIGNS.filter((c) => c.change !== 0).length} ${t("קמפיינים", "campaigns")}`, color: "#8b5cf6" },
         ].map((c) => (
-          <div key={c.label} style={{ background: "#ffffff", border: `1px solid ${c.color}33`, borderRadius: 12, padding: "16px 20px" }}>
+          <div key={c.label} style={{ background: "var(--c-card)", border: `1px solid ${c.color}33`, borderRadius: 12, padding: "16px 20px" }}>
             <div style={{ fontSize: 22, fontWeight: 700, color: c.color }}>{c.value}</div>
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{c.label}</div>
+            <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginTop: 4 }}>{c.label}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <button style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#6366f1", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <button style={{ padding: "8px 18px", borderRadius: 8, border: "none", background: "#6366f1", color: "#fff", cursor: "pointer", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
           🤖 {t("ייצר המלצות תקציב", "Generate Budget Recommendations")}
         </button>
         {budgets.some((c) => c.change !== 0) && (
-          <button onClick={applyAll} disabled={applying} style={{ padding: "8px 18px", borderRadius: 8, border: "1px solid #10b981", background: "#10b98111", color: "#10b981", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+          <button onClick={applyAll} disabled={applying} style={{ padding: "8px 18px", borderRadius: 8, border: "1px solid #10b981", background: "#10b98111", color: "#10b981", cursor: "pointer", fontSize: 13, fontWeight: 600, whiteSpace: "nowrap" }}>
             {applying ? t("🔄 מיישם...", "🔄 Applying...") : `✅ ${t("יישם כל השינויים", "Apply All Changes")}`}
           </button>
         )}
@@ -63,39 +63,39 @@ export default function BudgetModule({ lang }: { lang: Lang }) {
           const status = STATUS_CONFIG[c.pacingStatus as keyof typeof STATUS_CONFIG];
           const newBudget = c.dailyBudget + c.change;
           return (
-            <div key={i} style={{ background: "#ffffff", border: `1px solid ${status.color}33`, borderRadius: 12, padding: 20 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12 }}>
+            <div key={i} style={{ background: "var(--c-card)", border: `1px solid ${status.color}33`, borderRadius: 12, padding: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 18 }}>{status.icon}</span>
-                    <span style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>{c.name}</span>
-                    <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 20, background: `${status.color}22`, color: status.color, fontWeight: 600 }}>{status.label}</span>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: "var(--c-text)" }}>{c.name}</span>
+                    <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 20, background: `${status.color}22`, color: status.color, fontWeight: 600, whiteSpace: "nowrap" }}>{status.label}</span>
                   </div>
                   <div style={{ marginBottom: 12 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#64748b", marginBottom: 6 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--c-text-muted)", marginBottom: 6 }}>
                       <span>{t("ניצול תקציב", "Budget Utilization")}: {Math.round(c.pacingRate * 100)}%</span>
                       <span>₪{c.avgSpend} / ₪{c.dailyBudget}</span>
                     </div>
-                    <div style={{ height: 8, background: "#e2e8f0", borderRadius: 4, overflow: "visible" }}>
+                    <div style={{ height: 8, background: "var(--c-border)", borderRadius: 4, overflow: "visible" }}>
                       <div style={{ width: `${Math.min(100, c.pacingRate * 100)}%`, height: "100%", background: c.pacingRate > 1.1 ? "#f97316" : c.pacingRate < 0.7 ? "#3b82f6" : "#10b981", borderRadius: 4, transition: "width 0.5s" }} />
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#a0a0c0" }}>
+                  <div style={{ display: "flex", gap: 16, fontSize: 12, color: "var(--c-text-muted)", flexWrap: "wrap" }}>
                     <span>ROAS: <strong style={{ color: c.roas >= 4 ? "#10b981" : "#f59e0b" }}>{c.roas}x</strong></span>
                     <span>{t("רווח יומי", "Daily Profit")}: <strong style={{ color: c.profit >= 0 ? "#10b981" : "#ef4444" }}>₪{c.profit}</strong></span>
                   </div>
                 </div>
-                <div style={{ background: "#f8fafc", borderRadius: 10, padding: "16px 20px", minWidth: 180, textAlign: "center" }}>
-                  <div style={{ fontSize: 12, color: "#64748b", marginBottom: 8 }}>{t("המלצה", "Recommendation")}</div>
+                <div style={{ background: "var(--c-bg)", borderRadius: 10, padding: "16px 20px", minWidth: 160, textAlign: "center", flexShrink: 0 }}>
+                  <div style={{ fontSize: 12, color: "var(--c-text-muted)", marginBottom: 8 }}>{t("המלצה", "Recommendation")}</div>
                   {c.change === 0 ? (
                     <span style={{ color: "#10b981", fontWeight: 600 }}>✅ {t("אין שינוי", "No Change")}</span>
                   ) : (
                     <>
-                      <div style={{ fontSize: 13, color: "#64748b" }}>₪{c.dailyBudget} → <strong style={{ color: "#fff" }}>₪{newBudget}</strong></div>
+                      <div style={{ fontSize: 13, color: "var(--c-text-muted)" }}>₪{c.dailyBudget} → <strong style={{ color: "var(--c-text)" }}>₪{newBudget}</strong></div>
                       <div style={{ fontSize: 14, fontWeight: 700, color: c.change > 0 ? "#10b981" : "#ef4444", marginTop: 4 }}>
                         {c.change > 0 ? "↑" : "↓"} ₪{Math.abs(c.change)} ({c.change > 0 ? "+" : ""}{Math.round((c.change / c.dailyBudget) * 100)}%)
                       </div>
-                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 4 }}>
+                      <div style={{ fontSize: 11, color: "var(--c-text-muted)", marginTop: 4 }}>
                         {t("סיכון", "Risk")}: <span style={{ color: c.risk === "low" ? "#10b981" : c.risk === "medium" ? "#f59e0b" : "#ef4444" }}>{RISK_LABELS[c.risk]}</span>
                       </div>
                     </>

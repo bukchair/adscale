@@ -220,7 +220,7 @@ function GA4TrafficSection({ lang, ga4 }: { lang: Lang; ga4: { sessions: number;
       <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 16 }}>
         📊 {t("תנועת אתר — Google Analytics 4", "Website Traffic — Google Analytics 4")}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+      <div className="as-analytics-3col" style={{ marginBottom: 20 }}>
         {[
           { label: t("סשנים", "Sessions"), value: (ga4.sessions || 1247).toLocaleString(), color: "#6366f1" },
           { label: t("משתמשים", "Users"),  value: (ga4.users  || 984).toLocaleString(),  color: "#10b981" },
@@ -232,7 +232,7 @@ function GA4TrafficSection({ lang, ga4 }: { lang: Lang; ga4: { sessions: number;
           </div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="as-analytics-2col">
         <div>
           <div style={{ fontSize: 12, fontWeight: 700, color: C.textSub, marginBottom: 10 }}>🌐 {t("מקורות תנועה", "Traffic Sources")}</div>
           {mockSources.map(s => (
@@ -267,17 +267,17 @@ function SEOStatusSection({ lang, onGoToSEO }: { lang: Lang; onGoToSEO?: () => v
   const seo = { clicks: 3842, impressions: 48200, avgPosition: 14.3, ctr: 7.97 };
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, boxShadow: C.shadow }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>
           🔍 {t("סטטוס SEO — Google Search Console", "SEO Status — Google Search Console")}
         </div>
         {onGoToSEO && (
-          <button onClick={onGoToSEO} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #10b98144", background: "#10b98111", color: "#10b981", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+          <button onClick={onGoToSEO} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #10b98144", background: "#10b98111", color: "#10b981", cursor: "pointer", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
             🎯 {t("מרכז SEO", "SEO Center")} →
           </button>
         )}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div className="as-analytics-4col">
         {[
           { label: t("קליקים", "Clicks"),           value: seo.clicks.toLocaleString(),   icon: "👆", color: "#3b82f6", sub: "+12% " + t("מהחודש שעבר", "vs last month") },
           { label: t("חשיפות", "Impressions"),       value: seo.impressions.toLocaleString(), icon: "👁️", color: "#6366f1", sub: "+8% " + t("מהחודש שעבר", "vs last month") },

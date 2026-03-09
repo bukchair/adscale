@@ -313,7 +313,7 @@ function QualityBubble({ lang, connections, onGoToConnections }: {
           background: C.card, border: `1px solid ${C.border}`, borderRadius: 16,
           boxShadow: C.shadowLg, width: 320, maxWidth: "calc(100vw - 24px)", zIndex: 200,
           padding: 16,
-        }}>
+        }} className="as-quality-dropdown">
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{tl(lang, UI.connQuality!)}</div>
@@ -877,6 +877,30 @@ export default function ModulesPage() {
             {isLive ? tl(lang, UI.live!) : tl(lang, UI.demo!)}
           </div>
         </header>
+
+        {/* ── Mobile date filter strip (below header) ──────────── */}
+        <div className="as-date-filter-mobile">
+          {DATE_PRESETS.map((p, i) => (
+            <button key={i} onClick={() => { setPreset(i); if (i !== 3) setShowCustomPicker(false); else setShowCustomPicker(true); }} style={{
+              padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
+              fontSize: 12, fontWeight: 600, flexShrink: 0,
+              background: preset === i ? C.accent : C.pageBg,
+              color: preset === i ? "#fff" : C.textSub,
+              transition: "all 0.15s",
+            }}>
+              {tl(lang, DATE_FILTER_LABELS[p.key === "today" ? "today" : p.key === "7d" ? "last7days" : p.key === "30d" ? "last30days" : "customRange"]!)}
+            </button>
+          ))}
+          {preset === 3 && (
+            <>
+              <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                style={{ fontSize: 12, padding: "4px 8px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.text, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: C.textMuted, flexShrink: 0 }}>→</span>
+              <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                style={{ fontSize: 12, padding: "4px 8px", borderRadius: 6, border: `1px solid ${C.border}`, background: C.inputBg, color: C.text, flexShrink: 0 }} />
+            </>
+          )}
+        </div>
 
         {/* ── Impersonation banner ─────────────────────────────── */}
         {viewingAsTenant && (

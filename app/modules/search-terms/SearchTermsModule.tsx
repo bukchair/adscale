@@ -102,7 +102,7 @@ function NegativeKeywordsTab({ lang }: { lang: Lang }) {
             </button>
           )}
         </div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 560 }}>
           <thead>
             <tr style={{ background: C.cardAlt }}>
               {[t("מילה","Keyword"), t("סוג","Match"), t("מקור","Source"), t("קמפיין","Campaign"), t("בזבוז","Waste"), t("סטטוס","Status"), t("פעולה","Action")].map(h => (
@@ -166,8 +166,8 @@ function SearchAnalysisTab({ lang }: { lang: Lang }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
-        <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600 }}>📊 {t("התפלגות כוונת חיפוש", "Search Intent Distribution")}</h3>
+      <div style={{ background: "var(--c-card)", border: "1px solid var(--c-border)", borderRadius: 12, padding: 20 }}>
+        <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600, color: "var(--c-text)" }}>📊 {t("התפלגות כוונת חיפוש", "Search Intent Distribution")}</h3>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           {Object.entries(distribution).map(([intent, count]) => (
             <div key={intent} onClick={() => setIntentFilter(intentFilter === intent ? "all" : intent)}
@@ -180,15 +180,15 @@ function SearchAnalysisTab({ lang }: { lang: Lang }) {
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("🔍 חפש שאילתה...", "🔍 Search query...")}
-          style={{ flex: 1, minWidth: 200, background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
-        <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+          style={{ flex: 1, minWidth: 160, background: "var(--c-input-bg)", border: "1px solid var(--c-border)", color: "var(--c-text)", borderRadius: 8, padding: "8px 14px", fontSize: 13, outline: "none" }} />
+        <select value={riskFilter} onChange={(e) => setRiskFilter(e.target.value)} style={{ background: "var(--c-input-bg)", border: "1px solid var(--c-border)", color: "var(--c-text)", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="all">{t("כל רמות הסיכון", "All Risk Levels")}</option>
           <option value="critical">{t("קריטי", "Critical")}</option>
           <option value="high">{t("גבוה", "High")}</option>
           <option value="medium">{t("בינוני", "Medium")}</option>
           <option value="low">{t("נמוך", "Low")}</option>
         </select>
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} style={{ background: "#ffffff", border: "1px solid #e2e8f0", color: "#1e293b", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} style={{ background: "var(--c-input-bg)", border: "1px solid var(--c-border)", color: "var(--c-text)", borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
           <option value="spend">{t("מיין לפי הוצאה", "Sort by Spend")}</option>
           <option value="score">{t("מיין לפי ציון", "Sort by Score")}</option>
           <option value="conversions">{t("מיין לפי המרות", "Sort by Conversions")}</option>
@@ -198,13 +198,13 @@ function SearchAnalysisTab({ lang }: { lang: Lang }) {
         </button>
       </div>
 
-      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden" }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+      <div style={{ background: "var(--c-card)", border: "1px solid var(--c-border)", borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 700 }}>
             <thead>
-              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+              <tr style={{ background: "var(--c-card-alt)", borderBottom: "1px solid var(--c-border)" }}>
                 {[t("שאילתת חיפוש","Search Query"), t("כוונה","Intent"), t("ציון","Score"), t("סיכון","Risk"), t("פעולה מומלצת","Recommended Action"), t("קליקים","Clicks"), t("הוצאה","Spend"), t("המרות","Conversions"), "CVR"].map((h) => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "right", color: "#64748b", fontWeight: 600 }}>{h}</th>
+                  <th key={h} style={{ padding: "12px 16px", textAlign: "start", color: "var(--c-text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
