@@ -26,7 +26,7 @@ function LoginForm() {
 
   useEffect(() => {
     const u = getUser();
-    if (u) router.replace(isOnboardingComplete() ? "/modules" : "/onboarding");
+    if (u) router.replace(isOnboardingComplete() ? "/modules" : "/modules");
   }, [router]);
 
   const t = (he: string, en: string) => isHe ? he : en;

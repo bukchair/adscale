@@ -278,6 +278,10 @@ export async function loadConnectionsFromServer(): Promise<void> {
           if (idx >= 0) { all[idx] = fixed; localStorage.setItem(tenantUsersKey(fixed.tenantId!), JSON.stringify(all)); }
         }
       }
+      // If server has a real profile (user has been here before), restore onboarding status
+      if (profile?.id && profile?.email) {
+        completeOnboarding(user.tenantId);
+      }
     }
 
     if (!connRes.ok) return;
