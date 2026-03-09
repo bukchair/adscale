@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { C } from "../theme";
 import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser } from "../../lib/auth";
 import type { Lang } from "../page";
@@ -510,7 +511,8 @@ function GoogleOAuthBanner({ lang }: { lang: Lang }) {
 
   const handleConnectGoogle = () => {
     setConnecting(true);
-    window.location.href = "/api/auth/google-connect?returnTo=/modules?tab=integrations";
+    // Use NextAuth signIn — reuses the already-registered /api/auth/callback/google URI
+    signIn("google", { callbackUrl: "/auth-callback" });
   };
 
   return (
