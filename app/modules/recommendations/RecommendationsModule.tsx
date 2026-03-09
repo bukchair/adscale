@@ -60,7 +60,7 @@ export default function RecommendationsModule({ lang }: { lang: Lang }) {
       {/* Severity filter row — scrollable on mobile */}
       <div className="as-tab-scroll" style={{ display: "flex", gap: 8 }}>
         {["all", "critical", "high", "medium", "low"].map((f) => (
-          <button key={f} onClick={() => setFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, flexShrink: 0, background: filter === f ? (f === "all" ? "#7c74ff" : SEVERITY_COLORS[f as keyof typeof SEVERITY_COLORS]) : "var(--c-card)", color: filter === f ? "#fff" : "var(--c-text-muted)", border: `1px solid ${filter === f ? "transparent" : "var(--c-border)"}` }}>
+          <button key={f} onClick={() => setFilter(f)} style={{ padding: "6px 14px", borderRadius: 20, border: `1px solid ${filter === f ? "transparent" : "var(--c-border)"}`, cursor: "pointer", fontSize: 12, flexShrink: 0, background: filter === f ? (f === "all" ? "#7c74ff" : SEVERITY_COLORS[f as keyof typeof SEVERITY_COLORS]) : "var(--c-card)", color: filter === f ? "#fff" : "var(--c-text-muted)" }}>
             {f === "all" ? t("הכל", "All") : (lang === "he" ? SEVERITY_HE : SEVERITY_EN)[f as keyof typeof SEVERITY_HE]}
           </button>
         ))}
