@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import { C } from "../theme";
 import type { Lang } from "../page";
 
 interface SearchTerm {
@@ -24,7 +25,124 @@ const MOCK_TERMS: SearchTerm[] = [
   { query: "נעלי ריצה מחיר", intent: "BUYER", intentConfidence: 0.86, score: 72, riskLevel: "low", recommendedAction: "keep", impressions: 1890, clicks: 134, spend: 212.3, conversions: 8, ctr: 7.09, cvr: 5.97 },
 ];
 
-export default function SearchTermsModule({ lang }: { lang: Lang }) {
+/* ── Negative Keywords data ────────────────────────────────────── */
+const MOCK_NEG_KWS = [
+  { id: "1", keyword: "חינם", keywordEn: "free", matchType: "BROAD", source: "AI", spend: 89.2, impressions: 1200, campaign: "Shopping - Best Sellers", status: "PENDING" },
+  { id: "2", keyword: "תיקון", keywordEn: "repair", matchType: "PHRASE", source: "AI", spend: 67.8, impressions: 890, campaign: "Search - Brand", status: "PENDING" },
+  { id: "3", keyword: "diy", keywordEn: "diy", matchType: "EXACT", source: "AI", spend: 31.2, impressions: 320, campaign: "Shopping - All Products", status: "PENDING" },
+  { id: "4", keyword: "מדריך", keywordEn: "tutorial", matchType: "BROAD", source: "AI", spend: 45.1, impressions: 680, campaign: "Shopping - Best Sellers", status: "APPROVED" },
+  { id: "5", keyword: "השכרה", keywordEn: "rental", matchType: "PHRASE", source: "Manual", spend: 0, impressions: 0, campaign: "Search - Brand", status: "APPROVED" },
+];
+
+function NegativeKeywordsTab({ lang }: { lang: Lang }) {
+  const t = (he: string, en: string) => lang === "he" ? he : en;
+  const [kwList, setKwList] = useState(MOCK_NEG_KWS);
+  const [newKw, setNewKw] = useState("");
+  const [matchType, setMatchType] = useState("BROAD");
+
+  const approve = (id: string) => setKwList(prev => prev.map(k => k.id === id ? { ...k, status: "APPROVED" } : k));
+  const reject  = (id: string) => setKwList(prev => prev.filter(k => k.id !== id));
+  const addManual = () => {
+    if (!newKw.trim()) return;
+    setKwList(prev => [...prev, { id: Date.now().toString(), keyword: newKw, keywordEn: newKw, matchType, source: "Manual", spend: 0, impressions: 0, campaign: t("כל הקמפיינים","All Campaigns"), status: "PENDING" }]);
+    setNewKw("");
+  };
+
+  const pending  = kwList.filter(k => k.status === "PENDING");
+  const approved = kwList.filter(k => k.status === "APPROVED");
+  const totalWaste = pending.reduce((a, k) => a + k.spend, 0);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
+        {[
+          { l: t("ממתינות לאישור","Pending"),  v: `${pending.length}`,  c: C.amber },
+          { l: t("אושרו","Approved"),            v: `${approved.length}`, c: C.green },
+          { l: t("בזבוז צפוי","Wasted Spend"),  v: `₪${Math.round(totalWaste)}`, c: C.red },
+        ].map(k => (
+          <div key={k.l} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 18px" }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: k.c }}>{k.v}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 3 }}>{k.l}</div>
+          </div>
+        ))}
+        <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08))", border: `1px solid ${C.accentA}`, borderRadius: 12, padding: "14px 18px", gridColumn: "span 1" }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, marginBottom: 4 }}>✨ Gemini AI</div>
+          <div style={{ fontSize: 12, color: C.textSub }}>{t("מצא 8 מילות שלילי חדשות","Found 8 new negative keywords")}</div>
+        </div>
+      </div>
+
+      {/* Add manual */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>➕ {t("הוסף מילה שלילית ידנית","Add Negative Keyword Manually")}</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input value={newKw} onChange={e => setNewKw(e.target.value)} onKeyDown={e => e.key === "Enter" && addManual()}
+            placeholder={t("הכנס מילה שלילית...","Enter negative keyword...")}
+            style={{ flex: 1, minWidth: 180, background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13 }} />
+          <select value={matchType} onChange={e => setMatchType(e.target.value)}
+            style={{ background: C.inputBg, border: `1px solid ${C.border}`, color: C.text, borderRadius: 8, padding: "8px 12px", fontSize: 13 }}>
+            <option value="BROAD">Broad</option>
+            <option value="PHRASE">Phrase</option>
+            <option value="EXACT">Exact</option>
+          </select>
+          <button onClick={addManual} style={{ padding: "8px 18px", borderRadius: 8, background: C.accent, color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+            {t("הוסף","Add")}
+          </button>
+        </div>
+      </div>
+
+      {/* List */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflowX: "auto" }}>
+        <div style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>🚫 {t("מילות שלילי","Negative Keywords")} ({kwList.length})</div>
+          {pending.length > 0 && (
+            <button onClick={() => setKwList(prev => prev.map(k => ({ ...k, status: "APPROVED" })))}
+              style={{ padding: "6px 14px", borderRadius: 8, background: C.green, color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+              ✅ {t("אשר הכל","Approve All")}
+            </button>
+          )}
+        </div>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: C.cardAlt }}>
+              {[t("מילה","Keyword"), t("סוג","Match"), t("מקור","Source"), t("קמפיין","Campaign"), t("בזבוז","Waste"), t("סטטוס","Status"), t("פעולה","Action")].map(h => (
+                <th key={h} style={{ padding: "9px 14px", textAlign: "start", color: C.textMuted, fontWeight: 600, fontSize: 11, borderBottom: `1px solid ${C.border}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {kwList.map(kw => (
+              <tr key={kw.id} style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: "9px 14px", color: C.text, fontWeight: 600 }}>[{kw.matchType === "EXACT" ? `="${kw.keyword}"` : kw.matchType === "PHRASE" ? `"${kw.keyword}"` : kw.keyword}]</td>
+                <td style={{ padding: "9px 14px" }}><span style={{ fontSize: 10, background: C.cardAlt, border: `1px solid ${C.border}`, borderRadius: 6, padding: "2px 7px", color: C.textSub }}>{kw.matchType}</span></td>
+                <td style={{ padding: "9px 14px", color: kw.source === "AI" ? C.accent : C.textSub, fontSize: 12 }}>{kw.source === "AI" ? "✨ AI" : "👤 Manual"}</td>
+                <td style={{ padding: "9px 14px", color: C.textSub, fontSize: 12 }}>{lang === "he" ? kw.campaign : kw.campaign}</td>
+                <td style={{ padding: "9px 14px", color: kw.spend > 0 ? C.red : C.textMuted }}>₪{kw.spend.toFixed(0)}</td>
+                <td style={{ padding: "9px 14px" }}>
+                  <span style={{ fontSize: 11, background: kw.status === "APPROVED" ? C.greenLight : C.amberLight, color: kw.status === "APPROVED" ? C.green : C.amber, borderRadius: 8, padding: "2px 8px", fontWeight: 600 }}>
+                    {kw.status === "APPROVED" ? t("✓ אושר","✓ Approved") : t("⏳ ממתין","⏳ Pending")}
+                  </span>
+                </td>
+                <td style={{ padding: "9px 14px" }}>
+                  {kw.status === "PENDING" ? (
+                    <div style={{ display: "flex", gap: 5 }}>
+                      <button onClick={() => approve(kw.id)} style={{ padding: "4px 10px", borderRadius: 6, background: C.green, color: "#fff", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600 }}>✓</button>
+                      <button onClick={() => reject(kw.id)}  style={{ padding: "4px 10px", borderRadius: 6, background: C.red,   color: "#fff", border: "none", cursor: "pointer", fontSize: 11 }}>✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => reject(kw.id)} style={{ padding: "4px 10px", borderRadius: 6, background: "transparent", border: `1px solid ${C.border}`, color: C.textMuted, cursor: "pointer", fontSize: 11 }}>{t("הסר","Remove")}</button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function SearchAnalysisTab({ lang }: { lang: Lang }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const [search, setSearch] = useState("");
   const [intentFilter, setIntentFilter] = useState("all");
@@ -126,6 +244,37 @@ export default function SearchTermsModule({ lang }: { lang: Lang }) {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Root Export ─────────────────────────────────────────────── */
+export default function SearchTermsModule({ lang }: { lang: Lang }) {
+  const t = (he: string, en: string) => lang === "he" ? he : en;
+  const [tab, setTab] = useState<"analysis"|"negatives">("analysis");
+  const TABS = [
+    { id: "analysis",  label: t("ניתוח חיפושים","Search Analysis"),  icon: "🔍" },
+    { id: "negatives", label: t("מילות שליליות","Negative Keywords"), icon: "🚫" },
+  ] as const;
+  return (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", gap: 0, borderBottom: `1px solid ${C.border}`, background: C.card, padding: "0 20px" }}>
+        {TABS.map(tb => (
+          <button key={tb.id} onClick={() => setTab(tb.id)} style={{
+            padding: "12px 20px", border: "none", background: "none", cursor: "pointer",
+            fontSize: 13, fontWeight: tab === tb.id ? 700 : 400,
+            color: tab === tb.id ? C.accent : C.textMuted,
+            borderBottom: `2px solid ${tab === tb.id ? C.accent : "transparent"}`,
+            display: "flex", alignItems: "center", gap: 6,
+          }}>
+            {tb.icon} {tb.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ padding: 20 }}>
+        {tab === "analysis"  && <SearchAnalysisTab lang={lang} />}
+        {tab === "negatives" && <NegativeKeywordsTab lang={lang} />}
       </div>
     </div>
   );

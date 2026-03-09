@@ -13,16 +13,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="he" dir="rtl">
+    <html lang="en" dir="ltr">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
-        {/* Sync theme from localStorage before first paint to prevent flash */}
+        {/* Sync theme + detect browser language before first paint to prevent flash */}
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             try {
+              // Theme
               var t = localStorage.getItem('bscale_theme');
               if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
               else document.documentElement.removeAttribute('data-theme');
+              // Language: use saved preference, or detect from browser
+              var saved = localStorage.getItem('bscale_lang');
+              var supported = ['he','en','es','de','fr','pt','ru'];
+              var lang = saved;
+              if (!lang) {
+                var nav = navigator.language || navigator.languages && navigator.languages[0] || 'en';
+                var code = nav.split('-')[0].toLowerCase();
+                lang = supported.indexOf(code) !== -1 ? code : 'en';
+                localStorage.setItem('bscale_lang', lang);
+              }
+              document.documentElement.lang = lang;
+              document.documentElement.dir = lang === 'he' ? 'rtl' : 'ltr';
             } catch(e) {}
           })();
         ` }} />

@@ -6,23 +6,20 @@ import { C } from "./theme";
 import OverviewModule from "./overview/OverviewModule";
 import RecommendationsModule from "./recommendations/RecommendationsModule";
 import SearchTermsModule from "./search-terms/SearchTermsModule";
-import NegativeKeywordsModule from "./negative-keywords/NegativeKeywordsModule";
 import ProfitabilityModule from "./profitability/ProfitabilityModule";
 import BudgetModule from "./budget/BudgetModule";
 import CreativeLabModule from "./creative-lab/CreativeLabModule";
 import ApprovalsModule from "./approvals/ApprovalsModule";
 import AuditLogModule from "./audit-log/AuditLogModule";
-import AutomationModule from "./automation/AutomationModule";
 import IntegrationsModule from "./integrations/IntegrationsModule";
 import SEOModule from "./seo/SEOModule";
 import ProductsModule from "./products/ProductsModule";
 import AudiencesModule from "./audiences/AudiencesModule";
 import UsersModule from "./users/UsersModule";
-import FinancialReportsModule from "./financial-reports/FinancialReportsModule";
-import { getUser, clearUser, getConnections, loadConnectionsFromServer, isSuperAdmin, type Connection, ROLES, MODULE_PERMISSIONS } from "../lib/auth";
+import { getUser, clearUser, getConnections, loadConnectionsFromServer, type Connection, ROLES, MODULE_PERMISSIONS } from "../lib/auth";
 import { getViewingAsTenantId, getTenantById, clearViewingAs } from "../lib/tenant";
 import type { Lang } from "../lib/i18n";
-import { LANG_META, tl, NAV_GROUP_LABELS, MODULE_NAMES, MODULE_INFO, UI } from "../lib/i18n";
+import { LANG_META, tl, NAV_GROUP_LABELS, MODULE_NAMES, MODULE_INFO, DATE_FILTER_LABELS, UI } from "../lib/i18n";
 
 export type { Lang };
 
@@ -36,40 +33,38 @@ function sanitizeDisplayName(name: string | undefined, email: string): string {
 
 /* ── Navigation items ──────────────────────────────────────────── */
 const NAV_ITEMS = [
-  { id: "overview",          icon: "📊", group: "performance" },
-  { id: "profitability",     icon: "💰", group: "performance" },
-  { id: "budget",            icon: "📈", group: "performance" },
-  { id: "financial-reports", icon: "💹", group: "performance" },
-  { id: "recommendations",   icon: "🤖", group: "campaigns"   },
-  { id: "search-terms",      icon: "🔍", group: "campaigns"   },
-  { id: "negative-keywords", icon: "🚫", group: "campaigns"   },
-  { id: "seo",               icon: "🎯", group: "growth"      },
-  { id: "products",          icon: "🛍️", group: "growth"      },
-  { id: "audiences",         icon: "👥", group: "growth"      },
-  { id: "creative-lab",      icon: "✍️", group: "growth"      },
-  { id: "approvals",         icon: "✅", group: "manage"      },
-  { id: "automation",        icon: "⚙️", group: "manage"      },
-  { id: "audit-log",         icon: "📋", group: "manage"      },
-  { id: "integrations",      icon: "🔗", group: "manage"      },
-  { id: "users",             icon: "👤", group: "manage"      },
+  { id: "overview",        icon: "📊", group: "performance" },
+  { id: "profitability",   icon: "💰", group: "performance" },
+  { id: "budget",          icon: "📈", group: "performance" },
+  { id: "recommendations", icon: "🤖", group: "campaigns"   },
+  { id: "search-terms",    icon: "🔍", group: "campaigns"   },
+  { id: "seo",             icon: "🎯", group: "growth"      },
+  { id: "products",        icon: "🛍️", group: "growth"      },
+  { id: "audiences",       icon: "👥", group: "growth"      },
+  { id: "creative-lab",    icon: "✍️", group: "growth"      },
+  { id: "approvals",       icon: "✅", group: "manage"      },
+  { id: "audit-log",       icon: "📋", group: "manage"      },
+  { id: "integrations",    icon: "🔗", group: "manage"      },
+  { id: "users",           icon: "👤", group: "manage"      },
 ] as const;
 
 type TabId = typeof NAV_ITEMS[number]["id"];
 
 const NAV_GROUPS = ["performance", "campaigns", "growth", "manage"] as const;
 
+/** key 0=today 1=7d 2=30d 3=custom */
 const DATE_PRESETS = [
-  { he: "7 ימים",  en: "7d",  es: "7d",   de: "7T",  fr: "7j",  pt: "7d",  days: 7  },
-  { he: "14 ימים", en: "14d", es: "14d",  de: "14T", fr: "14j", pt: "14d", days: 14 },
-  { he: "30 ימים", en: "30d", es: "30d",  de: "30T", fr: "30j", pt: "30d", days: 30 },
-];
+  { key: "today",  days: 0  },
+  { key: "7d",     days: 7  },
+  { key: "30d",    days: 30 },
+  { key: "custom", days: -1 },
+] as const;
 
 const BADGES: Partial<Record<TabId, { count: number; color: string }>> = {
-  approvals:           { count: 5,  color: "#f59e0b" },
-  seo:                 { count: 12, color: "#ef4444"  },
-  "negative-keywords": { count: 8,  color: "#f97316" },
-  audiences:           { count: 1,  color: "#3b82f6"  },
-  "financial-reports": { count: 3,  color: "#10b981"  },
+  approvals:      { count: 5,  color: "#f59e0b" },
+  seo:            { count: 12, color: "#ef4444"  },
+  "search-terms": { count: 8,  color: "#f97316"  },
+  audiences:      { count: 1,  color: "#3b82f6"  },
 };
 
 /* ── Connection platform definitions ───────────────────────────── */
@@ -656,7 +651,10 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
 export default function ModulesPage() {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [lang, setLang] = useState<Lang>("he"); // always "he" for SSR — updated after mount
-  const [preset, setPreset] = useState(0);
+  const [preset, setPreset] = useState(1); // default: Last 7 Days
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<ReturnType<typeof getUser>>(null);
   const [connections, setConnections] = useState<Record<string, Connection>>({});
@@ -730,10 +728,14 @@ export default function ModulesPage() {
   const dir = LANG_META[lang].dir;
   const t = (he: string, en: string) => lang === "he" ? he : en;
 
-  const { data, loading, refetch } = useDashboard(
-    getDaysAgo(DATE_PRESETS[preset].days),
-    getToday()
-  );
+  const fromDate = preset === 3
+    ? (customFrom || getDaysAgo(30))
+    : preset === 0
+      ? getToday()
+      : getDaysAgo(DATE_PRESETS[preset].days);
+  const toDate = preset === 3 ? (customTo || getToday()) : getToday();
+
+  const { data, loading, refetch } = useDashboard(fromDate, toDate);
   const summary = data?.summary ?? { totalSpent: 0, totalRevenue: 0, avgRoas: 0, totalConversions: 0 };
   const isLive = data?.isLive ?? false;
 
@@ -750,17 +752,12 @@ export default function ModulesPage() {
     setDrawerOpen(false);
   }
 
-  const BOTTOM_TABS: TabId[] = ["overview", "financial-reports", "seo", "products", "integrations"];
+  const BOTTOM_TABS: TabId[] = ["overview", "profitability", "seo", "search-terms", "integrations"];
 
   const sidebarProps = {
     lang, active: activeTab, onSelect: handleSelect, onLangChange: setLang,
     onLogout: handleLogout, onToggleDark: () => setIsDark(d => !d), isDark,
     user: currentUser, onShowInfo: (id: TabId) => setInfoTabId(id),
-  };
-
-  const presetLabel = (p: typeof DATE_PRESETS[0]) => {
-    const key = lang as keyof typeof p;
-    return (p[key] as string) ?? p.en;
   };
 
   const metrics = [
@@ -826,15 +823,32 @@ export default function ModulesPage() {
             <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{activeItem.icon} {activeLabel}</span>
           </div>
 
-          {/* Date presets (desktop) */}
-          <div className="as-desktop-only" style={{ background: C.pageBg, borderRadius: 8, padding: 3, gap: 2, border: `1px solid ${C.border}` }}>
-            {DATE_PRESETS.map((p, i) => (
-              <button key={i} onClick={() => setPreset(i)} style={{
-                padding: "4px 12px", borderRadius: 6, border: "none", cursor: "pointer",
-                fontSize: 12, fontWeight: 600, background: preset === i ? C.accent : "transparent",
-                color: preset === i ? "#fff" : C.textSub, transition: "all 0.15s",
-              }}>{presetLabel(p)}</button>
-            ))}
+          {/* Date filter (desktop) — ONLY date navigation across the entire system */}
+          <div className="as-desktop-only" style={{ position: "relative", display: "flex", alignItems: "center", gap: 2 }}>
+            <div style={{ background: C.pageBg, borderRadius: 8, padding: 3, display: "flex", gap: 2, border: `1px solid ${C.border}` }}>
+              {DATE_PRESETS.map((p, i) => (
+                <button key={i} onClick={() => { setPreset(i); if (i !== 3) setShowCustomPicker(false); else setShowCustomPicker(true); }} style={{
+                  padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer",
+                  fontSize: 12, fontWeight: 600,
+                  background: preset === i ? C.accent : "transparent",
+                  color: preset === i ? "#fff" : C.textSub,
+                  transition: "all 0.15s",
+                }}>
+                  {tl(lang, DATE_FILTER_LABELS[p.key === "today" ? "today" : p.key === "7d" ? "last7days" : p.key === "30d" ? "last30days" : "customRange"]!)}
+                </button>
+              ))}
+            </div>
+            {/* Custom date picker */}
+            {preset === 3 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+                <span style={{ fontSize: 11, color: C.textMuted }}>{tl(lang, DATE_FILTER_LABELS.from!)}</span>
+                <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+                  style={{ fontSize: 11, padding: "2px 4px", borderRadius: 4, border: `1px solid ${C.border}`, background: C.inputBg, color: C.text, cursor: "pointer" }} />
+                <span style={{ fontSize: 11, color: C.textMuted }}>{tl(lang, DATE_FILTER_LABELS.to!)}</span>
+                <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+                  style={{ fontSize: 11, padding: "2px 4px", borderRadius: 4, border: `1px solid ${C.border}`, background: C.inputBg, color: C.text, cursor: "pointer" }} />
+              </div>
+            )}
           </div>
 
           {/* ── Connection Quality Bubble (replaces old bar) ── */}
@@ -901,22 +915,19 @@ export default function ModulesPage() {
             </div>
           ) : (
             <>
-              {activeTab === "overview"          && <OverviewModule lang={lang} connections={connections} onGoToConnections={goToConnections} />}
-              {activeTab === "financial-reports" && <FinancialReportsModule lang={lang} />}
-              {activeTab === "recommendations"   && <RecommendationsModule lang={lang} />}
-              {activeTab === "search-terms"      && <SearchTermsModule lang={lang} />}
-              {activeTab === "negative-keywords" && <NegativeKeywordsModule lang={lang} />}
-              {activeTab === "profitability"     && <ProfitabilityModule lang={lang} />}
-              {activeTab === "budget"            && <BudgetModule lang={lang} />}
-              {activeTab === "creative-lab"      && <CreativeLabModule lang={lang} />}
-              {activeTab === "seo"               && <SEOModule lang={lang} />}
-              {activeTab === "products"          && <ProductsModule lang={lang} />}
-              {activeTab === "audiences"         && <AudiencesModule lang={lang} />}
-              {activeTab === "approvals"         && <ApprovalsModule lang={lang} />}
-              {activeTab === "audit-log"         && <AuditLogModule lang={lang} />}
-              {activeTab === "automation"        && <AutomationModule lang={lang} />}
-              {activeTab === "integrations"      && <IntegrationsModule lang={lang} onConnectionsChanged={() => setConnections(getConnections())} />}
-              {activeTab === "users"             && <UsersModule lang={lang} />}
+              {activeTab === "overview"        && <OverviewModule lang={lang} connections={connections} onGoToConnections={goToConnections} dateFrom={fromDate} dateTo={toDate} />}
+              {activeTab === "profitability"   && <ProfitabilityModule lang={lang} dateFrom={fromDate} dateTo={toDate} />}
+              {activeTab === "budget"          && <BudgetModule lang={lang} />}
+              {activeTab === "recommendations" && <RecommendationsModule lang={lang} />}
+              {activeTab === "search-terms"    && <SearchTermsModule lang={lang} />}
+              {activeTab === "seo"             && <SEOModule lang={lang} />}
+              {activeTab === "products"        && <ProductsModule lang={lang} />}
+              {activeTab === "audiences"       && <AudiencesModule lang={lang} />}
+              {activeTab === "creative-lab"    && <CreativeLabModule lang={lang} />}
+              {activeTab === "approvals"       && <ApprovalsModule lang={lang} />}
+              {activeTab === "audit-log"       && <AuditLogModule lang={lang} />}
+              {activeTab === "integrations"    && <IntegrationsModule lang={lang} onConnectionsChanged={() => setConnections(getConnections())} />}
+              {activeTab === "users"           && <UsersModule lang={lang} />}
             </>
           )}
         </div>
