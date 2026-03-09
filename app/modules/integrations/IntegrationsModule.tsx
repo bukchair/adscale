@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { signIn } from "next-auth/react";
 import { C } from "../theme";
 import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser } from "../../lib/auth";
 import type { Lang } from "../page";
@@ -513,8 +512,10 @@ function GoogleOAuthBanner({ lang }: { lang: Lang }) {
 
   const handleConnectGoogle = () => {
     setConnecting(true);
-    // Use NextAuth signIn — reuses the already-registered /api/auth/callback/google URI
-    signIn("google", { callbackUrl: "/auth-callback" });
+    // Use the dedicated google-connect endpoint which requests platform scopes
+    // (adwords, analytics, webmasters, gmail) separately from login.
+    // Login uses only openid/email/profile so it's never blocked by scope verification.
+    window.location.href = "/api/auth/google-connect?returnTo=" + encodeURIComponent("/modules?tab=integrations");
   };
 
   return (
