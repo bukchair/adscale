@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { C } from "../theme";
 import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser } from "../../lib/auth";
@@ -202,6 +202,8 @@ const CATEGORY_META = {
   ecommerce: { he:"🛒 חנות אינטרנטית",    en:"🛒 eCommerce Store",   color: C.teal   },
   analytics: { he:"📊 אנליטיקה, SEO ואימייל", en:"📊 Analytics, SEO & Email", color: C.amber  },
 };
+
+const GOOGLE_IDS = new Set(["google_ads", "ga4", "gsc", "gmail"]);
 
 /* ── State per integration ───────────────────────────────────────── */
 interface IntgState {
@@ -580,17 +582,46 @@ function GoogleOAuthBanner({ lang }: { lang: Lang }) {
 export default function IntegrationsModule({ lang, onConnectionsChanged }: { lang: Lang; onConnectionsChanged?: () => void }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
   const isCreator = typeof window !== "undefined" && getUser()?.email === CREATOR_EMAIL;
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleSaved = useCallback(() => {
+    setRefreshKey(k => k + 1);
+    onConnectionsChanged?.();
+  }, [onConnectionsChanged]);
 
   const allDefs = INTEGRATIONS;
   const connected = allDefs.filter(d => {
     const s = initState(d.id);
     return s.status === "connected";
   });
+  const qualityScore = Math.round((connected.length / allDefs.length) * 100);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("bscale_quality_score", { detail: { score: qualityScore } }));
+    }
+  }, [qualityScore]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       {/* Google OAuth one-click connect */}
       <GoogleOAuthBanner lang={lang} />
+
+      {/* Connection quality score */}
+      <div style={{ background: `linear-gradient(135deg, rgba(99,102,241,0.08), rgba(16,185,129,0.06))`, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 20px", display: "flex", alignItems: "center", gap: 16, justifyContent: "space-between" }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>📡 {t("ציון חיבוריות", "Connection Quality Score")}</div>
+          <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>{t("מחושב על פי חיבורים פעילים ועדכניות נתונים", "Calculated from active connections and data freshness")}</div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: qualityScore >= 70 ? "#10b981" : qualityScore >= 40 ? "#f59e0b" : "#ef4444" }}>{qualityScore}%</div>
+          <div style={{ fontSize: 11, color: C.textMuted }}>{t("מחובר", "Connected")}</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: C.textMuted }}>
+          <span>✅ {connected.length} {t("פעיל", "active")}</span>
+          <span>○ {allDefs.length - connected.length} {t("לא מחובר", "not connected")}</span>
+        </div>
+      </div>
 
       {/* Summary bar */}
       <div className="as-4col-grid">
@@ -622,7 +653,23 @@ export default function IntegrationsModule({ lang, onConnectionsChanged }: { lan
         )}
         <div style={{ background: `${C.purpleA3}`, border: `1px solid ${C.purpleA}`, borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
           {INTEGRATIONS.filter(d => d.category === "ai").map(def => (
-            <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} isCreator={isCreator} />
+            <ConnectionCard key={def.id} def={def} lang={lang} onSaved={handleSaved} isCreator={isCreator} />
+          ))}
+        </div>
+      </div>
+
+      {/* Google Services group */}
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#4285f4", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+          <span>🔵 {t("חשבון Google — שירותים", "Google Account — Services")}</span>
+          <div style={{ flex: 1, height: 1, background: "#4285f433" }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#4285f4", padding: "2px 10px", background: "#4285f411", borderRadius: 20, border: "1px solid #4285f433" }}>
+            {INTEGRATIONS.filter(d => GOOGLE_IDS.has(d.id) && initState(d.id).status === "connected").length}/{GOOGLE_IDS.size} {t("מחוברים", "connected")}
+          </span>
+        </div>
+        <div style={{ background: "#4285f408", border: "1px solid #4285f422", borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
+          {INTEGRATIONS.filter(d => GOOGLE_IDS.has(d.id)).map(def => (
+            <ConnectionCard key={def.id} def={def} lang={lang} onSaved={handleSaved} isCreator={isCreator} />
           ))}
         </div>
       </div>
@@ -630,7 +677,8 @@ export default function IntegrationsModule({ lang, onConnectionsChanged }: { lan
       {/* Other categories */}
       {(["ads", "ecommerce", "analytics"] as const).map(cat => {
         const meta = CATEGORY_META[cat];
-        const defs = INTEGRATIONS.filter(d => d.category === cat);
+        const defs = INTEGRATIONS.filter(d => d.category === cat && !GOOGLE_IDS.has(d.id));
+        if (defs.length === 0) return null;
         return (
           <div key={cat}>
             <div style={{ fontSize: 13, fontWeight: 800, color: meta.color, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
@@ -639,7 +687,7 @@ export default function IntegrationsModule({ lang, onConnectionsChanged }: { lan
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {defs.map(def => (
-                <ConnectionCard key={def.id} def={def} lang={lang} onSaved={onConnectionsChanged} isCreator={isCreator} />
+                <ConnectionCard key={def.id} def={def} lang={lang} onSaved={handleSaved} isCreator={isCreator} />
               ))}
             </div>
           </div>

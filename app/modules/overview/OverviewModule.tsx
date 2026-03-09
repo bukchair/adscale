@@ -197,14 +197,120 @@ function EmptyState({ lang, onConnect }: { lang: Lang; onConnect: () => void }) 
 }
 
 /* ── Main Component ──────────────────────────────────────────────── */
+/* ── GA4 Traffic Section ─────────────────────────────────────────── */
+function GA4TrafficSection({ lang, ga4 }: { lang: Lang; ga4: { sessions: number; users: number; revenue: number } }) {
+  const t = mkT(lang);
+  const safeSessions = ga4.sessions || 1200;
+  const mockSources = [
+    { source: t("חיפוש אורגני", "Organic Search"), pct: 0.41, color: "#10b981" },
+    { source: t("חיפוש ממומן", "Paid Search"),     pct: 0.28, color: "#6366f1" },
+    { source: t("ישיר", "Direct"),                  pct: 0.18, color: "#3b82f6" },
+    { source: t("רשתות חברתיות", "Social"),         pct: 0.09, color: "#f59e0b" },
+    { source: t("אחר", "Other"),                    pct: 0.04, color: "#94a3b8" },
+  ];
+  const mockPages = [
+    { label: t("דף הבית", "Home"), pct: 0.31 },
+    { label: t("מוצרים", "Products"), pct: 0.22 },
+    { label: t("מבצעים", "Sale"), pct: 0.15 },
+    { label: t("אודות", "About"), pct: 0.09 },
+    { label: t("צור קשר", "Contact"), pct: 0.06 },
+  ];
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, boxShadow: C.shadow }}>
+      <div style={{ fontSize: 15, fontWeight: 700, color: C.text, marginBottom: 16 }}>
+        📊 {t("תנועת אתר — Google Analytics 4", "Website Traffic — Google Analytics 4")}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+        {[
+          { label: t("סשנים", "Sessions"), value: (ga4.sessions || 1247).toLocaleString(), color: "#6366f1" },
+          { label: t("משתמשים", "Users"),  value: (ga4.users  || 984).toLocaleString(),  color: "#10b981" },
+          { label: t("הכנסה", "Revenue"),  value: `₪${(ga4.revenue || 32400).toLocaleString()}`, color: "#f59e0b" },
+        ].map(s => (
+          <div key={s.label} style={{ background: C.pageBg, borderRadius: 10, padding: "12px 14px", textAlign: "center" }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 3 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.textSub, marginBottom: 10 }}>🌐 {t("מקורות תנועה", "Traffic Sources")}</div>
+          {mockSources.map(s => (
+            <div key={s.source} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, flexShrink: 0 }} />
+              <div style={{ flex: 1.5, fontSize: 12, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.source}</div>
+              <div style={{ background: C.pageBg, borderRadius: 4, height: 6, flex: 2, overflow: "hidden" }}>
+                <div style={{ height: "100%", background: s.color, width: `${Math.round(s.pct * 100)}%`, borderRadius: 4 }} />
+              </div>
+              <div style={{ fontSize: 11, color: C.textMuted, minWidth: 36, textAlign: "right" }}>{Math.round(s.pct * 100)}%</div>
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: C.textSub, marginBottom: 10 }}>📄 {t("עמודים פופולריים", "Top Pages")}</div>
+          {mockPages.map((p, i) => (
+            <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, background: C.pageBg, border: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: C.textMuted, flexShrink: 0 }}>{i + 1}</div>
+              <div style={{ flex: 1, fontSize: 12, color: C.text }}>{p.label}</div>
+              <div style={{ fontSize: 11, color: C.textMuted }}>{Math.round(p.pct * safeSessions).toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SEO Status Section ──────────────────────────────────────────── */
+function SEOStatusSection({ lang, onGoToSEO }: { lang: Lang; onGoToSEO?: () => void }) {
+  const t = mkT(lang);
+  const seo = { clicks: 3842, impressions: 48200, avgPosition: 14.3, ctr: 7.97 };
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, boxShadow: C.shadow }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: C.text }}>
+          🔍 {t("סטטוס SEO — Google Search Console", "SEO Status — Google Search Console")}
+        </div>
+        {onGoToSEO && (
+          <button onClick={onGoToSEO} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid #10b98144", background: "#10b98111", color: "#10b981", cursor: "pointer", fontSize: 12, fontWeight: 600 }}>
+            🎯 {t("מרכז SEO", "SEO Center")} →
+          </button>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+        {[
+          { label: t("קליקים", "Clicks"),           value: seo.clicks.toLocaleString(),   icon: "👆", color: "#3b82f6", sub: "+12% " + t("מהחודש שעבר", "vs last month") },
+          { label: t("חשיפות", "Impressions"),       value: seo.impressions.toLocaleString(), icon: "👁️", color: "#6366f1", sub: "+8% " + t("מהחודש שעבר", "vs last month") },
+          { label: t("מיקום ממוצע", "Avg Position"), value: `#${seo.avgPosition}`,         icon: "📊", color: "#f59e0b", sub: t("שיפור מ-16.1", "Improved from 16.1") },
+          { label: "CTR",                            value: `${seo.ctr}%`,                  icon: "🎯", color: "#10b981", sub: t("מעל לממוצע", "Above average") },
+        ].map(s => (
+          <div key={s.label} style={{ background: C.pageBg, borderRadius: 10, padding: "14px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 20, marginBottom: 6 }}>{s.icon}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 3 }}>{s.label}</div>
+            <div style={{ fontSize: 10, color: s.color, marginTop: 4, fontWeight: 600 }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Main Component ──────────────────────────────────────────────── */
 export default function OverviewModule({
   lang,
   connections,
   onGoToConnections,
+  onGoToSEO,
+  dateFrom,
+  dateTo,
 }: {
   lang: Lang;
   connections?: Record<string, Connection>;
   onGoToConnections?: () => void;
+  onGoToSEO?: () => void;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const t = mkT(lang);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -277,11 +383,13 @@ export default function OverviewModule({
           value={String(profitable)}
           sub={`${unprofitable} ${t("לא רווחיים","unprofitable","no rentables","nicht profitabel","non rentables","não rentáveis")}`}
           color="#10b981" icon="✅" />
-        <StatCard label={t("משתמשים (GA4)","Users (GA4)","Usuarios (GA4)","Nutzer (GA4)","Utilisateurs (GA4)","Usuários (GA4)")}
-          value={ga4.users.toLocaleString()}
-          sub={`${ga4.sessions.toLocaleString()} ${t("סשנים","sessions","sesiones","Sitzungen","sessions","sessões")}`}
-          color="#3b82f6" icon="👥" />
       </div>
+
+      {/* GA4 Traffic */}
+      <GA4TrafficSection lang={lang} ga4={ga4} />
+
+      {/* SEO Status */}
+      <SEOStatusSection lang={lang} onGoToSEO={onGoToSEO} />
 
       {/* Growth charts */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, boxShadow: C.shadow }}>

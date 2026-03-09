@@ -11,8 +11,10 @@ import {
    role:         within-tenant RBAC role
 ═══════════════════════════════════════════════════════════════════ */
 
+/** Within-tenant RBAC roles */
 export type Role         = "admin" | "manager" | "editor" | "viewer";
-export type PlatformRole = "super_admin" | "tenant_owner" | "tenant_member";
+/** Platform-level roles: System Owner > Agency Manager > Client User > Member */
+export type PlatformRole = "super_admin" | "tenant_owner" | "agency_manager" | "client_user" | "tenant_member";
 
 export interface AuthUser {
   id:            string;
@@ -60,11 +62,21 @@ export const ROLES: Record<Role, { he: string; en: string; color: string; bg: st
   viewer:  { he: "צופה",        en: "Viewer",  color: "#94a3b8", bg: "#f1f5f9", desc: "קריאה בלבד — ללא יכולת שינוי",                     descEn: "Read-only — no editing capabilities" },
 };
 
+/** Platform roles (displayed in Users module) */
+export const PLATFORM_ROLES: Record<string, { en: string; he: string; desc: string; descEn: string; color: string; bg: string; icon: string }> = {
+  super_admin:    { en: "System Owner",    he: "בעל המערכת",   desc: "גישה מלאה. ניהול מנויים, סוכנויות וכל ההרשאות", descEn: "Full access. Subscription management, agency management, all permissions", color: "#6366f1", bg: "#eef2ff", icon: "👑" },
+  agency_manager: { en: "Agency Manager",  he: "מנהל סוכנות",  desc: "ניהול דשבורדים עבור לקוחות שלו",                  descEn: "Manage dashboards for their clients",              color: "#8b5cf6", bg: "#f5f3ff", icon: "🏢" },
+  client_user:    { en: "Client User",     he: "לקוח / בעל אתר", desc: "צפייה באנליטיקס, אישור המלצות, ניהול משתמשים מוגבל", descEn: "View analytics, approve AI recommendations, manage limited users", color: "#10b981", bg: "#d1fae5", icon: "👤" },
+  tenant_owner:   { en: "Account Owner",   he: "בעל חשבון",    desc: "גישה מלאה לחשבון שלהם",                           descEn: "Full access to their own account",                color: "#3b82f6", bg: "#dbeafe", icon: "🏠" },
+  tenant_member:  { en: "Team Member",     he: "חבר צוות",     desc: "גישה לפי הרשאות שהוגדרו",                         descEn: "Access based on assigned permissions",             color: "#94a3b8", bg: "#f1f5f9", icon: "👥" },
+};
+
+/** New navigation tabs (financial-reports, negative-keywords, automation removed) */
 export const MODULE_PERMISSIONS: Record<Role, string[]> = {
   admin:   ["*"],
-  manager: ["overview","profitability","budget","recommendations","search-terms","negative-keywords","seo","products","audiences","creative-lab","approvals","automation","audit-log","integrations","financial-reports"],
-  editor:  ["overview","recommendations","search-terms","negative-keywords","seo","products","audiences","creative-lab","approvals","financial-reports"],
-  viewer:  ["overview","profitability","budget","search-terms","seo","products","audiences","audit-log","financial-reports"],
+  manager: ["overview","profitability","budget","recommendations","search-terms","seo","products","audiences","creative-lab","approvals","audit-log","integrations"],
+  editor:  ["overview","recommendations","search-terms","seo","products","audiences","creative-lab","approvals"],
+  viewer:  ["overview","profitability","budget","search-terms","seo","products","audiences","audit-log"],
 };
 
 /* ── Current user ───────────────────────────────────────────────── */
