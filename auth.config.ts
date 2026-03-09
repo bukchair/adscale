@@ -1,16 +1,10 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 
-// Scopes for Google platform connections (Ads, Analytics, Search Console, Gmail)
-const PLATFORM_SCOPES = [
-  "openid",
-  "email",
-  "profile",
-  "https://www.googleapis.com/auth/adwords",
-  "https://www.googleapis.com/auth/analytics.readonly",
-  "https://www.googleapis.com/auth/webmasters.readonly",
-  "https://www.googleapis.com/auth/gmail.send",
-].join(" ");
+// Login uses only basic scopes — no restricted/sensitive scopes that require Google verification.
+// Platform connections (Ads, Analytics, Search Console, Gmail) use a separate OAuth flow
+// via /api/auth/google-connect which requests the extended scopes independently.
+const LOGIN_SCOPES = "openid email profile";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -19,7 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
       authorization: {
         params: {
-          scope: PLATFORM_SCOPES,
+          scope: LOGIN_SCOPES,
           access_type: "offline",
           prompt: "consent",
         },

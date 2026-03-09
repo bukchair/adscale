@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { signIn } from "next-auth/react";
 import { C } from "../theme";
-import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser } from "../../lib/auth";
+import { getConnections, saveConnection, removeConnection, saveCreatorGeminiKey, CREATOR_EMAIL, getUser, getBusinessProfile } from "../../lib/auth";
 import type { Lang } from "../page";
 
 /* ── Types ──────────────────────────────────────────────────────── */
@@ -218,7 +217,7 @@ interface IntgState {
   testing: boolean;
 }
 
-function initState(id: string): IntgState {
+function initState(id: string, autofill: Record<string, string> = {}): IntgState {
   if (typeof window !== "undefined") {
     const conns = getConnections();
     const saved = conns[id];
@@ -234,13 +233,30 @@ function initState(id: string): IntgState {
       };
     }
   }
-  return { status:"disconnected", values:{}, expanded:false, helpOpen:false, saving:false, testing:false };
+  // Not yet connected — pre-populate with profile-derived values (user can override)
+  return { status:"disconnected", values: autofill, expanded:false, helpOpen:false, saving:false, testing:false };
 }
 
 /* ── Individual connection card ──────────────────────────────────── */
 function ConnectionCard({ def, lang, onSaved, isCreator }: { def: IntegrationDef; lang: Lang; onSaved?: () => void; isCreator?: boolean }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
-  const [st, setSt] = useState<IntgState>(() => initState(def.id));
+  const [st, setSt] = useState<IntgState>(() => {
+    // Build autofill from saved user profile — only for empty (not yet connected) cards
+    const autofill: Record<string, string> = {};
+    try {
+      const user = getUser();
+      const business = getBusinessProfile(user?.tenantId ?? undefined);
+      // Gmail: pre-fill sender email from logged-in user
+      if (def.id === "gmail" && user?.email) autofill.sender_email = user.email;
+      // GSC: pre-fill property URL from business profile
+      if (def.id === "gsc" && business?.websiteUrl) autofill.site_url = business.websiteUrl;
+      // WooCommerce: pre-fill store URL from business profile
+      if (def.id === "woocommerce" && business?.websiteUrl) autofill.store_url = business.websiteUrl;
+      // Shopify: same
+      if (def.id === "shopify" && business?.websiteUrl) autofill.store_url = business.websiteUrl;
+    } catch { /* ignore — window may not be available */ }
+    return initState(def.id, autofill);
+  });
 
   const setField = (key: string, val: string) =>
     setSt(p => ({ ...p, values: { ...p.values, [key]: val } }));
@@ -513,8 +529,10 @@ function GoogleOAuthBanner({ lang }: { lang: Lang }) {
 
   const handleConnectGoogle = () => {
     setConnecting(true);
-    // Use NextAuth signIn — reuses the already-registered /api/auth/callback/google URI
-    signIn("google", { callbackUrl: "/auth-callback" });
+    // Use the dedicated google-connect endpoint which requests platform scopes
+    // (adwords, analytics, webmasters, gmail) separately from login.
+    // Login uses only openid/email/profile so it's never blocked by scope verification.
+    window.location.href = "/api/auth/google-connect?returnTo=" + encodeURIComponent("/modules?tab=integrations");
   };
 
   return (
@@ -531,12 +549,12 @@ function GoogleOAuthBanner({ lang }: { lang: Lang }) {
     }}>
       <div style={{ flex: 1, minWidth: 200 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>
-          🔗 {t("חיבור Google אחיד לכל הפלטפורמות", "One-click Google connection for all platforms")}
+          🔗 {t("חיבור Google לפלטפורמות", "Connect Google platforms")}
         </div>
         <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
           {t(
-            "התחבר פעם אחת עם Google ואנחנו נחבר אוטומטית את Google Ads, Analytics, Search Console ו-Gmail",
-            "Connect once with Google and we'll automatically connect Google Ads, Analytics, Search Console and Gmail"
+            "התחבר עם Google ובחר אילו פלטפורמות לחבר. ניתן לחבר פלטפורמות שונות עם חשבונות Google שונים",
+            "Connect with Google and choose which platforms to link. You can use different Google accounts for different platforms"
           )}
         </div>
       </div>

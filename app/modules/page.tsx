@@ -543,7 +543,7 @@ function LangDropdown({ lang, onChange, compact }: { lang: Lang; onChange: (l: L
 }
 
 /* ── Sidebar component ─────────────────────────────────────────── */
-function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark, isDark, user, onShowInfo }: {
+function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark, isDark, user, onShowInfo, onGoHome }: {
   lang: Lang;
   active: TabId;
   onSelect: (id: TabId) => void;
@@ -553,6 +553,7 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
   isDark: boolean;
   user: { name: string; email: string; avatar?: string; role: string; platformRole?: string } | null;
   onShowInfo: (id: TabId) => void;
+  onGoHome: () => void;
 }) {
   const groups = NAV_GROUPS;
 
@@ -589,15 +590,18 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
 
   return (
     <aside style={{ width: 240, background: C.sidebar, borderInlineEnd: `1px solid ${C.sidebarBorder}`, display: "flex", flexDirection: "column", height: "100vh", overflowY: "auto" }}>
-      {/* Logo */}
+      {/* Logo — clickable home button */}
       <div style={{ padding: "18px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⚡</div>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>BScale AI</div>
-          <div style={{ fontSize: 11, color: C.textMuted }}>{tl(lang, UI.aiGrowthOS!)}</div>
-        </div>
+        <button onClick={onGoHome} title={tl(lang, { he: "דף הבית", en: "Home", es: "Inicio", de: "Startseite", fr: "Accueil", pt: "Início" })}
+          style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, background: "none", border: "none", cursor: "pointer", padding: 0, textAlign: "start" }}>
+          <div style={{ width: 36, height: 36, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⚡</div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>BScale AI</div>
+            <div style={{ fontSize: 11, color: C.textMuted }}>{tl(lang, UI.aiGrowthOS!)}</div>
+          </div>
+        </button>
         <button onClick={onToggleDark} title={isDark ? tl(lang, UI.lightMode ?? {he:"מצב בהיר",en:"Light mode",es:"Modo claro",de:"Hellmodus",fr:"Mode clair",pt:"Modo claro"}) : tl(lang, UI.darkMode ?? {he:"מצב כהה",en:"Dark mode",es:"Modo oscuro",de:"Dunkelmodus",fr:"Mode sombre",pt:"Modo escuro"})}
-          style={{ marginInlineStart: "auto", background: isDark ? "rgba(129,140,248,0.15)" : C.cardAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: "5px 7px", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>
+          style={{ background: isDark ? "rgba(129,140,248,0.15)" : C.cardAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: "5px 7px", cursor: "pointer", fontSize: 14, lineHeight: 1, flexShrink: 0 }}>
           {isDark ? "☀️" : "🌙"}
         </button>
       </div>
@@ -619,6 +623,12 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
       {/* User info + logout */}
       {user && (
         <div style={{ padding: "12px 10px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
+          {/* Greeting */}
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.accent, padding: "0 4px", marginBottom: 8 }}>
+            👋 {lang === "he"
+              ? `שלום, ${sanitizeDisplayName(user.name, user.email).split(" ")[0]}!`
+              : `Hello, ${sanitizeDisplayName(user.name, user.email).split(" ")[0]}!`}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, padding: "8px", background: C.cardAlt, borderRadius: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", background: C.accentLight, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0, overflow: "hidden" }}>
               {user.avatar && user.avatar.startsWith("http") ? (
@@ -758,6 +768,7 @@ export default function ModulesPage() {
     lang, active: activeTab, onSelect: handleSelect, onLangChange: setLang,
     onLogout: handleLogout, onToggleDark: () => setIsDark(d => !d), isDark,
     user: currentUser, onShowInfo: (id: TabId) => setInfoTabId(id),
+    onGoHome: () => setActiveTab("overview"),
   };
 
   const metrics = [
@@ -813,8 +824,8 @@ export default function ModulesPage() {
           {/* Mobile hamburger */}
           <button className="as-mobile-only" onClick={() => setDrawerOpen(true)} style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${C.border}`, background: "transparent", cursor: "pointer", fontSize: 18, color: C.textSub }}>☰</button>
 
-          {/* Mobile logo */}
-          <div className="as-mobile-only" style={{ flex: 1, fontSize: 16, fontWeight: 700, color: C.text }}>⚡ BScale</div>
+          {/* Mobile logo — home button */}
+          <button className="as-mobile-only" onClick={() => setActiveTab("overview")} style={{ flex: 1, fontSize: 16, fontWeight: 700, color: C.text, background: "none", border: "none", cursor: "pointer", textAlign: "start", padding: 0 }}>⚡ BScale</button>
 
           {/* Desktop: breadcrumb */}
           <div className="as-desktop-only" style={{ flex: 1, alignItems: "center", gap: 8 }}>
