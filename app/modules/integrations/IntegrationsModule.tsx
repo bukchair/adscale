@@ -549,12 +549,12 @@ function GoogleOAuthBanner({ lang }: { lang: Lang }) {
     }}>
       <div style={{ flex: 1, minWidth: 200 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>
-          🔗 {t("חיבור Google אחיד לכל הפלטפורמות", "One-click Google connection for all platforms")}
+          🔗 {t("חיבור Google לפלטפורמות", "Connect Google platforms")}
         </div>
         <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
           {t(
-            "התחבר פעם אחת עם Google ואנחנו נחבר אוטומטית את Google Ads, Analytics, Search Console ו-Gmail",
-            "Connect once with Google and we'll automatically connect Google Ads, Analytics, Search Console and Gmail"
+            "התחבר עם Google ובחר אילו פלטפורמות לחבר. ניתן לחבר פלטפורמות שונות עם חשבונות Google שונים",
+            "Connect with Google and choose which platforms to link. You can use different Google accounts for different platforms"
           )}
         </div>
       </div>
