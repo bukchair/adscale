@@ -255,7 +255,10 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
           platform,
           lang,
           tone,
-          connections: { anthropic: conns.anthropic?.fields ?? {} },
+          connections: {
+            gemini:    conns.gemini?.fields    ?? {},
+            anthropic: conns.anthropic?.fields ?? {},
+          },
         }),
       });
       const data = await res.json();
@@ -306,7 +309,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
           },
           platform,
           style: "modern",
-          connections: { openai: conns.openai?.fields ?? {} },
+          connections: { gemini: conns.gemini?.fields ?? {} },
         }),
       });
       const data = await res.json();
@@ -332,7 +335,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
             {isDemo && <span style={{ fontSize:11, background:C.amberLight, color:C.amberText, padding:"3px 10px", borderRadius:20, fontWeight:600 }}>⚠️ {t("דמו — חבר WooCommerce","Demo — Connect WooCommerce")}</span>}
             {!isDemo && <span style={{ fontSize:11, background:C.greenLight, color:C.greenText, padding:"3px 10px", borderRadius:20, fontWeight:600 }}>✅ {t("מוצרים אמיתיים","Live products")}</span>}
           </div>
-          <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("המערכת תשתמש בפרטי המוצר ליצירת מודעות מותאמות עם Claude AI","Product data will be used to create tailored ads with Claude AI")}</div>
+          <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("המערכת תשתמש בפרטי המוצר ליצירת מודעות מותאמות עם Gemini AI","Product data will be used to create tailored ads with Gemini AI")}</div>
           {loadingProducts ? (
             <div style={{ textAlign:"center", padding:30, color:C.textMuted, fontSize:13 }}>
               <div style={{ width:24, height:24, border:`2px solid ${C.accent}`, borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.8s linear infinite", margin:"0 auto 10px" }} />
@@ -413,7 +416,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
           {genTab==="text" && (
             <div className="as-card" style={{ padding:24 }}>
               <div style={{ fontSize:15, fontWeight:700, color:C.text, marginBottom:6 }}>✍️ {t("מחולל טקסט מודעה","Ad Text Generator")}</div>
-              <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("Claude AI יייצר 3 גרסאות מודעה בהתאם למוצר ולפלטפורמה","Claude AI will create 3 ad variants tailored to the product and platform")}</div>
+              <div style={{ fontSize:13, color:C.textMuted, marginBottom:20 }}>{t("Gemini AI יייצר 3 גרסאות מודעה בהתאם למוצר ולפלטפורמה","Gemini AI will create 3 ad variants tailored to the product and platform")}</div>
               {/* Tone selector */}
               <div style={{ fontSize:12, fontWeight:700, color:C.textMuted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>{t("סגנון כתיבה","Writing Tone")}</div>
               <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
@@ -423,12 +426,12 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
               </div>
               <div style={{ textAlign:"center" }}>
                 <button onClick={doGenerate} disabled={generating} style={{ padding:"13px 32px", borderRadius:10, border:"none", background:generating?C.border:`linear-gradient(135deg,${C.accent},${C.purple})`, color:generating?C.textMuted:"#fff", cursor:generating?"not-allowed":"pointer", fontWeight:700, fontSize:15, boxShadow:C.shadowMd }}>
-                  {generating ? `⏳ ${t("מייצר עם Claude AI...","Generating with Claude AI...")}` : `🤖 ${t("צור 3 גרסאות","Generate 3 Variants")}`}
+                  {generating ? `⏳ ${t("מייצר עם Gemini AI...","Generating with Gemini AI...")}` : `🤖 ${t("צור 3 גרסאות","Generate 3 Variants")}`}
                 </button>
                 {genError && <div style={{ marginTop:10, fontSize:12, color:C.amber }}>⚠️ {genError} — {t("נוצרו גרסאות מקומיות","Local variants used")}</div>}
                 {generating && (
                   <div style={{ marginTop:20, display:"inline-flex", flexDirection:"column", gap:6, textAlign:"start" }}>
-                    {[t("ניתוח פרטי מוצר...","Analyzing product..."), t("שולח ל-Claude AI...","Sending to Claude AI..."), t("מייצר גרסאות...","Generating variants...")].map((msg,i)=>(
+                    {[t("ניתוח פרטי מוצר...","Analyzing product..."), t("שולח ל-Gemini AI...","Sending to Gemini AI..."), t("מייצר גרסאות...","Generating variants...")].map((msg,i)=>(
                       <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:13, color:C.textSub }}><div style={{ width:6, height:6, borderRadius:"50%", background:C.green }} />{msg}</div>
                     ))}
                   </div>
@@ -446,7 +449,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
                 <button onClick={doGenerateImage} disabled={imgGenerating} style={{ padding:"10px 22px", borderRadius:8, border:"none", background:imgGenerating?C.border:`linear-gradient(135deg,${C.accent},${C.purple})`, color:imgGenerating?C.textMuted:"#fff", cursor:imgGenerating?"not-allowed":"pointer", fontWeight:700, fontSize:13 }}>
                   {imgGenerating?`⏳ ${t("מייצר...","Generating...")}`:`🎨 ${t("צור תמונה","Generate Image")}`}
                 </button>
-                <div style={{ fontSize:11, color:C.textMuted }}>{t("מופעל ע\"י OpenAI DALL·E 3 (נדרש API Key בחיבורים)","Powered by OpenAI DALL·E 3 (requires API key in Connections)")}</div>
+                <div style={{ fontSize:11, color:C.textMuted }}>{t("מופעל ע\"י Gemini Imagen (נדרש API Key בחיבורים)","Powered by Gemini Imagen (requires API key in Connections)")}</div>
               </div>
               {imgGenerating && (
                 <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10, padding:30 }}>
@@ -464,7 +467,7 @@ export default function CreativeLabModule({ lang }: { lang: Lang }) {
                       <div style={{ height:200, background:`linear-gradient(135deg,${C.accentLight},${C.purpleLight})`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:8 }}>
                         <span style={{ fontSize:56 }}>{product.image}</span>
                         <div style={{ fontSize:12, color:C.textSub, fontWeight:600 }}>{lang==="he"?product.name:product.nameEn}</div>
-                        <div style={{ fontSize:10, color:C.textMuted }}>{t("חבר OpenAI ליצירת תמונות אמיתיות","Connect OpenAI for real image generation")}</div>
+                        <div style={{ fontSize:10, color:C.textMuted }}>{t("חבר Gemini ליצירת תמונות אמיתיות","Connect Gemini for real image generation")}</div>
                       </div>
                     )}
                   </div>

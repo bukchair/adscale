@@ -503,6 +503,77 @@ function ConnectionCard({ def, lang, onSaved, isCreator }: { def: IntegrationDef
   );
 }
 
+/* ── Google OAuth Connect Banner ─────────────────────────────────── */
+function GoogleOAuthBanner({ lang }: { lang: Lang }) {
+  const t = (he: string, en: string) => lang === "he" ? he : en;
+  const [connecting, setConnecting] = useState(false);
+
+  const handleConnectGoogle = () => {
+    setConnecting(true);
+    window.location.href = "/api/auth/google-connect?returnTo=/modules?tab=integrations";
+  };
+
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, rgba(66,133,244,0.12), rgba(52,168,83,0.08))",
+      border: "1px solid rgba(66,133,244,0.3)",
+      borderRadius: 14,
+      padding: "18px 20px",
+      marginBottom: 20,
+      display: "flex",
+      alignItems: "center",
+      gap: 16,
+      flexWrap: "wrap",
+    }}>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+          🔗 {t("חיבור Google אחיד לכל הפלטפורמות", "One-click Google connection for all platforms")}
+        </div>
+        <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.5 }}>
+          {t(
+            "התחבר פעם אחת עם Google ואנחנו נחבר אוטומטית את Google Ads, Analytics, Search Console ו-Gmail",
+            "Connect once with Google and we'll automatically connect Google Ads, Analytics, Search Console and Gmail"
+          )}
+        </div>
+      </div>
+      <button
+        onClick={handleConnectGoogle}
+        disabled={connecting}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "11px 22px",
+          borderRadius: 10,
+          border: "none",
+          background: connecting ? C.border : "#fff",
+          color: connecting ? C.textMuted : "#1e293b",
+          cursor: connecting ? "not-allowed" : "pointer",
+          fontSize: 14,
+          fontWeight: 700,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          flexShrink: 0,
+          transition: "opacity 0.2s",
+          opacity: connecting ? 0.7 : 1,
+        }}
+      >
+        {connecting ? (
+          <span style={{ display: "inline-block", width: 18, height: 18, border: "2px solid #6366f1", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 29.8 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.8 20-21 0-1.4-.2-2.7-.5-4z" />
+            <path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 16.1 3 9.3 7.8 6.3 14.7z" />
+            <path fill="#FBBC05" d="M24 45c5.5 0 10.5-1.8 14.4-4.9l-6.7-5.5C29.6 36.4 26.9 37 24 37c-5.7 0-10.6-3.1-11.7-7.5l-7 5.4C8.4 41.2 15.6 45 24 45z" />
+            <path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-1.1 3-3.4 5.5-6.3 7.1l6.7 5.5C40.5 38 45 32 45 24c0-1.4-.2-2.7-.5-4z" />
+          </svg>
+        )}
+        {connecting ? t("מחבר...", "Connecting...") : t("התחבר עם Google", "Connect with Google")}
+      </button>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 /* ── Main module ────────────────────────────────────────────────── */
 export default function IntegrationsModule({ lang, onConnectionsChanged }: { lang: Lang; onConnectionsChanged?: () => void }) {
   const t = (he: string, en: string) => lang === "he" ? he : en;
@@ -516,6 +587,9 @@ export default function IntegrationsModule({ lang, onConnectionsChanged }: { lan
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Google OAuth one-click connect */}
+      <GoogleOAuthBanner lang={lang} />
+
       {/* Summary bar */}
       <div className="as-4col-grid">
         {[

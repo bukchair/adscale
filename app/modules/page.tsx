@@ -633,26 +633,11 @@ function Sidebar({ lang, active, onSelect, onLangChange, onLogout, onToggleDark,
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sanitizeDisplayName(user.name, user.email)}</div>
-              <div style={{ fontSize: 11, color: C.textMuted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
             </div>
           </div>
           <button onClick={onLogout} style={{ width: "100%", background: "transparent", border: `1px solid ${C.border}`, borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontSize: 12, color: C.textSub, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             🚪 {tl(lang, UI.logout!)}
           </button>
-        </div>
-      )}
-
-      {/* Super Admin: link to Owner Panel */}
-      {user?.platformRole === "super_admin" && (
-        <div style={{ padding: "10px 8px", borderTop: `1px solid ${C.border}`, flexShrink: 0 }}>
-          <a href="/admin" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1))", border: `1px solid ${C.accent}44`, borderRadius: 10, textDecoration: "none" }}>
-            <span style={{ fontSize: 16 }}>👑</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: C.accent }}>{tl(lang, UI.ownerPanel!)}</div>
-              <div style={{ fontSize: 10, color: C.textMuted }}>{tl(lang, UI.ownerPanelSub!)}</div>
-            </div>
-            <span style={{ fontSize: 12, color: C.textMuted }}>›</span>
-          </a>
         </div>
       )}
 
@@ -703,6 +688,13 @@ export default function ModulesPage() {
     document.documentElement.lang = lang;
     document.documentElement.dir = LANG_META[lang].dir;
   }, [lang]);
+
+  // Redirect to login if no user
+  useEffect(() => {
+    if (!currentUser) {
+      router.replace("/login");
+    }
+  }, [currentUser, router]);
 
   // Load connections from server
   useEffect(() => {

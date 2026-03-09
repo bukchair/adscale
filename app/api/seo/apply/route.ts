@@ -39,27 +39,30 @@ export async function POST(req: NextRequest) {
 
   try {
     if (field === "alt") {
-      // Alt text is on the image attachment — get image ID first, then update media
+      // Get product to retrieve images array
       const productRes = await fetch(`${baseUrl}/wp-json/wc/v3/products/${productId}`, {
         headers: { Authorization: authHeader },
         signal: AbortSignal.timeout(6000),
       });
       if (!productRes.ok) throw new Error(`Get product ${productRes.status}`);
       const productData = await productRes.json();
-      const imageId = productData.images?.[0]?.id;
-      if (!imageId) {
+      const images: { id: number; src: string; alt: string }[] = productData.images ?? [];
+      if (!images.length) {
         return NextResponse.json({ success: false, error: "No image found on product" });
       }
-      // Update media alt via WP REST API
-      const mediaRes = await fetch(`${baseUrl}/wp-json/wp/v2/media/${imageId}`, {
-        method: "POST",
+      // Update alt text via WooCommerce images field (uses wc/v3 auth — no 401)
+      const updatedImages = images.map((img, i) =>
+        i === 0 ? { ...img, alt: value } : img
+      );
+      const updateRes = await fetch(`${baseUrl}/wp-json/wc/v3/products/${productId}`, {
+        method: "PUT",
         headers: { Authorization: authHeader, "Content-Type": "application/json" },
-        body: JSON.stringify({ alt_text: value }),
-        signal: AbortSignal.timeout(6000),
+        body: JSON.stringify({ images: updatedImages }),
+        signal: AbortSignal.timeout(8000),
       });
-      if (!mediaRes.ok) {
-        const txt = await mediaRes.text();
-        throw new Error(`Media update ${mediaRes.status}: ${txt.slice(0, 200)}`);
+      if (!updateRes.ok) {
+        const txt = await updateRes.text();
+        throw new Error(`WooCommerce ${updateRes.status}: ${txt.slice(0, 200)}`);
       }
       return NextResponse.json({ success: true, field: "alt", productId });
     }
