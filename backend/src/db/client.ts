@@ -23,4 +23,5 @@ function createClient(): PrismaClient {
 
 // Prevent multiple instances in development (hot reload)
 export const db = globalThis.__prisma ?? createClient();
+export const prisma = db;
 if (process.env.NODE_ENV !== "production") globalThis.__prisma = db;
